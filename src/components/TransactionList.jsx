@@ -9,7 +9,7 @@ export default function TransactionList({ rows, onDelete }) {
           <tr>
             <th>Date</th>
             <th>Description</th>
-            <th>Category</th>
+            <th className="cat">Category</th>
             <th className="num">Amount</th>
             <th aria-label="Actions" />
           </tr>
@@ -21,8 +21,9 @@ export default function TransactionList({ rows, onDelete }) {
               <td>
                 <span className={`dot ${t.type}`} aria-hidden="true" />
                 {t.description}
+                <span className="cat-inline muted">{t.category}</span>
               </td>
-              <td className="muted">{t.category}</td>
+              <td className="muted cat">{t.category}</td>
               <td className="num">
                 {t.type === 'expense' ? '−' : '+'}
                 {formatMoney(t.amount)}

@@ -369,6 +369,25 @@ svg rect:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+.cat-inline {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .tx-table .cat {
+    display: none;
+  }
+  .cat-inline {
+    display: block;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .tx-table td,
+  .tx-table th {
+    padding: 7px 6px;
+  }
+}
+
 .tx-table .actions {
   width: 32px;
   text-align: right;
