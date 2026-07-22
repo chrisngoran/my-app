@@ -1,6 +1,6 @@
 // Simple app-shell service worker: precache core assets, network-first for
 // navigation (so new deploys show up), cache-first for hashed static assets.
-const CACHE = 'finance-tracker-v1'
+const CACHE = 'finance-tracker-v2'
 const SHELL = ['/', '/index.html', '/icon.svg', '/manifest.webmanifest']
 
 self.addEventListener('install', (event) => {
