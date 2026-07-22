@@ -1,34 +1,43 @@
 :root {
-  color-scheme: light dark;
-  --page: #f9f9f7;
-  --surface: #fcfcfb;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --muted: #898781;
-  --grid: #e1e0d9;
-  --baseline: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.1);
-  --income: #1baf7a;
-  --expense: #2a78d6;
-  --accent: #2a78d6;
-  --delta-good: #006300;
-  --delta-bad: #d03b3b;
+  color-scheme: dark;
+  --page: #0a0a0c;
+  --surface: #131316;
+  --surface-2: #1c1c20;
+  --ink: #f5f3ee;
+  --ink-2: #b8b4ab;
+  --muted: #7d7972;
+  --grid: #232326;
+  --baseline: #35353a;
+  --border: rgba(255, 255, 255, 0.08);
+  --income: #2fbf83;
+  --expense: #ea6570;
+  --accent: #d4a24c;
+  --accent-ink: #171310;
+  --delta-good: #2fbf83;
+  --delta-bad: #ea6570;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --page: #0d0d0d;
-    --surface: #1a1a19;
-    --ink: #ffffff;
-    --ink-2: #c3c2b7;
-    --grid: #2c2c2a;
-    --baseline: #383835;
-    --border: rgba(255, 255, 255, 0.1);
-    --income: #199e70;
-    --expense: #3987e5;
-    --accent: #3987e5;
-    --delta-good: #0ca30c;
-  }
+:root[data-theme='light'] {
+  color-scheme: light;
+  --page: #f7f5f0;
+  --surface: #ffffff;
+  --surface-2: #f0eee7;
+  --ink: #17140f;
+  --ink-2: #56514a;
+  --muted: #928c81;
+  --grid: #e8e4da;
+  --baseline: #d8d3c6;
+  --border: rgba(23, 20, 15, 0.09);
+  --income: #1f9d68;
+  --expense: #d0454f;
+  --accent: #a3752e;
+  --accent-ink: #fffaf0;
+  --delta-good: #1f9d68;
+  --delta-bad: #d0454f;
 }
 
 * {
@@ -39,9 +48,58 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--ink);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.45;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card,
+.hero-balance,
+.tile {
+  animation: fadeSlideIn 0.4s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .hero-balance,
+  .tile {
+    animation: none;
+  }
 }
 
 .app {
@@ -63,8 +121,9 @@ body {
 
 .app-header h1 {
   margin: 0;
-  font-size: 22px;
-  font-weight: 650;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
 }
 
 .sub {
@@ -84,6 +143,12 @@ h2 {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px 18px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
 /* ---- filters ---- */
@@ -114,10 +179,44 @@ h2 {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
 }
 
+/* ---- hero balance ---- */
+.hero-balance {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 28px;
+  overflow: hidden;
+}
+
+.hero-balance::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  right: -8%;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-value {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 480;
+  letter-spacing: -0.01em;
+}
+
+.hero-balance .tile-label,
+.hero-balance .tile-delta {
+  position: relative;
+}
+
 /* ---- stat tiles ---- */
 .tiles {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
@@ -127,15 +226,22 @@ h2 {
 }
 
 .tile-value {
-  font-size: 26px;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
-.tile.hero .tile-value {
-  font-size: 38px;
+.tile.income .tile-value {
+  color: var(--income);
+}
+
+.tile.expense .tile-value {
+  color: var(--expense);
 }
 
 .tile-unit {
+  font-family: var(--font-body);
   font-size: 0.55em;
   font-weight: 500;
   color: var(--ink-2);
@@ -245,6 +351,7 @@ svg rect:focus-visible {
 }
 
 .tip-row .val {
+  font-family: var(--font-mono);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -280,7 +387,7 @@ svg rect:focus-visible {
 .tx-form select {
   font: inherit;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--baseline);
   border-radius: 8px;
   padding: 7px 10px;
@@ -295,7 +402,7 @@ svg rect:focus-visible {
 .btn-primary {
   font: inherit;
   font-weight: 600;
-  color: #fff;
+  color: var(--accent-ink);
   background: var(--accent);
   border: none;
   border-radius: 8px;
@@ -364,8 +471,13 @@ svg rect:focus-visible {
   border-bottom: 1px solid var(--grid);
 }
 
+.tx-table tbody tr:hover td {
+  background: var(--surface-2);
+}
+
 .tx-table .num {
   text-align: right;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -442,7 +554,7 @@ svg rect:focus-visible {
 .login-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 32px 28px;
   width: 100%;
   max-width: 380px;
@@ -451,8 +563,9 @@ svg rect:focus-visible {
 
 .login-card h1 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 650;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
 }
 
 .login-card .sub {
@@ -513,7 +626,7 @@ svg rect:focus-visible {
 .auth-form input {
   font: inherit;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--baseline);
   border-radius: 8px;
   padding: 6px 10px;
@@ -615,7 +728,7 @@ svg rect:focus-visible {
   flex: 1;
   font: inherit;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--baseline);
   border-radius: 8px;
   padding: 9px 12px;
@@ -647,6 +760,7 @@ svg rect:focus-visible {
 }
 
 .ai-amount {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
@@ -724,6 +838,7 @@ svg rect:focus-visible {
 
 .ai-budget-table .num {
   text-align: right;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

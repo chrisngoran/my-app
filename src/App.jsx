@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { localISO } from './lib/utils'
 import { useTransactions } from './lib/useTransactions'
 import { useAuth } from './lib/auth.jsx'
@@ -41,21 +41,42 @@ function rangeBounds(id) {
 export default function App() {
   const { user, loading, configured } = useAuth()
   const [guest, setGuest] = useState(false)
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem('finance-tracker:theme') || 'dark',
+  )
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('finance-tracker:theme', theme)
+  }, [theme])
+
+  let content
   if (configured && loading) {
-    return (
+    content = (
       <div className="login-screen">
         <p className="muted">Loading…</p>
       </div>
     )
+  } else if (configured && !user && !guest) {
+    content = <LoginScreen onGuest={() => setGuest(true)} />
+  } else {
+    const isGuest = configured && !user && guest
+    content = <Dashboard isGuest={isGuest} onExitGuest={() => setGuest(false)} />
   }
 
-  if (configured && !user && !guest) {
-    return <LoginScreen onGuest={() => setGuest(true)} />
-  }
-
-  const isGuest = configured && !user && guest
-  return <Dashboard isGuest={isGuest} onExitGuest={() => setGuest(false)} />
+  return (
+    <>
+      <button
+        className="theme-toggle"
+        onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+        aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+      >
+        {theme === 'dark' ? '☀' : '☾'}
+      </button>
+      {content}
+    </>
+  )
 }
 
 function Dashboard({ isGuest, onExitGuest }) {
