@@ -3,7 +3,7 @@ import { cooperative } from "@/lib/data";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-border bg-surface">
+    <footer className="mt-16 border-t border-border bg-surface print:hidden">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-sm sm:grid-cols-3">
         <div>
           <p className="font-serif text-lg font-bold text-brand">{cooperative.name}</p>

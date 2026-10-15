@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-label="MONTHLY Subscription coffee bag">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efe7dc"/><stop offset="1" stop-color="#dccbb6"/></linearGradient></defs>
+<rect width="800" height="600" fill="url(#bg)"/>
+<path d="M0 420 L120 330 L230 390 L360 300 L480 380 L600 310 L800 420 L800 600 L0 600 Z" fill="#2f6b3f" opacity="0.12"/>
+<path d="M0 470 L160 410 L300 450 L470 400 L640 450 L800 410 L800 600 L0 600 Z" fill="#2f6b3f" opacity="0.14"/>
+<rect y="520" width="800" height="80" fill="#000" opacity="0.04"/>
+<g transform="translate(120 470) rotate(20)"><ellipse rx="22" ry="15" fill="#6b3f2a"/><path d="M-18 0 C-6 -6 6 6 18 0" stroke="#000" stroke-opacity="0.35" stroke-width="3" fill="none"/></g><g transform="translate(170 505) rotate(-30)"><ellipse rx="22" ry="15" fill="#6b3f2a"/><path d="M-18 0 C-6 -6 6 6 18 0" stroke="#000" stroke-opacity="0.35" stroke-width="3" fill="none"/></g><g transform="translate(640 480) rotate(40)"><ellipse rx="22" ry="15" fill="#6b3f2a"/><path d="M-18 0 C-6 -6 6 6 18 0" stroke="#000" stroke-opacity="0.35" stroke-width="3" fill="none"/></g><g transform="translate(690 515) rotate(-10)"><ellipse rx="22" ry="15" fill="#6b3f2a"/><path d="M-18 0 C-6 -6 6 6 18 0" stroke="#000" stroke-opacity="0.35" stroke-width="3" fill="none"/></g><g transform="translate(600 520) rotate(70)"><ellipse rx="22" ry="15" fill="#6b3f2a"/><path d="M-18 0 C-6 -6 6 6 18 0" stroke="#000" stroke-opacity="0.35" stroke-width="3" fill="none"/></g><g transform="translate(95 520) rotate(60)"><ellipse rx="22" ry="15" fill="#6b3f2a"/><path d="M-18 0 C-6 -6 6 6 18 0" stroke="#000" stroke-opacity="0.35" stroke-width="3" fill="none"/></g>
+<g transform="translate(250 330) scale(0.72)">
+  <ellipse cx="0" cy="200" rx="135" ry="16" fill="#000" opacity="0.12"/>
+  <clipPath id="csubscription1"><path d="M-118 -150 L118 -150 L130 185 Q130 198 117 198 L-117 198 Q-130 198 -130 185 Z"/></clipPath>
+  <path d="M-118 -150 L118 -150 L130 185 Q130 198 117 198 L-117 198 Q-130 198 -130 185 Z" fill="#4a2c20"/>
+  <g clip-path="url(#csubscription1)"><path d="M60 -150 L118 -150 L130 198 L80 198 Z" fill="#3a2118" opacity="0.55"/></g>
+  <path d="M-122 -190 L122 -190 L118 -150 L-118 -150 Z" fill="#3a2118"/>
+  <rect x="-122" y="-196" width="244" height="12" rx="3" fill="#c27a34"/>
+  <circle cx="0" cy="-172" r="6" fill="#efe7dc" opacity="0.9"/>
+  <rect x="-92" y="-108" width="184" height="210" rx="10" fill="#fbf8f4"/>
+  <g transform="translate(0 -62)">
+    <path d="M-22 6 C-22 -16 22 -16 22 6 C22 22 -22 22 -22 6 Z" fill="none" stroke="#4a2c20" stroke-width="3" transform="rotate(-25)"/>
+    <path d="M-12 -10 C-2 0 2 10 12 20" fill="none" stroke="#4a2c20" stroke-width="3" transform="rotate(-25)"/>
+  </g>
+  <text x="0" y="-14" text-anchor="middle" font-family="Georgia, serif" font-size="13" letter-spacing="2" fill="#4a2c20" opacity="0.85">GREEN VENTURE</text>
+  <text x="0" y="16" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="22" fill="#4a2c20">MONTHLY</text>
+  <text x="0" y="42" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="20" fill="#4a2c20">Subscription</text>
+  <line x1="-60" y1="58" x2="60" y2="58" stroke="#c27a34" stroke-width="3"/>
+  <text x="0" y="84" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#4a2c20" opacity="0.85">3 × 250 g</text>
+  <g transform="translate(0 140)"><rect x="-32" y="-26" width="52" height="52" rx="4" fill="#efe7dc"/>
+  <g fill="#3a2118"><rect x="-27" y="-21" width="14" height="14"/><rect x="1" y="-21" width="14" height="14"/><rect x="-27" y="7" width="14" height="14"/><rect x="-8" y="-4" width="6" height="6"/><rect x="5" y="5" width="6" height="6"/><rect x="5" y="14" width="10" height="6"/></g></g>
+</g><g transform="translate(550 330) scale(0.72)">
+  <ellipse cx="0" cy="200" rx="135" ry="16" fill="#000" opacity="0.12"/>
+  <clipPath id="csubscription2"><path d="M-118 -150 L118 -150 L130 185 Q130 198 117 198 L-117 198 Q-130 198 -130 185 Z"/></clipPath>
+  <path d="M-118 -150 L118 -150 L130 185 Q130 198 117 198 L-117 198 Q-130 198 -130 185 Z" fill="#c27a34"/>
+  <g clip-path="url(#csubscription2)"><path d="M60 -150 L118 -150 L130 198 L80 198 Z" fill="#a6662a" opacity="0.55"/></g>
+  <path d="M-122 -190 L122 -190 L118 -150 L-118 -150 Z" fill="#a6662a"/>
+  <rect x="-122" y="-196" width="244" height="12" rx="3" fill="#c27a34"/>
+  <circle cx="0" cy="-172" r="6" fill="#efe7dc" opacity="0.9"/>
+  <rect x="-92" y="-108" width="184" height="210" rx="10" fill="#fbf8f4"/>
+  <g transform="translate(0 -62)">
+    <path d="M-22 6 C-22 -16 22 -16 22 6 C22 22 -22 22 -22 6 Z" fill="none" stroke="#c27a34" stroke-width="3" transform="rotate(-25)"/>
+    <path d="M-12 -10 C-2 0 2 10 12 20" fill="none" stroke="#c27a34" stroke-width="3" transform="rotate(-25)"/>
+  </g>
+  <text x="0" y="-14" text-anchor="middle" font-family="Georgia, serif" font-size="13" letter-spacing="2" fill="#c27a34" opacity="0.85">GREEN VENTURE</text>
+  <text x="0" y="16" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="22" fill="#c27a34">MONTHLY</text>
+  <text x="0" y="42" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="20" fill="#c27a34">Subscription</text>
+  <line x1="-60" y1="58" x2="60" y2="58" stroke="#c27a34" stroke-width="3"/>
+  <text x="0" y="84" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#c27a34" opacity="0.85">3 × 250 g</text>
+  <g transform="translate(0 140)"><rect x="-32" y="-26" width="52" height="52" rx="4" fill="#efe7dc"/>
+  <g fill="#a6662a"><rect x="-27" y="-21" width="14" height="14"/><rect x="1" y="-21" width="14" height="14"/><rect x="-27" y="7" width="14" height="14"/><rect x="-8" y="-4" width="6" height="6"/><rect x="5" y="5" width="6" height="6"/><rect x="5" y="14" width="10" height="6"/></g></g>
+</g><g transform="translate(400 320) scale(0.95)">
+  <ellipse cx="0" cy="200" rx="135" ry="16" fill="#000" opacity="0.12"/>
+  <clipPath id="csubscription0"><path d="M-118 -150 L118 -150 L130 185 Q130 198 117 198 L-117 198 Q-130 198 -130 185 Z"/></clipPath>
+  <path d="M-118 -150 L118 -150 L130 185 Q130 198 117 198 L-117 198 Q-130 198 -130 185 Z" fill="#2f6b3f"/>
+  <g clip-path="url(#csubscription0)"><path d="M60 -150 L118 -150 L130 198 L80 198 Z" fill="#245432" opacity="0.55"/></g>
+  <path d="M-122 -190 L122 -190 L118 -150 L-118 -150 Z" fill="#245432"/>
+  <rect x="-122" y="-196" width="244" height="12" rx="3" fill="#c27a34"/>
+  <circle cx="0" cy="-172" r="6" fill="#efe7dc" opacity="0.9"/>
+  <rect x="-92" y="-108" width="184" height="210" rx="10" fill="#fbf8f4"/>
+  <g transform="translate(0 -62)">
+    <path d="M-22 6 C-22 -16 22 -16 22 6 C22 22 -22 22 -22 6 Z" fill="none" stroke="#2f6b3f" stroke-width="3" transform="rotate(-25)"/>
+    <path d="M-12 -10 C-2 0 2 10 12 20" fill="none" stroke="#2f6b3f" stroke-width="3" transform="rotate(-25)"/>
+  </g>
+  <text x="0" y="-14" text-anchor="middle" font-family="Georgia, serif" font-size="13" letter-spacing="2" fill="#2f6b3f" opacity="0.85">GREEN VENTURE</text>
+  <text x="0" y="16" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="22" fill="#2f6b3f">MONTHLY</text>
+  <text x="0" y="42" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="20" fill="#2f6b3f">Subscription</text>
+  <line x1="-60" y1="58" x2="60" y2="58" stroke="#c27a34" stroke-width="3"/>
+  <text x="0" y="84" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#2f6b3f" opacity="0.85">3 × 250 g</text>
+  <g transform="translate(0 140)"><rect x="-32" y="-26" width="52" height="52" rx="4" fill="#efe7dc"/>
+  <g fill="#245432"><rect x="-27" y="-21" width="14" height="14"/><rect x="1" y="-21" width="14" height="14"/><rect x="-27" y="7" width="14" height="14"/><rect x="-8" y="-4" width="6" height="6"/><rect x="5" y="5" width="6" height="6"/><rect x="5" y="14" width="10" height="6"/></g></g>
+</g>
+</svg>

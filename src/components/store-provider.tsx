@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import type { Currency } from "@/lib/types";
 
 export interface CartItem {
@@ -17,6 +17,8 @@ interface StoreState {
   removeFromCart: (slug: string) => void;
   clearCart: () => void;
   itemCount: number;
+  /** True once the saved cart and currency have been read from localStorage. */
+  loaded: boolean;
 }
 
 const StoreContext = createContext<StoreState | null>(null);
@@ -41,28 +43,71 @@ function writeStorage(key: string, value: unknown) {
   }
 }
 
+/*
+ * The cart and currency live in a tiny module-level store backed by
+ * localStorage. React reads it with useSyncExternalStore: the server (and the
+ * hydration pass) sees the empty "not loaded" snapshot, and the browser then
+ * switches to the saved one without a setState-in-effect round trip.
+ */
+interface Snapshot {
+  cart: CartItem[];
+  currency: Currency;
+  loaded: boolean;
+}
+
+const SERVER_SNAPSHOT: Snapshot = { cart: [], currency: "XAF", loaded: false };
+let snapshot: Snapshot | null = null;
+const listeners = new Set<() => void>();
+
+function getSnapshot(): Snapshot {
+  if (!snapshot) {
+    snapshot = {
+      cart: readStorage<CartItem[]>(CART_KEY, []),
+      currency: readStorage<Currency>(CURRENCY_KEY, "XAF"),
+      loaded: true,
+    };
+  }
+  return snapshot;
+}
+
+function getServerSnapshot(): Snapshot {
+  return SERVER_SNAPSHOT;
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === CART_KEY || e.key === CURRENCY_KEY) {
+      snapshot = null;
+      listener();
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function update(next: Partial<Omit<Snapshot, "loaded">>) {
+  const prev = getSnapshot();
+  snapshot = { ...prev, ...next };
+  if (next.cart) writeStorage(CART_KEY, next.cart);
+  if (next.currency) writeStorage(CURRENCY_KEY, next.currency);
+  listeners.forEach((l) => l());
+}
+
+function updateCart(fn: (prev: CartItem[]) => CartItem[]) {
+  update({ cart: fn(getSnapshot().cart) });
+}
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>("XAF");
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { cart, currency, loaded } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    setCart(readStorage<CartItem[]>(CART_KEY, []));
-    setCurrencyState(readStorage<Currency>(CURRENCY_KEY, "XAF"));
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) writeStorage(CART_KEY, cart);
-  }, [cart, loaded]);
-
-  const setCurrency = useCallback((c: Currency) => {
-    setCurrencyState(c);
-    writeStorage(CURRENCY_KEY, c);
-  }, []);
+  const setCurrency = useCallback((c: Currency) => update({ currency: c }), []);
 
   const addToCart = useCallback((slug: string, quantity = 1) => {
-    setCart((prev) => {
+    updateCart((prev) => {
       const existing = prev.find((i) => i.slug === slug);
       if (existing) return prev.map((i) => (i.slug === slug ? { ...i, quantity: i.quantity + quantity } : i));
       return [...prev, { slug, quantity }];
@@ -70,16 +115,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setQuantity = useCallback((slug: string, quantity: number) => {
-    setCart((prev) =>
+    updateCart((prev) =>
       quantity <= 0 ? prev.filter((i) => i.slug !== slug) : prev.map((i) => (i.slug === slug ? { ...i, quantity } : i)),
     );
   }, []);
 
   const removeFromCart = useCallback((slug: string) => {
-    setCart((prev) => prev.filter((i) => i.slug !== slug));
+    updateCart((prev) => prev.filter((i) => i.slug !== slug));
   }, []);
 
-  const clearCart = useCallback(() => setCart([]), []);
+  const clearCart = useCallback(() => update({ cart: [] }), []);
 
   const value = useMemo<StoreState>(
     () => ({
@@ -91,8 +136,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       removeFromCart,
       clearCart,
       itemCount: cart.reduce((n, i) => n + i.quantity, 0),
+      loaded,
     }),
-    [currency, setCurrency, cart, addToCart, setQuantity, removeFromCart, clearCart],
+    [currency, setCurrency, cart, addToCart, setQuantity, removeFromCart, clearCart, loaded],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

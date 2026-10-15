@@ -16,7 +16,7 @@ export function SiteHeader() {
   const { itemCount, currency, setCurrency } = useStore();
 
   return (
-    <header className="border-b border-border bg-surface">
+    <header className="border-b border-border bg-surface print:hidden">
       <div className="bg-brand px-4 py-1.5 text-center text-xs text-brand-contrast">
         Demo version — sample products, farmers and orders for illustration only.
       </div>
