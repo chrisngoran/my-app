@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRightIcon, CalendarIcon, CupIcon, HillsBackdrop, LeafIcon, MountainIcon, QrIcon } from "@/components/trace/icons";
+import { LiveLotScore } from "@/components/storefront/live-catalog";
 import { LotSearch } from "@/components/trace/lot-search";
 import { altitudeRange, formatHarvestDate, lotFarmers } from "@/components/trace/lot-utils";
 import { lots } from "@/lib/data";
@@ -115,7 +116,9 @@ export default function TracePage() {
                         </p>
                       </div>
                       <div className="shrink-0 rounded-lg bg-accent-soft px-2.5 py-1 text-center text-accent">
-                        <p className="text-lg font-bold leading-none">{lot.quality.cuppingScore}</p>
+                        <p className="text-lg font-bold leading-none">
+                          <LiveLotScore code={lot.code} fallback={lot.quality.cuppingScore} />
+                        </p>
                         <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider">SCA</p>
                       </div>
                     </div>

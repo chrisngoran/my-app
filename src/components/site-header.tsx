@@ -9,7 +9,6 @@ const NAV = [
   { href: "/shop", label: "Shop" },
   { href: "/our-story", label: "Our story" },
   { href: "/trace", label: "Trace your coffee" },
-  { href: "/portal", label: "Cooperative portal" },
 ];
 
 export function SiteHeader() {

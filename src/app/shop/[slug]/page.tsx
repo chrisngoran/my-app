@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CATEGORY_LABELS, formatWeight } from "@/components/storefront/catalog";
-import { ProductCard } from "@/components/storefront/product-card";
+import {
+  LiveLotNotes,
+  LiveLotScore,
+  LiveProductDescription,
+  LiveProductImage,
+  LiveProductName,
+  LiveProductStock,
+} from "@/components/storefront/live-catalog";
+import { ProductGrid } from "@/components/storefront/product-card";
 import { ProductPurchase } from "@/components/storefront/product-purchase";
-import { StockIndicator } from "@/components/storefront/stock-indicator";
 import { getFarmer, getLot, getProduct, products } from "@/lib/data";
 
 // Unknown slugs must wait for the full render so notFound() returns a real 404
@@ -33,7 +39,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const altitudes = growers.map((f) => f.altitudeMetres);
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 3);
 
-  const details: { label: string; value: string }[] = [
+  const details: { label: string; value: React.ReactNode }[] = [
     { label: "Weight", value: formatWeight(product.weightGrams) },
     { label: "Roast", value: product.roast ?? (product.category === "green" ? "Unroasted (green)" : "—") },
     ...(lot
@@ -48,7 +54,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 : `${Math.min(...altitudes).toLocaleString("en-GB")}–${Math.max(...altitudes).toLocaleString("en-GB")} m`
               : "1,600–2,000 m",
           },
-          { label: "Cupping score", value: `${lot.quality.cuppingScore} / 100` },
+          {
+            label: "Cupping score",
+            value: (
+              <>
+                <LiveLotScore code={lot.code} fallback={lot.quality.cuppingScore} /> / 100
+              </>
+            ),
+          },
         ]
       : []),
   ];
@@ -70,19 +83,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-foreground">
-            {product.name}
+            <LiveProductName slug={product.slug} fallback={product.name} />
           </li>
         </ol>
       </nav>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
         <div className="overflow-hidden rounded-3xl border border-border bg-accent-soft lg:sticky lg:top-6 lg:self-start">
-          <Image
-            src={product.image}
+          <LiveProductImage
+            slug={product.slug}
+            fallbackSrc={product.image}
             alt={`${product.name} — ${formatWeight(product.weightGrams)} bag`}
-            width={800}
-            height={600}
-            unoptimized
             preload
             className="aspect-[4/3] h-auto w-full object-cover"
           />
@@ -90,11 +101,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">{CATEGORY_LABELS[product.category]}</p>
-          <h1 className="mt-1 font-serif text-3xl font-bold leading-tight text-brand sm:text-4xl">{product.name}</h1>
+          <h1 className="mt-1 font-serif text-3xl font-bold leading-tight text-brand sm:text-4xl">
+            <LiveProductName slug={product.slug} fallback={product.name} />
+          </h1>
           <div className="mt-3">
-            <StockIndicator stock={product.stock} />
+            <LiveProductStock slug={product.slug} fallback={product.stock} />
           </div>
-          <p className="mt-4 text-lg leading-relaxed text-foreground/85">{product.description}</p>
+          <p className="mt-4 text-lg leading-relaxed text-foreground/85">
+            <LiveProductDescription slug={product.slug} fallback={product.description} />
+          </p>
 
           <section aria-labelledby="notes-heading" className="mt-6">
             <h2 id="notes-heading" className="text-sm font-semibold uppercase tracking-wider text-muted">
@@ -132,7 +147,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <h2 id="origin-heading" className="font-serif text-xl font-bold text-accent">
                 Where this coffee comes from
               </h2>
-              <p className="mt-2 text-sm text-foreground/85">{lot.notes}</p>
+              <p className="mt-2 text-sm text-foreground/85">
+                <LiveLotNotes code={lot.code} fallback={lot.notes} />
+              </p>
               {growers.length > 0 && (
                 <p className="mt-3 text-sm">
                   <span className="font-semibold">Grown by: </span>
@@ -160,13 +177,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <h2 id="related-heading" className="font-serif text-2xl font-bold text-brand">
           You may also like
         </h2>
-        <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {related.map((p) => (
-            <li key={p.slug} className="flex [&>article]:flex-1">
-              <ProductCard product={p} />
-            </li>
-          ))}
-        </ul>
+        <ProductGrid products={related} className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" />
       </section>
     </div>
   );

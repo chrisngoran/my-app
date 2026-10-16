@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { LiveLotScore } from "@/components/storefront/live-catalog";
 import { PrintButton } from "@/components/trace/print-button";
 import {
   altitudeRange,
@@ -158,7 +159,10 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
         {/* Footer strip */}
         <div className="l-xs flex items-center justify-between gap-[2cqw] border-t border-[#e7ddd3] px-[6cqw] py-[2.5cqw]">
           <span>
-            Cupping score <strong>{lot.quality.cuppingScore}</strong>
+            Cupping score{" "}
+            <strong>
+              <LiveLotScore code={lot.code} fallback={lot.quality.cuppingScore} />
+            </strong>
           </span>
           {netWeight && (
             <span>

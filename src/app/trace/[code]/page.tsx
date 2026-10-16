@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Price } from "@/components/price";
-import { CuppingScore } from "@/components/trace/cupping-score";
+import { LiveCuppingGauge, LiveFarmerStory, LiveLotNotes, LiveLotScore } from "@/components/storefront/live-catalog";
 import {
-  ArrowRightIcon,
-  BeanIcon,
   CalendarIcon,
   DropIcon,
   HillsBackdrop,
@@ -23,6 +20,7 @@ import {
   normaliseLotCode,
   safeDecode,
 } from "@/components/trace/lot-utils";
+import { LotProducts } from "@/components/trace/lot-products";
 import { LotQrCode } from "@/components/trace/qr-code";
 import { cooperative, getLot, lots } from "@/lib/data";
 import { traceUrl } from "@/lib/qr";
@@ -128,14 +126,16 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
               <h1 className="mt-4 font-serif text-3xl font-bold leading-tight sm:text-5xl">
                 {lot.processingMethod} Arabica from {villages.join(villages.length > 2 ? ", " : " & ")}
               </h1>
-              <p className="mt-4 max-w-2xl text-base text-brand-contrast/85 sm:text-lg">{lot.notes}</p>
+              <p className="mt-4 max-w-2xl text-base text-brand-contrast/85 sm:text-lg">
+                <LiveLotNotes code={lot.code} fallback={lot.notes} />
+              </p>
               <p className="mt-4 text-sm text-brand-contrast/70">
                 Grown by {farmers.length === 1 ? "one farmer" : `${farmers.length} member farmers`} of {cooperative.name},
                 Bui Division, North West Cameroon.
               </p>
             </div>
             <div className="justify-self-center rounded-3xl bg-brand-contrast/5 px-8 py-6 ring-1 ring-brand-contrast/15">
-              <CuppingScore score={q.cuppingScore} />
+              <LiveCuppingGauge code={lot.code} fallback={q.cuppingScore} />
             </div>
           </div>
         </div>
@@ -167,7 +167,9 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
               <DropIcon /> {lot.processingMethod} process
             </h2>
             <p className="mt-3 text-foreground/85">{PROCESS_TEXT[lot.processingMethod]}</p>
-            <p className="mt-3 text-sm text-muted">{lot.notes}</p>
+            <p className="mt-3 text-sm text-muted">
+              <LiveLotNotes code={lot.code} fallback={lot.notes} />
+            </p>
           </div>
           <div className="rounded-2xl border border-border bg-surface p-6">
             <h2 id="quality-heading" className="font-serif text-xl font-bold text-brand">
@@ -199,7 +201,7 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
                 <p className="text-sm text-brand-contrast/85">80+ points is specialty grade</p>
               </div>
               <p className="font-serif text-3xl font-bold">
-                {q.cuppingScore}
+                <LiveLotScore code={lot.code} fallback={q.cuppingScore} />
                 <span className="ml-1 text-base font-normal text-brand-contrast/70">/ 100</span>
               </p>
             </div>
@@ -238,7 +240,9 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
                     <span>{f.plotHectares} ha</span>
                     <span>Member since {f.joinedYear}</span>
                   </p>
-                  <p className="mt-3 text-foreground/85">{f.story}</p>
+                  <p className="mt-3 text-foreground/85">
+                    <LiveFarmerStory id={f.id} fallback={f.story} />
+                  </p>
                 </div>
               </li>
             ))}
@@ -250,49 +254,7 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
           <h2 id="products-heading" className="font-serif text-2xl font-bold text-brand sm:text-3xl">
             Coffee from this lot
           </h2>
-          {products.length === 0 ? (
-            <p className="mt-3 text-muted">
-              This lot is reserved for export buyers. <Link href="/shop" className="font-semibold text-accent underline">Browse the shop</Link>{" "}
-              for coffee available now.
-            </p>
-          ) : (
-            <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((p) => (
-                <li key={p.slug}>
-                  <Link
-                    href={`/shop/${p.slug}`}
-                    className="group flex h-full flex-col rounded-2xl border border-border bg-surface p-5 transition hover:border-accent hover:shadow-md focus-visible:outline-2 focus-visible:outline-accent"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand text-brand-contrast">
-                        <BeanIcon />
-                      </span>
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground group-hover:text-brand">{p.name}</h3>
-                        <p className="text-sm text-muted">
-                          {p.weightGrams >= 1000 ? `${p.weightGrams / 1000} kg` : `${p.weightGrams} g`}
-                          {p.roast ? ` · ${p.roast} roast` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Tasting notes">
-                      {p.cuppingNotes.map((n) => (
-                        <li key={n} className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
-                          {n}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-auto flex items-center justify-between pt-4">
-                      <Price xaf={p.priceXaf} className="text-lg font-bold text-brand" />
-                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-accent">
-                        Buy <ArrowRightIcon />
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          <LotProducts slugs={products.map((p) => p.slug)} />
         </section>
 
         {/* QR */}

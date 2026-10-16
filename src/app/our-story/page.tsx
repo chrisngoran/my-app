@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LiveFarmerStory } from "@/components/storefront/live-catalog";
 import { cooperative, farmers, lots } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -133,7 +134,9 @@ export default function OurStoryPage() {
                     </p>
                   </div>
                 </div>
-                <p className="mt-4 flex-1 text-sm leading-relaxed text-foreground/85">{f.story}</p>
+                <p className="mt-4 flex-1 text-sm leading-relaxed text-foreground/85">
+                  <LiveFarmerStory id={f.id} fallback={f.story} />
+                </p>
                 <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
                   <div className="rounded-lg bg-background p-2.5">
                     <dt className="text-xs text-muted">Altitude</dt>

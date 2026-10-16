@@ -24,6 +24,17 @@ export function SiteFooter() {
           <p className="text-muted">{cooperative.email}</p>
         </div>
       </div>
+      <div className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-1 px-4 py-3 text-xs text-muted">
+          <span>Demo website</span>
+          <Link href="/portal" className="inline-flex min-h-8 items-center hover:text-brand hover:underline">
+            Full platform preview
+          </Link>
+          <Link href="/admin" className="inline-flex min-h-8 items-center hover:text-brand hover:underline">
+            Staff login
+          </Link>
+        </div>
+      </div>
     </footer>
   );
 }

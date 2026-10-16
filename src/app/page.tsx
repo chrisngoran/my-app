@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { HeroArt } from "@/components/storefront/hero-art";
 import { PaymentBadges } from "@/components/storefront/payment-badges";
-import { ProductCard } from "@/components/storefront/product-card";
+import { LiveLotNotes, LiveLotScore } from "@/components/storefront/live-catalog";
+import { ProductGrid } from "@/components/storefront/product-card";
 import { cooperative, farmers, lots, products } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -85,13 +86,7 @@ export default function Home() {
             See all products →
           </Link>
         </div>
-        <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((p) => (
-            <li key={p.slug} className="flex [&>article]:flex-1">
-              <ProductCard product={p} />
-            </li>
-          ))}
-        </ul>
+        <ProductGrid products={featured} />
       </section>
 
       {/* Traceability */}
@@ -144,7 +139,9 @@ export default function Home() {
             <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg bg-background p-3">
                 <dt className="text-muted">Cupping score</dt>
-                <dd className="text-lg font-bold text-accent">{exampleLot.quality.cuppingScore}</dd>
+                <dd className="text-lg font-bold text-accent">
+                  <LiveLotScore code={exampleLot.code} fallback={exampleLot.quality.cuppingScore} />
+                </dd>
               </div>
               <div className="rounded-lg bg-background p-3">
                 <dt className="text-muted">Harvested</dt>
@@ -153,7 +150,9 @@ export default function Home() {
                 </dd>
               </div>
             </dl>
-            <p className="mt-4 text-sm text-foreground/80">{exampleLot.notes}</p>
+            <p className="mt-4 text-sm text-foreground/80">
+              <LiveLotNotes code={exampleLot.code} fallback={exampleLot.notes} />
+            </p>
             <Link href={`/trace/${exampleLot.code}`} className="mt-4 inline-block text-sm font-semibold text-accent hover:underline">
               See the full journey of this lot →
             </Link>

@@ -4,18 +4,28 @@ import Image from "next/image";
 import Link from "next/link";
 import { Price } from "@/components/price";
 import { useStore } from "@/components/store-provider";
-import { getProduct } from "@/lib/data";
+import { type CatalogProduct, useCatalog } from "@/lib/catalog-overrides";
 import { formatWeight } from "./catalog";
 import { QuantityStepper } from "./quantity-stepper";
 
+/**
+ * Cart lines at the current price (including any admin edits saved in this
+ * browser). Products that are sold out or hidden from the website are listed
+ * separately in `unavailable` and left out of the total and the order.
+ */
 export function useCartLines() {
   const { cart } = useStore();
-  const lines = cart.flatMap((item) => {
-    const product = getProduct(item.slug);
-    return product ? [{ product, quantity: item.quantity, lineXaf: product.priceXaf * item.quantity }] : [];
-  });
+  const { products } = useCatalog();
+  const lines: { product: CatalogProduct; quantity: number; lineXaf: number }[] = [];
+  const unavailable: CatalogProduct[] = [];
+  for (const item of cart) {
+    const product = products.find((p) => p.slug === item.slug);
+    if (!product) continue;
+    if (product.hidden || product.stock <= 0) unavailable.push(product);
+    else lines.push({ product, quantity: item.quantity, lineXaf: product.priceXaf * item.quantity });
+  }
   const subtotalXaf = lines.reduce((sum, l) => sum + l.lineXaf, 0);
-  return { lines, subtotalXaf };
+  return { lines, unavailable, subtotalXaf };
 }
 
 export function CartSkeleton() {
@@ -49,10 +59,10 @@ export function EmptyCart() {
 
 export function CartView() {
   const { setQuantity, removeFromCart, loaded } = useStore();
-  const { lines, subtotalXaf } = useCartLines();
+  const { lines, unavailable, subtotalXaf } = useCartLines();
 
   if (!loaded) return <CartSkeleton />;
-  if (lines.length === 0) return <EmptyCart />;
+  if (lines.length === 0 && unavailable.length === 0) return <EmptyCart />;
 
   const itemCount = lines.reduce((n, l) => n + l.quantity, 0);
 
@@ -109,6 +119,27 @@ export function CartView() {
             </li>
           ))}
         </ul>
+        {unavailable.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface p-4">
+            <p className="text-sm font-semibold text-brand">No longer available</p>
+            <ul className="mt-2 space-y-1">
+              {unavailable.map((p) => (
+                <li key={p.slug} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span className="text-muted">
+                    {p.name} · {p.hidden ? "not on sale" : "sold out"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeFromCart(p.slug)}
+                    className="min-h-11 rounded-lg px-3 font-medium text-muted underline-offset-2 hover:text-red-700 hover:underline"
+                  >
+                    Remove<span className="sr-only"> {p.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <Link href="/shop" className="mt-4 inline-block text-sm font-medium text-accent hover:underline">
           ← Continue shopping
         </Link>
@@ -136,12 +167,16 @@ export function CartView() {
           <span className="font-semibold">Subtotal</span>
           <Price xaf={subtotalXaf} className="text-2xl font-bold text-brand" />
         </div>
+        {lines.length > 0 ? (
         <Link
           href="/order"
           className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-accent px-6 py-3 font-semibold text-brand-contrast hover:bg-accent/90"
         >
           Continue to send order
         </Link>
+        ) : (
+          <p className="mt-5 rounded-lg bg-background px-4 py-3 text-center text-sm text-muted">Nothing in your list can be ordered right now.</p>
+        )}
         <p className="mt-3 text-center text-xs text-muted">Order on WhatsApp or by phone. Pay by MoMo or Orange Money.</p>
       </aside>
     </div>

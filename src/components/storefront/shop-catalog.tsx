@@ -1,11 +1,19 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCatalog } from "@/lib/catalog-overrides";
 import type { Product, ProductCategory } from "@/lib/types";
 import { CATEGORIES, CATEGORY_LABELS, isCategory } from "./catalog";
 import { ProductCard } from "./product-card";
 
-export function ShopCatalog({ products }: { products: Product[] }) {
+/** Leaves out products that staff have hidden from the website in the demo admin. */
+function useShownProducts(products: Product[]) {
+  const { products: merged } = useCatalog();
+  return products.filter((p) => !merged.find((m) => m.slug === p.slug)?.hidden);
+}
+
+export function ShopCatalog({ products: all }: { products: Product[] }) {
+  const products = useShownProducts(all);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -68,7 +76,8 @@ export function ShopCatalog({ products }: { products: Product[] }) {
   );
 }
 
-export function ShopCatalogFallback({ products }: { products: Product[] }) {
+export function ShopCatalogFallback({ products: all }: { products: Product[] }) {
+  const products = useShownProducts(all);
   return (
     <div>
       <div className="h-11" aria-hidden="true" />

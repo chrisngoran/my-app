@@ -15,7 +15,7 @@ const inputClass =
 
 export function WhatsAppOrderForm() {
   const { loaded, clearCart } = useStore();
-  const { lines, subtotalXaf } = useCartLines();
+  const { lines, unavailable, subtotalXaf } = useCartLines();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
@@ -76,6 +76,11 @@ export function WhatsAppOrderForm() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+      {unavailable.length > 0 && (
+        <p className="rounded-lg border border-dashed border-border bg-surface px-4 py-3 text-sm text-muted lg:col-span-2">
+          Left out of this order because they are no longer available: {unavailable.map((p) => p.name).join(", ")}.
+        </p>
+      )}
       <form className="space-y-4 rounded-2xl border border-border bg-surface p-5" onSubmit={(e) => e.preventDefault()}>
         <h2 className="font-serif text-xl font-bold text-brand">Your details</h2>
         <div className="grid gap-4 sm:grid-cols-2">
