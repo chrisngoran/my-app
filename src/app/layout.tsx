@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { StoreProvider } from "@/components/store-provider";
+import { archivo, stencil } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,11 +19,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${archivo.variable} ${stencil.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"
-          className="sr-only rounded-lg bg-surface px-4 py-3 font-semibold text-brand focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:shadow-lg"
+          className="sr-only rounded-lg bg-surface px-4 py-3 font-semibold text-brand focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:shadow-[var(--shadow-float)]"
         >
           Skip to content
         </a>

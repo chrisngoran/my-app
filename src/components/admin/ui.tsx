@@ -3,16 +3,89 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export const inputClass =
-  "mt-1 block min-h-12 w-full rounded-lg border border-border bg-surface px-3 py-2 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 aria-[invalid=true]:border-danger";
+  "mt-1.5 block min-h-12 w-full rounded-lg border border-field-border bg-surface px-3 py-2 text-base font-normal tracking-normal text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent aria-[invalid=true]:border-danger";
+
+/** Form label: Archivo 600 at 14px; the field inside it resets to body text. */
+export const labelClass = "type-label block text-foreground";
 
 /** Built from the shared `btn` recipes in globals.css. Staff controls stay 48px tall. */
 export const primaryButton = "btn btn-primary min-h-12";
 
 export const secondaryButton = "btn btn-secondary min-h-12";
 
-/** Field-level error text. It fades in when it appears. */
+/** Field-level error text. It fades in when it appears. Pair it with <AlertMark /> so it is never colour alone. */
 export const errorText =
-  "mt-1 block text-sm font-medium text-danger transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150";
+  "mt-1.5 flex items-start gap-1.5 text-sm font-medium tracking-normal text-danger transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150";
+
+/** Muted hint under a field. */
+export const hintText = "mt-1.5 block text-sm font-normal tracking-normal text-muted";
+
+/** 16px warning mark for errors (authored SVG, always next to text). */
+export function AlertMark({ className = "mt-0.5 h-4 w-4" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="6.25" />
+      <path d="M8 4.75v3.75M8 11.1v.15" />
+    </svg>
+  );
+}
+
+/** 16px information mark in leaf, for the "live version" callout. */
+export function InfoMark({ className = "mt-0.5 h-4 w-4" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="6.25" />
+      <path d="M8 7.25v4M8 4.9v.15" />
+    </svg>
+  );
+}
+
+/** 16px tick for saved states. */
+export function CheckMark({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3.5 8.5 3 3 6-6.5" />
+    </svg>
+  );
+}
+
+/** 16px back chevron for "All products" (authored, not a glyph). */
+export function ChevronLeftMark({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 3.5 5.5 8l4.5 4.5" />
+    </svg>
+  );
+}
+
+/** Hint under a field that turns into the error, with its icon, when there is one. */
+export function FieldHint({ id, error, children }: { id?: string; error?: string | null; children?: React.ReactNode }) {
+  if (error) {
+    return (
+      <span id={id} className={errorText}>
+        <AlertMark />
+        <span>{error}</span>
+      </span>
+    );
+  }
+  if (!children) return null;
+  return (
+    <span id={id} className={hintText}>
+      {children}
+    </span>
+  );
+}
+
+/** "Edited" marker: parchment, the colour of the record (11.19:1). */
+export function EditedChip() {
+  return <span className="shrink-0 rounded-md bg-sand px-2 py-0.5 text-xs font-semibold text-brand">Edited</span>;
+}
+
+/** Initials for a farmer's disc, e.g. "Delphine Berinyuy" → "DB". */
+export function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "")).toUpperCase();
+}
 
 /** Small inline spinner for busy states. */
 export function Spinner({ className = "h-4 w-4" }: { className?: string }) {
@@ -28,17 +101,22 @@ export function Spinner({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-/** Large on/off switch with its label, easy to tap on a phone. */
+/**
+ * Large on/off switch with its label, easy to tap on a phone. The bordered
+ * variant stands alone in a form; `bare` sits in a list row (no box inside a box).
+ */
 export function Toggle({
   checked,
   onChange,
   label,
   description,
+  bare = false,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   label: string;
   description?: string;
+  bare?: boolean;
 }) {
   return (
     <button
@@ -46,15 +124,17 @@ export function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="group flex min-h-12 w-full touch-manipulation items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-left [transition:background-color_150ms_ease] hover:bg-background active:bg-background"
+      className={`group flex min-h-12 w-full min-w-0 touch-manipulation items-center justify-between gap-3 rounded-lg py-2 text-left [transition:background-color_150ms_ease] ${
+        bare ? "px-0" : "border border-field-border bg-surface px-3 pointer-fine:hover:bg-background active:bg-background"
+      }`}
     >
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-foreground">{label}</span>
-        {description && <span className="block text-xs text-muted">{description}</span>}
+        {description && <span className="block text-sm text-muted">{description}</span>}
       </span>
       <span
         aria-hidden="true"
-        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full [transition:background-color_180ms_ease] ${checked ? "bg-accent" : "bg-border"}`}
+        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full [transition:background-color_180ms_ease] ${checked ? "bg-accent" : "bg-field-border"}`}
       >
         <span
           className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-[translate,scale] duration-180 ease-out group-active:scale-92 motion-reduce:transition-none ${checked ? "translate-x-6" : "translate-x-1"}`}
@@ -106,15 +186,16 @@ export function useToast({ raised = false }: { raised?: boolean } = {}) {
       {message && (
         <p
           key={message.id}
-          className={`pointer-events-auto max-w-md rounded-xl px-4 py-3 text-sm font-semibold shadow-lg transition-[opacity,translate] ease-out motion-reduce:transition-opacity ${
-            message.tone === "error" ? "bg-danger text-white" : "bg-accent text-brand-contrast"
+          className={`pointer-events-auto flex max-w-md min-w-0 items-start gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-[var(--shadow-float)] [overflow-wrap:anywhere] transition-[opacity,translate] ease-out motion-reduce:transition-opacity ${
+            message.tone === "error" ? "bg-danger text-white" : "on-dark bg-brand text-sand"
           } ${
             message.leaving
               ? "translate-y-2 opacity-0 duration-160 motion-reduce:translate-y-0"
               : "duration-240 starting:translate-y-full starting:opacity-0 motion-reduce:duration-150"
           }`}
         >
-          {message.text}
+          {message.tone === "error" ? <AlertMark /> : <CheckMark className="mt-0.5 h-4 w-4" />}
+          <span>{message.text}</span>
         </p>
       )}
     </div>
@@ -205,8 +286,8 @@ export function AdminLoading({ label = "Loading…" }: { label?: string }) {
 export function PageTitle({ title, intro }: { title: string; intro?: React.ReactNode }) {
   return (
     <div>
-      <h1 className="font-serif text-2xl font-bold text-brand sm:text-3xl">{title}</h1>
-      {intro && <p className="mt-1 text-sm text-muted">{intro}</p>}
+      <h1 className="text-2xl leading-tight font-bold text-brand [font-stretch:88%]">{title}</h1>
+      {intro && <p className="mt-1.5 max-w-[60ch] text-muted">{intro}</p>}
     </div>
   );
 }

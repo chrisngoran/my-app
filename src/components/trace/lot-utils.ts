@@ -1,9 +1,38 @@
 import { farmers as allFarmers, products as allProducts } from "@/lib/data";
 import type { CoffeeLot, Farmer } from "@/lib/types";
 
-/** Lot codes are printed in upper case, e.g. GV-2026-014. */
+/**
+ * Lot codes are printed in upper case, e.g. GV-2026-014. People type them in
+ * many shapes ("gv 2026 14", "GV2026014", "2026-14"), so anything that reads as
+ * a year plus a 1–3 digit lot number becomes the canonical code. Other input
+ * is only trimmed and upper-cased, so the not-found page can echo it back.
+ */
 export function normaliseLotCode(input: string) {
+  const compact = input.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const match = compact.match(/^(?:GV)?(\d{4})(\d{1,3})$/);
+  if (match) return `GV-${match[1]}-${match[2].padStart(3, "0")}`;
   return input.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+/** "250 g" or "1 kg". */
+export function formatWeight(grams: number) {
+  return grams >= 1000 ? `${(grams / 1000).toLocaleString("en-GB")} kg` : `${grams.toLocaleString("en-GB")} g`;
+}
+
+/** Initials for the farmer disc, e.g. "Delphine Berinyuy" → "DB". */
+export function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+/** Score as printed: 86.75, 84.5, 82. */
+export function formatScore(score: number) {
+  return score.toFixed(2).replace(/\.?0+$/, "");
 }
 
 /** Decodes a route param, tolerating malformed percent-encoding. */
@@ -39,7 +68,7 @@ export function formatMetres(m: number) {
 }
 
 export function altitudeRange(farmers: Farmer[]) {
-  if (farmers.length === 0) return "—";
+  if (farmers.length === 0) return "Not recorded";
   const alts = farmers.map((f) => f.altitudeMetres);
   const min = Math.min(...alts);
   const max = Math.max(...alts);

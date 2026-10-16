@@ -9,7 +9,29 @@ import { getProduct } from "@/lib/data";
 import type { Product } from "@/lib/types";
 import { LiveVersionNote } from "./product-list";
 import { resizeImage } from "./resize-image";
-import { AdminLoading, ConfirmButton, errorText, inputClass, primaryButton, secondaryButton, Spinner, Toggle, useToast } from "./ui";
+import {
+  AdminLoading,
+  CheckMark,
+  ChevronLeftMark,
+  ConfirmButton,
+  errorText,
+  AlertMark,
+  FieldHint,
+  hintText,
+  inputClass,
+  labelClass,
+  primaryButton,
+  secondaryButton,
+  Spinner,
+  Toggle,
+  useToast,
+} from "./ui";
+
+/** Limits that keep one product readable on a phone-sized shop card and in a WhatsApp line. */
+const NAME_MAX = 80;
+const DESCRIPTION_MAX = 600;
+const PRICE_MAX = 10_000_000;
+const STOCK_MAX = 100_000;
 
 export function AdminProductEdit({ slug }: { slug: string }) {
   const { loaded, resets } = useCatalogOverrides();
@@ -64,9 +86,12 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
     const priceValue = Number(price);
     const stockValue = Number(stock);
     if (!name.trim()) next.name = "Enter a product name.";
+    else if (name.trim().length > NAME_MAX) next.name = `Keep the name to ${NAME_MAX} characters or fewer.`;
     if (price.trim() === "" || !Number.isFinite(priceValue) || priceValue <= 0) next.price = "Enter a price above 0 FCFA.";
     else if (!Number.isInteger(priceValue)) next.price = "FCFA prices are whole numbers, e.g. 4500.";
+    else if (priceValue > PRICE_MAX) next.price = "Enter a price up to 10 000 000 FCFA.";
     if (stock.trim() === "" || !Number.isInteger(stockValue) || stockValue < 0) next.stock = "Enter a whole number, 0 or more.";
+    else if (stockValue > STOCK_MAX) next.stock = "Enter a stock up to 100,000 bags.";
     setErrors(next);
     if (Object.keys(next).length) {
       show("Please check the highlighted fields.", "error");
@@ -102,19 +127,23 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
 
   return (
     <div>
-      <Link href="/admin/products" className="inline-flex min-h-11 items-center text-sm font-medium text-accent hover:underline">
-        ← All products
+      <Link
+        href="/admin/products"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1 rounded-lg px-1 text-sm font-semibold text-accent underline underline-offset-[3px] hover:decoration-2"
+      >
+        <ChevronLeftMark />
+        All products
       </Link>
-      <h1 className="mt-1 font-serif text-2xl font-bold text-brand sm:text-3xl">Edit product</h1>
-      <p className="mt-1 text-sm text-muted">{original.name}</p>
+      <h1 className="mt-1 text-2xl leading-tight font-bold text-brand [font-stretch:88%]">Edit product</h1>
+      <p className="mt-1 text-muted [overflow-wrap:anywhere]">{original.name}</p>
       <LiveVersionNote />
 
-      <form noValidate onSubmit={onSubmit} className="mt-6 space-y-5 rounded-2xl border border-border bg-surface p-4 sm:p-5">
+      <form noValidate onSubmit={onSubmit} className="mt-6 space-y-6 rounded-2xl border border-border bg-surface p-4 sm:p-6">
         <section aria-labelledby={`${ids}-photo`} aria-busy={photoBusy}>
-          <h2 id={`${ids}-photo`} className="text-sm font-medium">
+          <h2 id={`${ids}-photo`} className={labelClass}>
             Photo
           </h2>
-          <div className="mt-2 overflow-hidden rounded-xl border border-border bg-accent-soft">
+          <div className="mt-2 overflow-hidden rounded-2xl bg-accent-soft">
             <Image
               src={shownImage}
               alt={`Photo of ${name || original.name}`}
@@ -125,7 +154,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             />
           </div>
           <p className="mt-2 text-xs text-muted">
-            {photo ? "Your uploaded photo." : "Original demo photo."} Photos are made smaller (max 800 px wide) before saving.
+            {photo ? "Your uploaded photo." : "Original demo photo."} Photos are cropped to the 4:3 shape the shop shows and made smaller (max 800 px wide) before saving.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <label
@@ -159,38 +188,43 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
           </div>
           {photoError && (
             <p role="alert" className={`${errorText} mt-2`}>
+              <AlertMark />
               {photoError}
             </p>
           )}
         </section>
 
-        <label className="block text-sm font-medium">
+        <label className={labelClass}>
           Name
           <input
             className={inputClass}
             value={name}
+            maxLength={NAME_MAX}
             onChange={(e) => {
               setName(e.target.value);
               touch();
             }}
             aria-invalid={!!errors.name}
-            aria-describedby={errors.name ? `${ids}-name-err` : undefined}
+            aria-describedby={`${ids}-name-err ${ids}-name-count`}
           />
-          {errors.name && (
-            <span id={`${ids}-name-err`} className={errorText}>
-              {errors.name}
+          <span className="flex items-start justify-between gap-3">
+            <FieldHint id={`${ids}-name-err`} error={errors.name} />
+            <span id={`${ids}-name-count`} className="mt-1.5 ml-auto shrink-0 text-sm font-normal tracking-normal text-muted tabular-nums">
+              <span className="sr-only">Characters used: </span>
+              {name.length}/{NAME_MAX}
             </span>
-          )}
+          </span>
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm font-medium">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5 sm:grid-cols-[repeat(2,minmax(0,1fr))]">
+          <label className={labelClass}>
             Price (FCFA)
             <input
-              className={inputClass}
+              className={`${inputClass} tabular-nums`}
               type="number"
               inputMode="numeric"
               min={1}
+              max={PRICE_MAX}
               step={1}
               value={price}
               onChange={(e) => {
@@ -200,17 +234,20 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
               aria-invalid={!!errors.price}
               aria-describedby={`${ids}-price-hint`}
             />
-            <span id={`${ids}-price-hint`} className={errors.price ? errorText : "mt-1 block text-sm text-muted"}>
-              {errors.price ?? (Number(price) > 0 ? `Shown as ${formatPrice(Number(price))}` : "Price in FCFA")}
-            </span>
+            <FieldHint id={`${ids}-price-hint`} error={errors.price}>
+              <span className="[overflow-wrap:anywhere]">
+                {Number(price) > 0 && Number(price) <= PRICE_MAX ? `Shown as ${formatPrice(Number(price))}` : "Price in FCFA, up to 10 000 000"}
+              </span>
+            </FieldHint>
           </label>
-          <label className="block text-sm font-medium">
+          <label className={labelClass}>
             Stock (bags)
             <input
-              className={inputClass}
+              className={`${inputClass} tabular-nums`}
               type="number"
               inputMode="numeric"
               min={0}
+              max={STOCK_MAX}
               step={1}
               value={stock}
               onChange={(e) => {
@@ -220,22 +257,28 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
               aria-invalid={!!errors.stock}
               aria-describedby={`${ids}-stock-hint`}
             />
-            <span id={`${ids}-stock-hint`} className={errors.stock ? errorText : "mt-1 block text-sm text-muted"}>
-              {errors.stock ?? "0 shows “Sold out” on the website"}
-            </span>
+            <FieldHint id={`${ids}-stock-hint`} error={errors.stock}>
+              0 shows “Sold out” on the website
+            </FieldHint>
           </label>
         </div>
 
-        <label className="block text-sm font-medium">
+        <label className={labelClass}>
           Description
           <textarea
             className={`${inputClass} min-h-32`}
             value={description}
+            maxLength={Math.max(DESCRIPTION_MAX, product.description.length)}
+            aria-describedby={`${ids}-desc-count`}
             onChange={(e) => {
               setDescription(e.target.value);
               touch();
             }}
           />
+          <span id={`${ids}-desc-count`} className={`${hintText} text-right tabular-nums`}>
+            <span className="sr-only">Characters used: </span>
+            {description.length}/{DESCRIPTION_MAX}
+          </span>
         </label>
 
         <Toggle
@@ -249,10 +292,20 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
         />
 
         {/* On phones the actions stay at the bottom of the screen, so Save is always in reach on this long form. */}
-        <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:px-0 sm:pt-5 sm:pb-0">
+        <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-float)] sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pt-5 sm:pb-0 sm:shadow-none">
           <div className="flex flex-wrap items-center gap-2">
             <button type="submit" className={`${primaryButton} flex-1 whitespace-nowrap max-sm:px-3 sm:flex-none`} disabled={photoBusy}>
-              Save changes
+              {/* "Save changes" turns into a certain "Saved" until the next edit. */}
+              <span key={saved && !dirty ? "saved" : "save"} className={`inline-flex items-center gap-2 ${saved && !dirty ? "anim-swap" : ""}`}>
+                {saved && !dirty ? (
+                  <>
+                    <CheckMark />
+                    Saved
+                  </>
+                ) : (
+                  "Save changes"
+                )}
+              </span>
             </button>
             <Link href={`/shop/${original.slug}`} className={`${secondaryButton} flex-1 whitespace-nowrap max-sm:px-3 sm:flex-none`}>
               View on website
@@ -260,9 +313,9 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             {!saved && dirty && (
               <span
                 aria-hidden="true"
-                className="order-first inline-flex w-full items-center gap-2 text-sm font-medium text-warm-ink sm:order-none sm:ml-1 sm:w-auto"
+                className="order-first inline-flex w-full items-center gap-2 text-sm font-medium text-cherry sm:order-none sm:ml-1 sm:w-auto"
               >
-                <span className="h-2 w-2 rounded-full bg-warm" />
+                <span className="h-2 w-2 rounded-full bg-cherry" />
                 Unsaved changes
               </span>
             )}
@@ -272,9 +325,10 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
           </div>
         </div>
         {saved && (
-          <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm font-semibold text-accent transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150">
-            Saved.{" "}
-            <Link href={`/shop/${original.slug}`} className="underline">
+          <p className="flex flex-wrap items-center gap-x-2 rounded-lg bg-accent-soft px-4 py-1 text-sm font-semibold text-accent transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150">
+            <CheckMark />
+            Saved.
+            <Link href={`/shop/${original.slug}`} className="inline-flex min-h-11 items-center underline underline-offset-[3px]">
               View on website
             </Link>
           </p>

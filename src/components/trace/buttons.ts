@@ -2,22 +2,23 @@
  * Class recipes for the traceability pages.
  *
  * Buttons are the shared `btn` / `btn-*` recipes from globals.css (44px,
- * rounded-lg, 0.97 press scale, hover gated to fine pointers, reduced-motion
- * handled there). Only the trace-specific card and arrow recipes live here.
+ * rounded-lg, press scale, hover gated to fine pointers, reduced motion
+ * handled there). Colour comes from the tokens, so these pick up the site
+ * identity without trace-specific overrides.
  */
 
-/** Brown brand button: the main action on a light surface. */
-export const btnPrimary = "btn btn-primary text-sm";
+/** Cherry "commit" button: the main action on a light surface. */
+export const btnPrimary = "btn btn-primary";
 
-/** Bordered surface button for the secondary action beside a primary one. */
-export const btnSecondary = "btn btn-secondary text-sm";
+/** Soil outline button for the secondary action beside a primary one. */
+export const btnSecondary = "btn btn-secondary";
 
-/** Green "go" button for the lot search. */
-export const btnGo = "btn btn-go text-sm";
+/** Leaf "go" button: trace actions on a light surface. */
+export const btnGo = "btn btn-go";
 
-/** Shared arrow nudge for linked cards: moves 3px on hover, hover-capable devices only. */
-export const arrowNudge =
-  "h-4 w-4 transition-transform duration-(--dur-ui) ease-out group-hover:translate-x-[3px] motion-reduce:transition-none motion-reduce:group-hover:translate-x-0";
+/** Parchment button for actions sitting on a Volcanic Soil band. */
+export const btnOnDark = "btn btn-on-dark";
 
-/** Linked card surface: border and shadow transition only (no `transition: all`). */
-export const linkedCard = "group transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent hover:shadow-md";
+/** Underlined leaf text link, padded to a 44px tap target. */
+export const textLink =
+  "inline-flex min-h-11 items-center font-semibold text-accent underline decoration-1 underline-offset-[3px] hover:decoration-2";

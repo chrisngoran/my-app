@@ -15,9 +15,14 @@ export function convertFromXaf(amountXaf: number, currency: Currency) {
 }
 
 export function formatPrice(amountXaf: number, currency: Currency = "XAF") {
-  const value = convertFromXaf(amountXaf, currency);
-  if (currency === "XAF") {
+  // Unknown currency codes fall back to FCFA instead of throwing a RangeError.
+  const code: Currency = CURRENCIES.includes(currency) ? currency : "XAF";
+  const value = convertFromXaf(Number.isFinite(amountXaf) ? amountXaf : 0, code);
+  if (code === "XAF") {
     return `${Math.round(value).toLocaleString("fr-FR").replace(/ /g, " ")} FCFA`;
   }
-  return new Intl.NumberFormat("en-GB", { style: "currency", currency, minimumFractionDigits: 2 }).format(value);
+  const fmt = new Intl.NumberFormat("en-GB", { style: "currency", currency: code, minimumFractionDigits: 2 });
+  // A 1 FCFA item would otherwise read as "€0.00", as if it were free.
+  if (value > 0 && value < 0.01) return `< ${fmt.format(0.01)}`;
+  return fmt.format(value);
 }

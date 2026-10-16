@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronLeft } from "@/components/storefront/cart-view";
 import { WhatsAppOrderForm } from "@/components/storefront/whatsapp-order-form";
 
 export const metadata: Metadata = {
@@ -9,15 +10,19 @@ export const metadata: Metadata = {
 
 export default function OrderPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12">
-      <Link href="/cart" className="-ml-1 inline-flex min-h-11 items-center rounded-lg px-1 text-sm font-medium text-accent hover:underline">
-        ← Back to your order list
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+      <Link
+        href="/cart"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1 rounded-lg px-1 text-sm font-semibold text-accent underline underline-offset-[3px] hover:decoration-2"
+      >
+        <ChevronLeft />
+        Back to your order list
       </Link>
-      <h1 className="mt-1 font-serif text-3xl font-bold text-brand sm:text-4xl">Send your order</h1>
-      <p className="mt-2 text-muted">
+      <h1 className="type-h1 mt-2 text-brand">Send your order</h1>
+      <p className="type-lead mt-3 max-w-[60ch] text-foreground">
         Your order opens in WhatsApp, ready to send. We confirm it, then you pay by MTN MoMo or Orange Money.
       </p>
-      <div className="mt-6">
+      <div className="mt-8">
         <WhatsAppOrderForm />
       </div>
     </div>

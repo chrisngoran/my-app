@@ -3,13 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CATEGORY_LABELS, formatWeight } from "@/components/storefront/catalog";
 import {
-  LiveLotNotes,
-  LiveLotScore,
   LiveProductDescription,
   LiveProductImage,
   LiveProductName,
   LiveProductStock,
 } from "@/components/storefront/live-catalog";
+import { LotTag } from "@/components/storefront/lot-tag";
 import { ProductGrid } from "@/components/storefront/product-card";
 import { ProductPurchase } from "@/components/storefront/product-purchase";
 import { getFarmer, getLot, getProduct, products } from "@/lib/data";
@@ -36,40 +35,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const lot = getLot(product.lotCode);
   const growers = lot ? lot.farmerIds.flatMap((id) => getFarmer(id) ?? []) : [];
-  const altitudes = growers.map((f) => f.altitudeMetres);
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 3);
 
-  const details: { label: string; value: React.ReactNode }[] = [
+  // The lot tag carries processing, variety, altitude, harvest and score; these are the bag's own facts.
+  const details: { label: string; value: string }[] = [
     { label: "Weight", value: formatWeight(product.weightGrams) },
-    { label: "Roast", value: product.roast ?? (product.category === "green" ? "Unroasted (green)" : "—") },
-    ...(lot
-      ? [
-          { label: "Processing", value: lot.processingMethod },
-          { label: "Variety", value: lot.variety },
-          {
-            label: "Altitude",
-            value: altitudes.length
-              ? Math.min(...altitudes) === Math.max(...altitudes)
-                ? `${altitudes[0].toLocaleString("en-GB")} m`
-                : `${Math.min(...altitudes).toLocaleString("en-GB")}–${Math.max(...altitudes).toLocaleString("en-GB")} m`
-              : "1,600–2,000 m",
-          },
-          {
-            label: "Cupping score",
-            value: (
-              <>
-                <LiveLotScore code={lot.code} fallback={lot.quality.cuppingScore} /> / 100
-              </>
-            ),
-          },
-        ]
-      : []),
+    ...(product.roast
+      ? [{ label: "Roast", value: product.roast }]
+      : product.category === "green"
+        ? [{ label: "Roast", value: "Unroasted (green)" }]
+        : []),
   ];
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-10 pt-3 sm:pb-12 sm:pt-6">
       <nav aria-label="Breadcrumb" className="text-sm text-muted">
-        <ol className="flex flex-wrap items-center gap-x-1.5">
+        <ol className="flex flex-wrap items-center gap-x-2">
           <li>
             <Link href="/shop" className="inline-flex min-h-11 items-center hover:text-brand hover:underline">
               Shop
@@ -77,103 +58,100 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href={`/shop?category=${product.category}`} className="inline-flex min-h-11 items-center hover:text-brand hover:underline">
+            <Link
+              href={`/shop?category=${product.category}`}
+              className="inline-flex min-h-11 items-center hover:text-brand hover:underline"
+            >
               {CATEGORY_LABELS[product.category]}
             </Link>
           </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="py-3 text-foreground">
+          {/* The page title repeats the name right below, so phones skip this crumb. */}
+          <li aria-hidden="true" className="max-sm:hidden">
+            /
+          </li>
+          <li aria-current="page" className="min-w-0 py-3 text-foreground [overflow-wrap:anywhere] max-sm:hidden">
             <LiveProductName slug={product.slug} fallback={product.name} />
           </li>
         </ol>
       </nav>
 
-      <div className="mt-3 grid gap-8 lg:grid-cols-2 lg:gap-12">
-        <div className="overflow-hidden rounded-3xl border border-border bg-accent-soft lg:sticky lg:top-6 lg:self-start">
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-8 lg:mt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
+        <div className="relative overflow-hidden rounded-2xl bg-accent-soft lg:sticky lg:top-6 lg:self-start">
           <LiveProductImage
             slug={product.slug}
             fallbackSrc={product.image}
-            alt={`${product.name} — ${formatWeight(product.weightGrams)} bag`}
+            alt={`${product.name}, ${formatWeight(product.weightGrams)} bag`}
             preload
             className="aspect-[4/3] h-auto w-full object-cover"
           />
+          {/* On phones the lot record is a screen away, so the code is tagged on the photo; on desktop the lot record sits beside it. */}
+          <span
+            aria-hidden="true"
+            className="type-stencil absolute bottom-4 left-4 rounded-md bg-sand px-2.5 py-1 text-2xl text-brand lg:hidden"
+          >
+            {product.lotCode}
+          </span>
         </div>
 
-        <div>
-          <h1 className="text-balance font-serif text-3xl font-bold leading-tight text-brand sm:text-4xl">
+        <div className="min-w-0">
+          <h1 className="type-h1 text-brand [overflow-wrap:anywhere]">
             <LiveProductName slug={product.slug} fallback={product.name} />
           </h1>
           <div className="mt-3">
             <LiveProductStock slug={product.slug} fallback={product.stock} />
           </div>
-          <p className="mt-4 text-lg leading-relaxed text-foreground/80">
-            <LiveProductDescription slug={product.slug} fallback={product.description} />
-          </p>
+          <LiveProductDescription
+            slug={product.slug}
+            fallback={product.description}
+            className="type-lead mt-4 max-w-[60ch] text-foreground [overflow-wrap:anywhere]"
+          />
 
-          <section aria-labelledby="notes-heading" className="mt-6">
-            <h2 id="notes-heading" className="text-sm font-semibold text-muted">
-              Cupping notes
-            </h2>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {product.cuppingNotes.map((n) => (
-                <li key={n} className="rounded-full bg-accent-soft px-3 py-1 text-sm font-medium text-accent">
-                  {n}
-                </li>
-              ))}
-            </ul>
-          </section>
+          {product.cuppingNotes.length > 0 && (
+            <section aria-labelledby="notes-heading" className="mt-6">
+              <h2 id="notes-heading" className="type-label text-muted">
+                Cupping notes
+              </h2>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {product.cuppingNotes.map((n) => (
+                  <li key={n} className="rounded-lg bg-accent-soft px-3 py-1 text-sm font-medium text-accent">
+                    {n}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <div className="mt-6">
             <ProductPurchase slug={product.slug} name={product.name} priceXaf={product.priceXaf} stock={product.stock} />
           </div>
 
+          {lot && <LotTag lot={lot} growers={growers} className="mt-8" />}
+
           <section aria-labelledby="details-heading" className="mt-8">
-            <h2 id="details-heading" className="font-serif text-xl font-bold text-brand">
-              Coffee details
+            <h2 id="details-heading" className="type-label text-muted">
+              About the bag
             </h2>
-            <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border text-sm">
+            <dl className="mt-2 divide-y divide-border border-y border-border">
               {details.map((d) => (
-                <div key={d.label} className="bg-surface p-3">
-                  <dt className="text-muted">{d.label}</dt>
-                  <dd className="mt-0.5 font-semibold tabular-nums">{d.value}</dd>
+                <div key={d.label} className="flex items-baseline justify-between gap-4 py-2.5">
+                  <dt className="text-sm text-muted">{d.label}</dt>
+                  <dd className="type-data text-right">{d.value}</dd>
                 </div>
               ))}
             </dl>
           </section>
-
-          {lot && (
-            <section aria-labelledby="origin-heading" className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-5">
-              <h2 id="origin-heading" className="font-serif text-xl font-bold text-accent">
-                Where this coffee comes from
-              </h2>
-              <p className="mt-2 text-sm text-foreground/80">
-                <LiveLotNotes code={lot.code} fallback={lot.notes} />
-              </p>
-              {growers.length > 0 && (
-                <p className="mt-3 text-sm">
-                  <span className="font-semibold">Grown by: </span>
-                  {growers.map((f) => `${f.name} (${f.village})`).join(", ")}
-                </p>
-              )}
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Link href={`/trace/${lot.code}`} className="btn btn-go text-sm">
-                  <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
-                    <path d="M2 2h6v6H2zm2 2v2h2V4zm8-2h6v6h-6zm2 2v2h2V4zM2 12h6v6H2zm2 2v2h2v-2zm7-2h2v2h-2zm2 2h2v2h-2zm2-2h3v2h-3zm-4 4h2v2h-2zm4 0h3v2h-3z" />
-                  </svg>
-                  Trace this coffee
-                </Link>
-                <span className="font-mono text-sm text-muted">Lot {lot.code}</span>
-              </div>
-            </section>
-          )}
         </div>
       </div>
 
-      <section aria-labelledby="related-heading" className="mt-12 sm:mt-16">
-        <h2 id="related-heading" className="font-serif text-2xl font-bold text-brand">
+      <section aria-labelledby="related-heading" className="mt-14 sm:mt-16">
+        <h2 id="related-heading" className="type-h2 text-brand">
           You may also like
         </h2>
-        <ProductGrid products={related} compact className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3" />
+        <ProductGrid
+          products={related}
+          compact
+          className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-4 sm:mt-6 sm:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]"
+        />
       </section>
     </div>
   );

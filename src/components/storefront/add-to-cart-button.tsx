@@ -9,6 +9,7 @@ export function AddToCartButton({
   quantity = 1,
   disabled = false,
   className = "",
+  disabledLabel = "Sold out",
   onAdded,
 }: {
   slug: string;
@@ -16,6 +17,8 @@ export function AddToCartButton({
   quantity?: number;
   disabled?: boolean;
   className?: string;
+  /** What the button says while disabled (default "Sold out"). */
+  disabledLabel?: string;
   /** Called after the item is added, e.g. to show a link to the order list. */
   onAdded?: () => void;
 }) {
@@ -53,7 +56,7 @@ export function AddToCartButton({
               Added
             </>
           ) : disabled ? (
-            "Sold out"
+            disabledLabel
           ) : (
             "Add to order"
           )}

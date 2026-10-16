@@ -66,6 +66,50 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/*
+ * The saved edits are whatever this browser holds under the key, so each
+ * field is checked on the way in. A field of the wrong type or out of range is
+ * dropped (the original data.ts value shows instead) rather than crashing a
+ * page or printing "NaN FCFA".
+ */
+const isText = (v: unknown): v is string => typeof v === "string";
+const isWhole = (v: unknown, min: number): v is number => typeof v === "number" && Number.isInteger(v) && v >= min;
+
+function cleanProduct(o: Record<string, unknown>): ProductOverride {
+  const out: ProductOverride = {};
+  if (isText(o.name) && o.name.trim()) out.name = o.name;
+  if (isText(o.description)) out.description = o.description;
+  if (isWhole(o.priceXaf, 1) && Number.isSafeInteger(o.priceXaf)) out.priceXaf = o.priceXaf;
+  if (isWhole(o.stock, 0) && Number.isSafeInteger(o.stock)) out.stock = o.stock;
+  if (typeof o.hidden === "boolean") out.hidden = o.hidden;
+  if (isText(o.image) && o.image.startsWith("data:image/")) out.image = o.image;
+  return out;
+}
+
+function cleanLot(o: Record<string, unknown>): LotOverride {
+  const out: LotOverride = {};
+  if (isText(o.notes)) out.notes = o.notes;
+  if (typeof o.cuppingScore === "number" && Number.isFinite(o.cuppingScore) && o.cuppingScore >= 0 && o.cuppingScore <= 100) {
+    out.cuppingScore = o.cuppingScore;
+  }
+  return out;
+}
+
+function cleanFarmer(o: Record<string, unknown>): FarmerOverride {
+  return isText(o.story) ? { story: o.story } : {};
+}
+
+function cleanMap<T extends object>(value: unknown, clean: (o: Record<string, unknown>) => T): Record<string, T> {
+  const out: Record<string, T> = {};
+  if (!isRecord(value)) return out;
+  for (const [id, entry] of Object.entries(value)) {
+    if (!isRecord(entry)) continue;
+    const cleaned = clean(entry);
+    if (Object.keys(cleaned).length) out[id] = cleaned;
+  }
+  return out;
+}
+
 function readOverrides(): CatalogOverrides {
   try {
     const raw = window.localStorage.getItem(ADMIN_STORAGE_KEY);
@@ -73,9 +117,9 @@ function readOverrides(): CatalogOverrides {
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return EMPTY;
     return {
-      products: isRecord(parsed.products) ? (parsed.products as CatalogOverrides["products"]) : {},
-      lots: isRecord(parsed.lots) ? (parsed.lots as CatalogOverrides["lots"]) : {},
-      farmers: isRecord(parsed.farmers) ? (parsed.farmers as CatalogOverrides["farmers"]) : {},
+      products: cleanMap(parsed.products, cleanProduct),
+      lots: cleanMap(parsed.lots, cleanLot),
+      farmers: cleanMap(parsed.farmers, cleanFarmer),
     };
   } catch {
     return EMPTY;

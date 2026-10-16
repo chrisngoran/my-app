@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 
 export default function CartPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12">
-      <h1 className="font-serif text-3xl font-bold text-brand sm:text-4xl">Your order list</h1>
-      <div className="mt-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+      <h1 className="type-h1 text-brand">Your order list</h1>
+      <div className="mt-8">
         <CartView />
       </div>
     </div>

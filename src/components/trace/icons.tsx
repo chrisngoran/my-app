@@ -72,10 +72,28 @@ export function PinIcon({ className = "h-4 w-4" }: IconProps) {
   );
 }
 
-export function ArrowRightIcon({ className = "h-4 w-4" }: IconProps) {
+export function ChevronLeftIcon({ className = "h-4 w-4" }: IconProps) {
   return (
-    <svg {...base} className={className}>
-      <path d="M5 12h14M13 6l6 6-6 6" />
+    <svg {...base} className={className} strokeWidth={2}>
+      <path d="m14.5 6-6 6 6 6" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg {...base} className={className} strokeWidth={2.2}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+/** Warning triangle for out-of-range values and form errors; always paired with text. */
+export function AlertIcon({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg {...base} className={className} strokeWidth={2}>
+      <path d="M12 3.5 2.5 20h19z" />
+      <path d="M12 10v4.5M12 17.2v.1" />
     </svg>
   );
 }
@@ -101,10 +119,10 @@ export function CupIcon({ className = "h-5 w-5" }: IconProps) {
 }
 
 /**
- * Stylised hills used as a decorative band at the foot of the brown heroes.
- * The far ridges are light tints of the current colour over the brand brown;
- * the nearest ridge is solid page background, so the hero flows into the page
- * instead of ending in a hard, muddy seam.
+ * Stylised hills at the foot of the Volcanic Soil heroes. The far ridges are
+ * light tints of the current colour over the soil; the nearest ridge is solid
+ * page background (Highland Mist), so the hero settles into the page like
+ * mist on the lower slopes instead of ending in a hard seam.
  */
 export function HillsBackdrop({ className = "" }: IconProps) {
   return (

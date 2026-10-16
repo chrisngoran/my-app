@@ -2,13 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
-import { btnGo } from "./buttons";
+import { btnGo, btnOnDark } from "./buttons";
+import { AlertIcon } from "./icons";
+import { normaliseLotCode } from "./lot-utils";
 
-function normaliseLotCode(input: string) {
-  return input.trim().toUpperCase().replace(/\s+/g, "");
-}
-
-export function LotSearch({ codes }: { codes: string[] }) {
+/**
+ * Lot-code finder. `tone="dark"` sits directly on a Volcanic Soil band (home
+ * hero, /trace hero); the default sits on Highland Mist or white.
+ */
+export function LotSearch({
+  codes,
+  tone = "light",
+  label = "Lot code",
+}: {
+  codes: string[];
+  tone?: "light" | "dark";
+  /** Visible label above the field. */
+  label?: string;
+}) {
   const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +30,7 @@ export function LotSearch({ codes }: { codes: string[] }) {
   const listId = useId();
   const hintId = useId();
   const errorId = useId();
+  const dark = tone === "dark";
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,9 +46,9 @@ export function LotSearch({ codes }: { codes: string[] }) {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-busy={isPending || undefined} className="w-full">
-      <label htmlFor={inputId} className="block text-sm font-semibold text-foreground">
-        Lot code
+    <form onSubmit={onSubmit} noValidate aria-busy={isPending || undefined} className={`w-full ${dark ? "on-dark" : ""}`}>
+      <label htmlFor={inputId} className={`type-label block ${dark ? "text-sand" : "text-foreground"}`}>
+        {label}
       </label>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <input
@@ -47,20 +59,29 @@ export function LotSearch({ codes }: { codes: string[] }) {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
+          maxLength={40}
           list={listId}
           placeholder="e.g. GV-2026-014"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           aria-describedby={error ? `${hintId} ${errorId}` : hintId}
           aria-invalid={error ? true : undefined}
-          className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 font-mono text-base uppercase tracking-wide transition-[border-color,box-shadow] duration-150 ease-out placeholder:normal-case placeholder:tracking-normal placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30 focus:outline-none aria-invalid:border-danger"
+          className={`min-h-11 min-w-0 flex-1 rounded-lg border bg-surface px-3 py-2 font-mono text-base text-foreground uppercase tracking-wide transition-[border-color,box-shadow] duration-(--dur-ui) ease-(--ease-out) placeholder:normal-case placeholder:tracking-normal placeholder:text-muted focus:ring-2 focus:outline-none ${
+            dark
+              ? "border-transparent focus:ring-offset-2 focus:ring-sand focus:ring-offset-brand aria-invalid:border-danger"
+              : "border-field-border focus:border-accent focus:ring-accent aria-invalid:border-danger"
+          }`}
         />
         <datalist id={listId}>
           {codes.map((c) => (
             <option key={c} value={c} />
           ))}
         </datalist>
-        <button type="submit" disabled={isPending} className={`${btnGo} sm:min-w-40 disabled:cursor-wait disabled:opacity-90`}>
+        <button
+          type="submit"
+          disabled={isPending}
+          className={`${dark ? btnOnDark : btnGo} shrink-0 sm:min-w-40 disabled:cursor-wait disabled:opacity-90`}
+        >
           {isPending ? (
             <>
               <svg
@@ -78,15 +99,18 @@ export function LotSearch({ codes }: { codes: string[] }) {
           )}
         </button>
       </div>
-      <p id={hintId} className="mt-2 text-xs text-muted">
-        You&apos;ll find it printed beneath the QR code on the back of every Green Venture bag.
+      <p id={hintId} className={`mt-2 text-sm ${dark ? "text-mist-on-soil" : "text-muted"}`}>
+        It&apos;s printed under the QR code on the back of every Green Venture bag.
       </p>
       {error && (
         <p
           id={errorId}
           role="alert"
-          className="mt-1 text-sm font-medium text-danger transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:starting:translate-y-0"
+          className={`mt-1 flex items-start gap-1.5 text-sm font-semibold transition-[opacity,translate] duration-180 ease-(--ease-out) starting:-translate-y-1 starting:opacity-0 motion-reduce:starting:translate-y-0 ${
+            dark ? "text-sand" : "text-danger"
+          }`}
         >
+          <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
           {error}
         </p>
       )}

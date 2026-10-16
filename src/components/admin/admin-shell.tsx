@@ -14,25 +14,28 @@ const NAV = [
   { href: "/admin/farmers", label: "Farmers" },
 ];
 
+/** One segment of the section control. Labels wrap (never clip) at large text sizes. */
 const tab =
-  "press flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold";
+  "press flex min-h-12 w-full items-center justify-center rounded-lg px-3 py-2 text-center text-sm leading-tight";
 
-/** Small text actions on the brown header ("View website", "Sign out"). */
+/** Small text actions on the soil header ("View website", "Sign out"). */
 const headerAction =
-  "press inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-2.5 text-sm font-medium text-brand-contrast/90 hover:bg-white/10 hover:text-brand-contrast";
+  "press inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-2.5 text-sm font-medium text-sand underline-offset-[3px] hover:bg-white/10 hover:underline";
 
 function AdminTabs({ pathname }: { pathname: string | null }) {
   return (
     <nav aria-label="Admin">
-      <ul className="grid grid-cols-3 gap-1.5 sm:flex">
+      <ul className="flex flex-wrap gap-1.5">
         {NAV.map((item) => {
           const active = !!pathname && (pathname === item.href || pathname.startsWith(`${item.href}/`));
           return (
-            <li key={item.href}>
+            <li key={item.href} className="flex min-w-0 flex-1 basis-[min(100%,6.5rem)]">
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`${tab} ${active ? "bg-surface text-brand" : "bg-white/10 text-brand-contrast hover:bg-white/20"}`}
+                className={`${tab} ${
+                  active ? "bg-background font-semibold text-brand" : "bg-white/10 font-medium text-white pointer-fine:hover:bg-white/20"
+                }`}
               >
                 {item.label}
               </Link>
@@ -66,17 +69,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <p className="bg-warm-ink px-4 py-2 text-center text-sm font-semibold text-white">
+      <p className="bg-sand px-4 py-2 text-center text-sm font-semibold text-brand">
         Demo admin — changes are saved only in this browser
       </p>
-      <header className="on-dark bg-brand text-brand-contrast">
+      <header className="on-dark bg-brand text-white">
         <div className="mx-auto max-w-3xl px-4 pt-3 pb-3">
-          <p className="font-serif text-lg font-bold leading-tight">{cooperative.name}</p>
-          {/* One compact row: who is signed in, then the two secondary actions. The section tabs stay the only large row. */}
-          <div className="mt-0.5 flex items-center justify-between gap-2">
-            <p className="min-w-0 truncate text-xs text-brand-contrast/75">Staff admin{email ? ` · ${email}` : ""}</p>
+          <p className="type-title text-sand">{cooperative.name}</p>
+          {/* One compact row: who is signed in, then the two secondary actions. It wraps at large text sizes instead of clipping. */}
+          <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2">
+            <p className="min-w-0 flex-1 basis-40 truncate text-xs text-mist-on-soil" title={email ?? undefined}>
+              {email ? `Signed in as ${email}` : "Staff admin"}
+            </p>
             {loaded && email && (
-              <div className="-mr-2.5 flex shrink-0 items-center">
+              <div className="-mr-2.5 flex flex-wrap items-center">
                 <Link href="/" className={headerAction}>
                   View website
                 </Link>
@@ -102,8 +107,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div hidden={!loaded || !email}>
           {children}
           {loaded && email && (
-            <section aria-labelledby="demo-tools-heading" className="mt-12 rounded-2xl border border-dashed border-border bg-surface p-4">
-              <h2 id="demo-tools-heading" className="font-semibold text-brand">
+            <section aria-labelledby="demo-tools-heading" className="mt-12 rounded-2xl border border-dashed border-field-border bg-surface p-4">
+              <h2 id="demo-tools-heading" className="type-label text-brand">
                 Demo tools
               </h2>
               <p className="mt-1 text-sm text-muted">

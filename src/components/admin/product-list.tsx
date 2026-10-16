@@ -5,12 +5,13 @@ import Link from "next/link";
 import { updateProduct, useCatalog, useCatalogOverrides } from "@/lib/catalog-overrides";
 import { formatPrice } from "@/lib/currency";
 import { getProduct } from "@/lib/data";
-import { PageTitle, Toggle, useToast } from "./ui";
+import { EditedChip, InfoMark, PageTitle, Toggle, useToast } from "./ui";
 
 export function LiveVersionNote() {
   return (
-    <p className="mt-4 rounded-xl border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-accent">
-      In the live version these changes are saved securely online and appear for every customer.
+    <p className="mt-4 flex max-w-[65ch] items-start gap-2 rounded-lg bg-accent-soft p-3 text-sm text-foreground">
+      <InfoMark className="mt-0.5 h-4 w-4 text-accent" />
+      <span>In the live version these changes are saved securely online and appear for every customer.</span>
     </p>
   );
 }
@@ -29,42 +30,47 @@ export function AdminProductList() {
       <PageTitle title="Products" intro="Tap a product to change its name, price, photo, stock or description." />
       <LiveVersionNote />
 
-      <ul className="mt-6 space-y-3">
+      <ul className="mt-6 divide-y divide-border rounded-2xl border border-border bg-surface">
         {products.map((p) => {
           const edited = !!overrides.products[p.slug];
           const originalStock = getProduct(p.slug)?.stock ?? 0;
           return (
-            <li key={p.slug} className="rounded-2xl border border-border bg-surface p-3 sm:p-4">
-              <Link
-                href={`/admin/products/${p.slug}`}
-                className="group -m-1.5 flex min-h-16 touch-manipulation items-center gap-3 rounded-xl p-1.5 [transition:background-color_150ms_ease] hover:bg-background active:bg-accent-soft/60"
-              >
+            <li key={p.slug} className="px-4 pt-4 pb-2">
+              {/* The Edit link stretches over this whole top row, so the photo and name are a tap target too. */}
+              <div className="relative flex items-start gap-3">
                 <Image
                   src={p.image}
                   alt=""
-                  width={160}
-                  height={120}
+                  width={112}
+                  height={112}
                   unoptimized
-                  className="h-16 w-20 shrink-0 rounded-lg bg-accent-soft object-cover"
+                  className="h-14 w-14 shrink-0 rounded-lg bg-accent-soft object-cover"
                 />
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold leading-snug text-brand">{p.name}</span>
-                  <span className="mt-0.5 block text-sm text-muted">
-                    <span className="tabular-nums">{formatPrice(p.priceXaf)}</span> · {p.stock <= 0 ? <span className="font-semibold text-danger">Sold out</span> : `${p.stock} in stock`}
-                  </span>
-                  <span className="mt-1 flex flex-wrap gap-1.5">
-                    {p.hidden && (
-                      <span className="rounded-full bg-border px-2 py-0.5 text-xs font-medium text-foreground">Hidden from website</span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="type-title text-brand [overflow-wrap:anywhere]">{p.name}</h2>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+                    <span className="tabular-nums">{formatPrice(p.priceXaf)}</span>
+                    {p.stock <= 0 ? (
+                      <span className="rounded-md bg-danger-soft px-2 py-0.5 text-xs font-semibold text-danger">Sold out</span>
+                    ) : (
+                      <span className="tabular-nums">{p.stock.toLocaleString("en-GB")} in stock</span>
                     )}
-                    {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm-ink">Edited</span>}
-                  </span>
-                </span>
-                <span className="shrink-0 rounded-lg border border-brand/30 bg-surface px-3 py-2 text-sm font-semibold text-brand transition-[scale] duration-140 ease-out group-hover:border-brand group-active:scale-97 motion-reduce:transition-none">
-                  Edit
-                </span>
-              </Link>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {p.hidden && (
+                      <span className="rounded-md bg-background px-2 py-0.5 text-xs font-semibold text-foreground">Hidden from website</span>
+                    )}
+                    {edited && <EditedChip />}
+                  </p>
+                </div>
+                <Link
+                  href={`/admin/products/${p.slug}`}
+                  className="btn btn-secondary shrink-0 px-4 text-sm after:absolute after:inset-0 after:content-['']"
+                >
+                  Edit<span className="sr-only"> {p.name}</span>
+                </Link>
+              </div>
+              <div className="mt-2 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-x-4">
                 <Toggle
+                  bare
                   label="Visible on website"
                   checked={!p.hidden}
                   onChange={(visible) =>
@@ -75,6 +81,7 @@ export function AdminProductList() {
                   }
                 />
                 <Toggle
+                  bare
                   label="Sold out"
                   description={p.stock <= 0 ? "Customers cannot order it" : undefined}
                   checked={p.stock <= 0}

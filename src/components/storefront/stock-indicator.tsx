@@ -3,7 +3,7 @@ export function StockIndicator({ stock }: { stock: number }) {
     stock <= 0
       ? { label: "Sold out", dot: "bg-danger", text: "text-danger" }
       : stock <= 30
-        ? { label: `Only ${stock} left`, dot: "bg-warm", text: "text-warm-ink" }
+        ? { label: `Only ${stock.toLocaleString("en-GB")} left`, dot: "bg-warm", text: "text-warm-ink" }
         : { label: "In stock", dot: "bg-accent", text: "text-accent" };
   return (
     <p className={`inline-flex items-center gap-2 text-sm font-medium ${state.text}`}>

@@ -1,29 +1,51 @@
 @import "tailwindcss";
 
-/* Brand tokens: roasted-coffee browns with a coffee-leaf green accent. */
+/*
+ * Direction v2, "Six farms on one ridge" (DESIGN.md). Light theme only: phones
+ * outdoors and in shops, in bright light. Token NAMES are shared with the
+ * trace, ordering and admin code; only the values changed, plus new tokens.
+ */
 :root {
-  --background: #fbf8f4;
-  --foreground: #2a1d16;
+  /* Highland Mist: the page itself, a cool green-grey morning mist. */
+  --background: #eef1eb;
+  /* Basalt Ink: body text (14.96:1 on mist, 17.06:1 on white). */
+  --foreground: #231a16;
+  /* Cloud: inputs, the order summary, admin rows. */
   --surface: #ffffff;
-  --muted: #7a6a5f;
-  --border: #e7ddd3;
-  --brand: #4a2c20;
+  /* Lichen: meta text (6.06:1 on mist, 5.10:1 on parchment). */
+  --muted: #545c55;
+  /* Decorative hairlines only; control edges use --field-border. */
+  --border: #cdd5ca;
+  /* Input, stepper, chip and off-toggle edges (3.82:1 on white). */
+  --field-border: #7c857c;
+  /* Volcanic Soil: headings and full-bleed dark bands, never rounded cards. */
+  --brand: #33221b;
   --brand-contrast: #ffffff;
-  --accent: #2f6b3f;
-  --accent-soft: #e5f0e7;
-  --warm: #c27a34;
-  /* Warm text on light surfaces (--warm itself is a fill colour, 3.4:1 as text). */
-  --warm-ink: #8f5420;
-  /* Text and fills on the brown band. */
-  --sand: #e9c79c;
-  /* White text on it is about 5.6:1. */
+  /* Shade Leaf: links, trace actions, toggles, success, focus. */
+  --accent: #22573a;
+  --accent-soft: #dce7da;
+  /* Ripe Cherry: the colour of committing to buy (white on it 8.98:1). */
+  --cherry: #8c1d33;
+  --cherry-hover: #6e1628;
+  /* Cherry on soil, for graphics (5.10:1). */
+  --cherry-lift: #e9707a;
+  /* Older names now resolve to cherry (low stock, admin chips, gauge). */
+  --warm: var(--cherry);
+  --warm-ink: var(--cherry);
+  /* Sun-dried Parchment: the lot record, and text on soil (11.19:1). */
+  --sand: #eadcc0;
+  /* Secondary text on soil (9.76:1). */
+  --mist-on-soil: #c9d2c6;
+  /* White text on it is 5.89:1. */
   --whatsapp: #19733f;
   --whatsapp-hover: #145c33;
   --danger: #b42318;
   --danger-soft: #fdecea;
   --ring: var(--accent);
+  /* Toasts and sticky bars only; everything else is flat at rest. */
+  --shadow-float: 0 10px 28px -12px rgb(35 26 22 / 0.35);
 
-  /* Motion. Animate transform and opacity only. */
+  /* Motion. Animate transform and opacity only (plus the ripening dots). */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --dur-press: 140ms;
@@ -35,6 +57,10 @@
   /* Tailwind's ease-out / ease-in-out utilities use the same strong curves. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Meta text: a touch heavier and looser than Tailwind's default text-sm. */
+  --text-sm--line-height: 1.45;
+  --text-sm--letter-spacing: 0.005em;
+  --text-sm--font-weight: 450;
 }
 
 @theme inline {
@@ -43,31 +69,41 @@
   --color-surface: var(--surface);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-field-border: var(--field-border);
   --color-brand: var(--brand);
   --color-brand-contrast: var(--brand-contrast);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-cherry: var(--cherry);
+  --color-cherry-hover: var(--cherry-hover);
+  --color-cherry-lift: var(--cherry-lift);
   --color-warm: var(--warm);
   --color-warm-ink: var(--warm-ink);
   --color-sand: var(--sand);
+  --color-mist-on-soil: var(--mist-on-soil);
   --color-whatsapp: var(--whatsapp);
   --color-whatsapp-hover: var(--whatsapp-hover);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-ring: var(--ring);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  /* Temporary alias: untouched `font-serif` classes render in Archivo. */
+  --font-serif: var(--font-archivo), ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  /* Lot codes only (≥ 18px). */
+  --font-stencil: var(--font-stencil-face), "Arial Narrow", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  font-stretch: 100%;
 }
 
 @layer base {
   html {
     scroll-padding-top: 1rem;
+    scrollbar-color: var(--field-border) transparent;
   }
 
   :root {
@@ -75,12 +111,29 @@ body {
   }
 
   ::selection {
-    background-color: var(--accent-soft);
+    background-color: var(--sand);
     color: var(--foreground);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--cherry);
   }
 
   a {
     text-underline-offset: 3px;
+  }
+
+  /* Long words (a zoomed screen, an admin-edited name) wrap instead of widening the page. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   :focus-visible {
@@ -88,15 +141,94 @@ body {
     outline-offset: 2px;
   }
 
-  /* Brown and green bands: a white ring stays visible on the dark fill. */
+  /*
+   * Volcanic Soil bands. Light text on dark gets one step more weight and a
+   * little tracking; the focus ring turns parchment so it stays visible.
+   */
+  .on-dark {
+    font-weight: 450;
+    letter-spacing: 0.01em;
+  }
+
   .on-dark:focus-visible,
   .on-dark :focus-visible {
-    outline-color: #fff;
+    outline-color: var(--sand);
   }
 }
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Type scale. Archivo's width axis carries the hierarchy: the bigger the
+ * role, the narrower and tighter it gets. Reading text stays at 100%.
+ */
+@utility type-display {
+  font-size: clamp(2.25rem, 7.5vw + 1rem, 5rem);
+  line-height: 0.98;
+  font-weight: 800;
+  font-stretch: 72%;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+@utility type-h1 {
+  font-size: clamp(2rem, 3vw + 1.25rem, 3.25rem);
+  line-height: 1.02;
+  font-weight: 800;
+  font-stretch: 78%;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+@utility type-h2 {
+  font-size: clamp(1.5rem, 1.5vw + 1.1rem, 2.25rem);
+  line-height: 1.08;
+  font-weight: 750;
+  font-stretch: 85%;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+@utility type-title {
+  font-size: 1.1875rem;
+  line-height: 1.25;
+  font-weight: 700;
+  font-stretch: 92%;
+  letter-spacing: 0;
+}
+
+@utility type-lead {
+  font-size: 1.125rem;
+  line-height: 1.55;
+  font-weight: 400;
+  font-stretch: 100%;
+  text-wrap: pretty;
+}
+
+@utility type-label {
+  font-size: 0.875rem;
+  line-height: 1.3;
+  font-weight: 600;
+  font-stretch: 100%;
+  letter-spacing: 0.01em;
+}
+
+/* Prices, scores and measures: inherits its size, always tabular. */
+@utility type-data {
+  line-height: 1.2;
+  font-weight: 700;
+  font-stretch: 92%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lot codes only, at 18px or larger: they really are stencilled on the sacks. */
+@utility type-stencil {
+  font-family: var(--font-stencil-face), "Arial Narrow", sans-serif;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.04em;
 }
 
 @layer components {
@@ -111,6 +243,7 @@ body {
     padding: 0.625rem 1.25rem;
     font-weight: 600;
     line-height: 1.25;
+    letter-spacing: 0;
     text-align: center;
     touch-action: manipulation;
     transition:
@@ -135,17 +268,19 @@ body {
     padding-inline: 1.75rem;
   }
 
+  /* Cherry commits: add to order, shop, continue, save. */
   .btn-primary {
-    background-color: var(--brand);
+    background-color: var(--cherry);
     color: var(--brand-contrast);
   }
 
   .btn-secondary {
-    border: 1px solid color-mix(in oklab, var(--brand) 30%, transparent);
-    background-color: var(--surface);
+    border: 1.5px solid var(--brand);
+    background-color: transparent;
     color: var(--brand);
   }
 
+  /* Leaf traces: provenance actions. */
   .btn-go {
     background-color: var(--accent);
     color: var(--brand-contrast);
@@ -156,18 +291,27 @@ body {
     color: #fff;
   }
 
+  /* The action on a Volcanic Soil band: parchment, soil text (11.19:1). */
+  .btn-on-dark {
+    background-color: var(--sand);
+    color: var(--brand);
+  }
+
   @media (hover: hover) and (pointer: fine) {
     .btn-primary:hover:not(:disabled) {
-      background-color: color-mix(in oklab, var(--brand) 88%, white);
+      background-color: var(--cherry-hover);
     }
     .btn-secondary:hover:not(:disabled) {
-      border-color: var(--brand);
+      background-color: color-mix(in oklab, var(--brand) 6%, transparent);
     }
     .btn-go:hover:not(:disabled) {
       background-color: color-mix(in oklab, var(--accent) 85%, black);
     }
     .btn-whatsapp:hover:not(:disabled) {
       background-color: var(--whatsapp-hover);
+    }
+    .btn-on-dark:hover:not(:disabled) {
+      background-color: #f3e9d6;
     }
   }
 
@@ -208,6 +352,16 @@ body {
     }
   }
 
+  /*
+   * Delight 1: the cherries ripen. The farm dots on the home ridge turn from
+   * leaf green to cherry once per load, lowest farm first (set --i to the
+   * altitude rank). The resting style is the final cherry, so nothing waits
+   * for it and nothing is hidden without CSS.
+   */
+  .anim-ripen {
+    animation: gv-ripen var(--dur-enter) var(--ease-out) calc(150ms + var(--i, 0) * 90ms) both;
+  }
+
   /* Product image zoom, only for a real hovering pointer. */
   .card-zoom {
     transition: transform 250ms var(--ease-out);
@@ -240,6 +394,13 @@ body {
   }
 }
 
+@keyframes gv-ripen {
+  from {
+    background-color: var(--accent);
+    transform: scale(0.7);
+  }
+}
+
 /* Reduced motion: no movement, keep short fades so state changes stay visible. */
 @media (prefers-reduced-motion: reduce) {
   .btn,
@@ -256,6 +417,11 @@ body {
   .anim-pop,
   .anim-swap {
     animation: gv-fade 150ms ease;
+  }
+
+  /* The dots are simply ripe. */
+  .anim-ripen {
+    animation: none;
   }
 
   .anim-enter {

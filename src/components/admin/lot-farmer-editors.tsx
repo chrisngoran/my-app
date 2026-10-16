@@ -12,15 +12,42 @@ import {
   useLotView,
 } from "@/lib/catalog-overrides";
 import { farmers, getFarmer, getLot, lots } from "@/lib/data";
-import { AdminLoading, errorText, inputClass, PageTitle, primaryButton, secondaryButton, useToast } from "./ui";
+import {
+  AdminLoading,
+  EditedChip,
+  FieldHint,
+  hintText,
+  initials,
+  inputClass,
+  labelClass,
+  PageTitle,
+  primaryButton,
+  secondaryButton,
+  useToast,
+} from "./ui";
+
+/** Lot notes sit in the trace hero above the cupping score; keep them short enough not to push it off the screen. */
+const NOTES_MAX = 400;
+/** Farmer stories show on trace and Our story. */
+const STORY_MAX = 1200;
+
+/** "120/400" under a long text field. */
+function CharCount({ id, used, max }: { id: string; used: number; max: number }) {
+  return (
+    <span id={id} className={`${hintText} text-right tabular-nums ${used > max ? "font-semibold text-danger" : ""}`}>
+      <span className="sr-only">Characters used: </span>
+      {used}/{max}
+    </span>
+  );
+}
 
 /** Shown next to Save while a card has edits that are not saved yet. */
 function UnsavedNote({ show }: { show: boolean }) {
   return (
     <>
       {show && (
-        <span aria-hidden="true" className="inline-flex items-center gap-2 text-sm font-medium text-warm-ink sm:ml-1">
-          <span className="h-2 w-2 rounded-full bg-warm" />
+        <span aria-hidden="true" className="inline-flex items-center gap-2 text-sm font-medium text-cherry sm:ml-1">
+          <span className="h-2 w-2 rounded-full bg-cherry" />
           Unsaved changes
         </span>
       )}
@@ -68,6 +95,7 @@ function LotCard({ code, show }: { code: string; show: Show }) {
   const [notes, setNotes] = useState(lot?.notes ?? "");
   const [score, setScore] = useState(String(lot?.quality.cuppingScore ?? ""));
   const [error, setError] = useState<string | null>(null);
+  const [notesError, setNotesError] = useState<string | null>(null);
   const ids = useId();
   if (!lot || !original) return null;
 
@@ -80,6 +108,12 @@ function LotCard({ code, show }: { code: string; show: Show }) {
     if (!lot || !original) return;
     const value = Number(score);
     const unchanged = value === lot.quality.cuppingScore;
+    const notesProblem = !notes.trim()
+      ? "Write a short note, or undo your changes to use the original."
+      : notes.trim().length > NOTES_MAX
+        ? `Keep the notes to ${NOTES_MAX} characters or fewer.`
+        : null;
+    setNotesError(notesProblem);
     if (!unchanged) {
       if (score.trim() === "" || !Number.isFinite(value) || value < 0 || value > 100) {
         setError("Enter a score from 0 to 100.");
@@ -91,6 +125,7 @@ function LotCard({ code, show }: { code: string; show: Show }) {
       }
     }
     setError(null);
+    if (notesProblem) return;
     const ok = updateLot(code, {
       notes: notes.trim() !== original.notes ? notes.trim() : undefined,
       cuppingScore: value !== original.quality.cuppingScore ? value : undefined,
@@ -99,25 +134,36 @@ function LotCard({ code, show }: { code: string; show: Show }) {
   }
 
   return (
-    <form noValidate onSubmit={onSubmit} className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+    <form noValidate onSubmit={onSubmit} className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-mono text-lg font-bold text-brand">{code}</h2>
-          <p className="text-sm text-muted">
-            {lot.processingMethod} · {lot.variety}
+          <h2 className="type-stencil text-xl text-brand">{code}</h2>
+          <p className="mt-1.5 text-sm text-muted">
+            {lot.processingMethod} process, {lot.variety}
           </p>
           <p className="text-sm text-muted">Farmers: {names}</p>
         </div>
-        {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm-ink">Edited</span>}
+        {edited && <EditedChip />}
       </div>
-      <label className="mt-4 block text-sm font-medium">
+      <label className={`${labelClass} mt-5`}>
         Notes
-        <textarea className={`${inputClass} min-h-24`} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <textarea
+          className={`${inputClass} min-h-24`}
+          value={notes}
+          maxLength={Math.max(NOTES_MAX, lot.notes.length)}
+          onChange={(e) => setNotes(e.target.value)}
+          aria-invalid={!!notesError}
+          aria-describedby={`${ids}-notes-err ${ids}-notes-count`}
+        />
+        <span className="flex items-start justify-between gap-3">
+          <FieldHint id={`${ids}-notes-err`} error={notesError} />
+          <CharCount id={`${ids}-notes-count`} used={notes.length} max={NOTES_MAX} />
+        </span>
       </label>
-      <label className="mt-4 block text-sm font-medium sm:max-w-48">
+      <label className={`${labelClass} mt-5 sm:max-w-56`}>
         Cupping score (0–100)
         <input
-          className={inputClass}
+          className={`${inputClass} tabular-nums`}
           type="number"
           inputMode="decimal"
           min={0}
@@ -128,9 +174,9 @@ function LotCard({ code, show }: { code: string; show: Show }) {
           aria-invalid={!!error}
           aria-describedby={`${ids}-score`}
         />
-        <span id={`${ids}-score`} className={error ? errorText : "mt-1 block text-sm text-muted"}>
-          {error ?? "80 or more is specialty grade"}
-        </span>
+        <FieldHint id={`${ids}-score`} error={error}>
+          80 or more is specialty grade
+        </FieldHint>
       </label>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <button type="submit" className={primaryButton}>
@@ -149,6 +195,7 @@ function LotCard({ code, show }: { code: string; show: Show }) {
               setNotes(original.notes);
               setScore(String(original.quality.cuppingScore));
               setError(null);
+              setNotesError(null);
               show(`Lot ${code} put back to the original.`);
             }}
           >
@@ -203,11 +250,15 @@ function FarmerCard({ id, show }: { id: string; show: Show }) {
   return (
     <form
       noValidate
-      className="rounded-2xl border border-border bg-surface p-4 sm:p-5"
+      className="rounded-2xl border border-border bg-surface p-4 sm:p-6"
       onSubmit={(e) => {
         e.preventDefault();
         if (!story.trim()) {
           setError("Write a short story, or undo your changes to use the original.");
+          return;
+        }
+        if (story.trim().length > STORY_MAX) {
+          setError(`Keep the story to ${STORY_MAX} characters or fewer.`);
           return;
         }
         setError(null);
@@ -215,29 +266,32 @@ function FarmerCard({ id, show }: { id: string; show: Show }) {
         show(ok ? `${farmer.name}'s story saved.` : "Could not save: this browser is blocking storage.", ok ? "success" : "error");
       }}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="font-serif text-lg font-bold text-brand">{farmer.name}</h2>
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sand text-base font-bold text-brand">
+          {initials(farmer.name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="type-title text-brand [overflow-wrap:anywhere]">{farmer.name}</h2>
           <p className="text-sm text-muted">
-            {farmer.village} · member since {farmer.joinedYear}
+            {farmer.village}, member since {farmer.joinedYear}
           </p>
         </div>
-        {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm-ink">Edited</span>}
+        {edited && <EditedChip />}
       </div>
-      <label className="mt-4 block text-sm font-medium">
+      <label className={`${labelClass} mt-5`}>
         Story
         <textarea
           className={`${inputClass} min-h-28`}
           value={story}
+          maxLength={Math.max(STORY_MAX, farmer.story.length)}
           onChange={(e) => setStory(e.target.value)}
           aria-invalid={!!error}
-          aria-describedby={error ? `${ids}-story` : undefined}
+          aria-describedby={`${ids}-story ${ids}-story-count`}
         />
-        {error && (
-          <span id={`${ids}-story`} className={errorText}>
-            {error}
-          </span>
-        )}
+        <span className="flex items-start justify-between gap-3">
+          <FieldHint id={`${ids}-story`} error={error} />
+          <CharCount id={`${ids}-story-count`} used={story.length} max={STORY_MAX} />
+        </span>
       </label>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <button type="submit" className={primaryButton}>

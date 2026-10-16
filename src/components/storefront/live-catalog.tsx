@@ -16,8 +16,11 @@ export function LiveProductName({ slug, fallback }: { slug: string; fallback: st
   return <>{useProductView(slug)?.name ?? fallback}</>;
 }
 
-export function LiveProductDescription({ slug, fallback }: { slug: string; fallback: string }) {
-  return <>{useProductView(slug)?.description ?? fallback}</>;
+/** The description as its own paragraph; nothing at all when staff have cleared it. */
+export function LiveProductDescription({ slug, fallback, className }: { slug: string; fallback: string; className?: string }) {
+  const text = useProductView(slug)?.description ?? fallback;
+  if (!text.trim()) return null;
+  return <p className={className}>{text}</p>;
 }
 
 export function LiveProductPrice({ slug, fallbackXaf, className }: { slug: string; fallbackXaf: number; className?: string }) {
@@ -56,6 +59,13 @@ export function LiveProductImage({
 
 export function LiveLotNotes({ code, fallback }: { code: string; fallback: string }) {
   return <>{useLotView(code)?.notes ?? fallback}</>;
+}
+
+/** Lot notes as their own paragraph; nothing at all when they are blank (no empty gap). */
+export function LiveLotNotesBlock({ code, fallback, className }: { code: string; fallback: string; className?: string }) {
+  const text = useLotView(code)?.notes ?? fallback;
+  if (!text.trim()) return null;
+  return <p className={className}>{text}</p>;
 }
 
 export function LiveLotScore({ code, fallback }: { code: string; fallback: number }) {

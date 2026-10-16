@@ -28,18 +28,22 @@ export function ProductPurchase({
   const priceXaf = live?.priceXaf ?? defaultPriceXaf;
   const stock = live?.stock ?? defaultStock;
   const hidden = live?.hidden ?? false;
-  const max = Math.max(1, Math.min(stock, 20));
+  // Never let the order list hold more bags than are in stock.
+  const { cart } = useStore();
+  const inList = cart.find((i) => i.slug === slug)?.quantity ?? 0;
+  const remaining = Math.max(0, stock - inList);
+  const allInList = stock > 0 && remaining === 0;
+  const max = Math.max(1, Math.min(remaining, 20));
   const [chosen, setQuantity] = useState(1);
   // Stock can drop while the page is open (e.g. edited in the admin).
   const quantity = Math.min(chosen, max);
   const soldOut = stock <= 0 || hidden;
-  const { itemCount } = useStore();
   // Once something is added on this page, keep a route to the order list in view.
   const [addedHere, setAddedHere] = useState(false);
 
   if (hidden) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
+      <div className="border-y border-border py-4">
         <p className="font-semibold text-brand">This coffee is not on sale at the moment.</p>
         <p className="mt-1 text-sm text-muted">Browse the shop for coffee available now, or ask us on WhatsApp when it will be back.</p>
       </div>
@@ -47,12 +51,14 @@ export function ProductPurchase({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <Price xaf={priceXaf} className="text-3xl font-bold text-brand" />
+    // No card on phones (the page is the panel); a quiet white panel beside the image on desktop.
+    <div className="lg:rounded-2xl lg:bg-surface lg:p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <Price xaf={priceXaf} className="type-data min-w-0 text-[2rem] text-brand [overflow-wrap:anywhere]" />
         {quantity > 1 && (
           <p className="text-sm text-muted">
-            {quantity} × = <Price xaf={priceXaf * quantity} className="font-semibold text-foreground" />
+            <span className="tabular">{quantity}</span> bags:{" "}
+            <Price xaf={priceXaf * quantity} className="type-data text-foreground" />
           </p>
         )}
       </div>
@@ -68,23 +74,28 @@ export function ProductPurchase({
           slug={slug}
           name={name}
           quantity={quantity}
-          disabled={soldOut}
+          disabled={soldOut || allInList}
+          disabledLabel={allInList ? "All in your order" : undefined}
           onAdded={() => setAddedHere(true)}
           className="flex-1 sm:flex-none sm:px-8"
         />
       </div>
-      {addedHere && (
+      {allInList && (
+        <p className="mt-2 text-sm text-muted">
+          Your order list already holds all <span className="tabular">{stock.toLocaleString("en-GB")}</span> in stock.
+        </p>
+      )}
+      {(addedHere || allInList) && (
         <Link
           href="/cart"
-          className="anim-enter mt-2 inline-flex min-h-11 items-center gap-1 font-semibold text-accent hover:underline"
+          className="anim-enter mt-2 inline-flex min-h-11 items-center gap-1 font-semibold text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
         >
-          View my order <span className="tabular-nums">({itemCount})</span>
-          <span aria-hidden="true">→</span>
+          View my order
         </Link>
       )}
       {soldOut ? (
-        <p className="mt-3 flex min-h-11 w-full items-center justify-center rounded-lg bg-background px-6 py-2.5 text-center font-semibold text-muted text-pretty">
-          Sold out — ask us on WhatsApp about the next harvest
+        <p className="mt-3 flex min-h-11 w-full items-center justify-center rounded-lg bg-accent-soft px-6 py-2.5 text-center font-semibold text-muted text-pretty">
+          Sold out. Ask us on WhatsApp about the next harvest.
         </p>
       ) : (
         <a
@@ -93,7 +104,7 @@ export function ProductPurchase({
           )}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn mt-3 w-full border border-whatsapp/40 bg-surface text-whatsapp hover:border-whatsapp hover:bg-whatsapp/5"
+          className="btn mt-3 w-full border-[1.5px] border-whatsapp bg-surface text-whatsapp pointer-fine:hover:bg-whatsapp/5"
         >
           <WhatsAppGlyph />
           Order this on WhatsApp

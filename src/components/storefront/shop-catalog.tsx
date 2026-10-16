@@ -7,6 +7,10 @@ import type { Product, ProductCategory } from "@/lib/types";
 import { CATEGORIES, CATEGORY_LABELS, isCategory } from "./catalog";
 import { ProductCard } from "./product-card";
 
+/* minmax(0, 1fr) tracks: a long unbroken product name wraps instead of widening the page. */
+const GRID =
+  "grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-10 sm:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]";
+
 /** Leaves out products that staff have hidden from the website in the demo admin. */
 function useShownProducts(products: Product[]) {
   const { products: merged } = useCatalog();
@@ -32,7 +36,8 @@ export function ShopCatalog({ products: all }: { products: Product[] }) {
   const options: { id: ProductCategory | null; label: string; count: number }[] = [
     { id: null, label: "All coffee", count: products.length },
     ...CATEGORIES.map((c) => ({ id: c, label: CATEGORY_LABELS[c], count: products.filter((p) => p.category === c).length })),
-  ];
+    // An empty category is a dead end, so its chip only shows while it is the active filter.
+  ].filter((o) => o.id === null || o.count > 0 || o.id === active);
 
   return (
     <div>
@@ -47,13 +52,14 @@ export function ShopCatalog({ products: all }: { products: Product[] }) {
                 type="button"
                 aria-pressed={pressed}
                 onClick={() => select(o.id)}
-                className={`press min-h-11 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium ${
+                className={`press inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-medium ${
                   pressed
                     ? "border-brand bg-brand text-brand-contrast"
-                    : "border-border bg-surface text-foreground hover:border-brand hover:text-brand"
+                    : "border-field-border bg-transparent text-foreground pointer-fine:hover:border-brand pointer-fine:hover:text-brand"
                 }`}
               >
-                {o.label} <span className={pressed ? "opacity-80" : "text-muted"}>({o.count})</span>
+                {o.label}
+                <span className={`tabular ${pressed ? "text-mist-on-soil" : "text-muted"}`}>{o.count}</span>
               </button>
             );
           })}
@@ -63,17 +69,23 @@ export function ShopCatalog({ products: all }: { products: Product[] }) {
         Showing {visible.length} {visible.length === 1 ? "product" : "products"}
       </p>
       {visible.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center text-muted">
-          No products in this category yet — check back after the next harvest.
-        </p>
+        <div className="mt-8 rounded-2xl border border-dashed border-field-border p-6 sm:p-8">
+          <p className="text-foreground">
+            {active
+              ? "No products in this category yet. Check back after the next harvest."
+              : "No coffee on sale right now. Check back after the next harvest, or ask us on WhatsApp about the next roast."}
+          </p>
+          {active && (
+            <button type="button" onClick={() => select(null)} className="btn btn-secondary mt-4">
+              Show all coffee
+            </button>
+          )}
+        </div>
       ) : (
-        <ul
-          key={active ?? "all"}
-          className={`mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 ${filtered ? "anim-enter" : ""}`}
-        >
+        <ul key={active ?? "all"} className={`mt-6 ${GRID} ${filtered ? "anim-enter" : ""}`}>
           {visible.map((p) => (
-            <li key={p.slug} className="flex">
-              <div className="flex w-full flex-col [&>article]:flex-1">
+            <li key={p.slug} className="flex min-w-0">
+              <div className="flex w-full min-w-0 flex-col [&>article]:flex-1">
                 <ProductCard product={p} headingLevel="h2" />
               </div>
             </li>
@@ -89,10 +101,10 @@ export function ShopCatalogFallback({ products: all }: { products: Product[] }) 
   return (
     <div>
       <div className="h-[3.25rem]" aria-hidden="true" />
-      <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className={`mt-6 ${GRID}`}>
         {products.map((p) => (
-          <li key={p.slug} className="flex">
-            <div className="flex w-full flex-col [&>article]:flex-1">
+          <li key={p.slug} className="flex min-w-0">
+            <div className="flex w-full min-w-0 flex-col [&>article]:flex-1">
               <ProductCard product={p} headingLevel="h2" />
             </div>
           </li>

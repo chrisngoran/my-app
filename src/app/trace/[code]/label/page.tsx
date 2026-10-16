@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { LiveLotScore } from "@/components/storefront/live-catalog";
+import { stencil } from "@/app/fonts";
+import { ChevronLeftIcon } from "@/components/trace/icons";
+import { LotScore } from "@/components/trace/live-lot";
 import { PrintButton } from "@/components/trace/print-button";
 import {
   altitudeRange,
   formatHarvestDate,
+  formatWeight,
   lotFarmers,
   lotProducts,
   normaliseLotCode,
@@ -77,12 +80,9 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
   const product = lotProducts(lot)[0];
   const villages = [...new Set(farmers.map((f) => f.village))];
   const productName = product?.name ?? `${lot.processingMethod} Arabica`;
-  const netWeight = product
-    ? product.weightGrams >= 1000
-      ? `${product.weightGrams / 1000} kg`
-      : `${product.weightGrams} g`
-    : null;
-  const shortUrl = `${siteUrl().replace(/^https?:\/\//, "")}/trace/${lot.code}`;
+  const netWeight = product ? formatWeight(product.weightGrams) : null;
+  // Printed as base + code, so a narrow label wraps before the code, never inside it.
+  const shortBase = `${siteUrl().replace(/^https?:\/\//, "")}/trace/`;
 
   const rows: [string, string][] = [
     ["Origin", `${villages.join(", ")}, Kumbo, Cameroon`],
@@ -101,49 +101,50 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
         <p className="text-sm text-muted">
           <Link
             href={`/trace/${lot.code}`}
-            className="inline-flex min-h-11 items-center rounded-lg px-2 underline-offset-[3px] hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 font-medium underline-offset-[3px] hover:text-foreground hover:underline"
           >
-            ← Back to lot {lot.code}
+            <ChevronLeftIcon className="h-4 w-4 shrink-0" />
+            Back to lot {lot.code}
           </Link>
         </p>
-        <h1 className="mt-1 font-serif text-2xl font-bold text-brand">Packaging label</h1>
+        <h1 className="type-h1 mt-1 text-brand">Packaging label</h1>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted">
-          Printed at 10 × 15 cm. Use a label printer or A6 sticker paper and set margins to “None”.
+          Prints at 10 × 15 cm. Use a label printer or A6 sticker paper and set margins to “None”.
         </p>
         <PrintButton className="mt-4" />
       </div>
 
       <section
         aria-label={`Printable label for lot ${lot.code}`}
-        className="gv-label flex flex-col overflow-hidden rounded-md border border-border bg-white text-[#2a1d16] shadow-lg"
+        className={`${stencil.variable} gv-label flex flex-col overflow-hidden rounded-lg bg-white text-foreground ring-1 ring-border shadow-[var(--shadow-float)]`}
       >
         {/* Brand band */}
-        <div className="l-pad flex items-center gap-[3cqw] bg-brand text-brand-contrast">
+        <div className="l-pad flex items-center gap-[3cqw] bg-brand text-sand">
           <svg viewBox="0 0 40 40" aria-hidden="true" className="h-[10cqw] w-[10cqw] shrink-0">
             <circle cx="20" cy="20" r="19" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.6" />
             <ellipse cx="20" cy="20" rx="8" ry="12" transform="rotate(30 20 20)" fill="currentColor" />
-            <path d="M16.5 10.5c4 4 -1.5 9 3.5 12.5s3.5 6 3.5 6" fill="none" stroke="#4a2c20" strokeWidth="1.6" />
+            <path d="M16.5 10.5c4 4 -1.5 9 3.5 12.5s3.5 6 3.5 6" fill="none" stroke="var(--brand)" strokeWidth="1.6" />
           </svg>
           <div className="min-w-0 leading-tight">
-            <p className="l-lg font-serif font-bold">{cooperative.shortName}</p>
-            <p className="l-xs uppercase tracking-[0.15em] opacity-80">Cooperative Coffee · Kumbo</p>
+            <p className="l-lg font-extrabold [font-stretch:85%]">{cooperative.shortName}</p>
+            <p className="l-xs font-medium">Cooperative Coffee, Kumbo</p>
           </div>
         </div>
 
         {/* Product */}
         <div className="l-pad pb-0">
-          <p className="l-xs font-semibold uppercase tracking-[0.18em] text-[#2f6b3f]">100% Arabica · Bui Highlands</p>
-          <h2 className="l-xl mt-[1cqw] font-serif font-bold leading-[1.1]">{productName}</h2>
+          <p className="l-xs font-semibold text-accent">100% Arabica, Bui highlands</p>
+          <h2 className="l-xl mt-[1cqw] font-extrabold leading-[1.08] [font-stretch:80%] [overflow-wrap:anywhere] line-clamp-3">{productName}</h2>
           <dl className="mt-[3cqw] grid grid-cols-2 gap-x-[4cqw] gap-y-[1.6cqw]">
             {rows.map(([k, v], i) => (
               <div key={k} className={i === 0 ? "col-span-2" : undefined}>
-                <dt className="l-xs uppercase tracking-wider text-[#7a6a5f]">{k}</dt>
-                <dd className="l-sm font-semibold leading-snug">{v}</dd>
+                <dt className="l-xs text-muted">{k}</dt>
+                <dd className="l-sm font-semibold leading-snug [overflow-wrap:anywhere]">{v}</dd>
               </div>
             ))}
           </dl>
           <p className="l-sm mt-[2cqw] leading-snug">
-            <span className="text-[#7a6a5f]">Grown by </span>
+            <span className="text-muted">Grown by </span>
             <span className="font-semibold">{farmers.map((f) => f.name).join(", ")}</span>
           </p>
         </div>
@@ -152,19 +153,23 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
         <div className="l-pad mt-auto flex items-center gap-[4cqw]">
           <LotQrCode code={lot.code} className="l-qr shrink-0" />
           <div className="min-w-0">
-            <p className="l-lg font-serif font-bold leading-tight">Scan to meet your farmer</p>
-            <p className="l-xs mt-[1.5cqw] break-all text-[#7a6a5f]">{shortUrl}</p>
-            <p className="l-xs mt-[2cqw] uppercase tracking-wider text-[#7a6a5f]">Lot code</p>
-            <p className="l-md font-mono font-bold tracking-wide">{lot.code}</p>
+            <p className="l-lg font-extrabold leading-tight [font-stretch:85%]">Scan to meet your farmer</p>
+            <p className="l-xs mt-[1.5cqw] font-mono text-muted [overflow-wrap:anywhere]">
+              {shortBase}
+              <wbr />
+              <span className="whitespace-nowrap">{lot.code}</span>
+            </p>
+            <p className="l-xs mt-[2cqw] text-muted">Lot code</p>
+            <p className="l-lg font-stencil font-extrabold leading-none tracking-[0.04em]">{lot.code}</p>
           </div>
         </div>
 
         {/* Footer strip */}
-        <div className="l-xs flex items-center justify-between gap-[2cqw] border-t border-[#e7ddd3] px-[6cqw] py-[2.5cqw]">
+        <div className="l-xs flex items-center justify-between gap-[2cqw] border-t border-border px-[6cqw] py-[2.5cqw]">
           <span>
             Cupping score{" "}
             <strong>
-              <LiveLotScore code={lot.code} fallback={lot.quality.cuppingScore} />
+              <LotScore code={lot.code} fallback={lot.quality.cuppingScore} />
             </strong>
           </span>
           {netWeight && (
