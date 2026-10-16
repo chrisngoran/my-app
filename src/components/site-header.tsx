@@ -48,7 +48,7 @@ export function SiteHeader() {
             ))}
           </select>
           <Link href="/cart" className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-brand-contrast">
-            Cart ({itemCount})
+            My order ({itemCount})
           </Link>
         </div>
       </div>

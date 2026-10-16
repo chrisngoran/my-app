@@ -166,9 +166,9 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl flex-col items-start gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 id="pay-heading" className="font-serif text-xl font-bold text-brand">
-              Pay the way you already do
+              Order on WhatsApp, pay with mobile money
             </h2>
-            <p className="text-sm text-muted">Mobile money in Cameroon, cards for customers abroad. Prices in FCFA, EUR or USD.</p>
+            <p className="text-sm text-muted">Choose your coffee, send the order on WhatsApp or call us, then pay by MTN MoMo or Orange Money once we confirm.</p>
           </div>
           <PaymentBadges />
         </div>

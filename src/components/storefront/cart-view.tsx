@@ -129,7 +129,7 @@ export function CartView() {
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">Delivery</dt>
-            <dd className="text-muted">Calculated at checkout</dd>
+            <dd className="text-muted">Confirmed with your order</dd>
           </div>
         </dl>
         <div className="mt-4 flex items-baseline justify-between border-t border-border pt-4">
@@ -137,12 +137,12 @@ export function CartView() {
           <Price xaf={subtotalXaf} className="text-2xl font-bold text-brand" />
         </div>
         <Link
-          href="/checkout"
+          href="/order"
           className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-accent px-6 py-3 font-semibold text-brand-contrast hover:bg-accent/90"
         >
-          Proceed to checkout
+          Continue to send order
         </Link>
-        <p className="mt-3 text-center text-xs text-muted">Pay with MTN MoMo, Orange Money or card</p>
+        <p className="mt-3 text-center text-xs text-muted">Order on WhatsApp or by phone. Pay by MoMo or Orange Money.</p>
       </aside>
     </div>
   );

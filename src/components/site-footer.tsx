@@ -19,8 +19,8 @@ export function SiteFooter() {
           </Link>
         </div>
         <div className="space-y-1">
-          <p className="font-semibold">Pay with</p>
-          <p className="text-muted">MTN Mobile Money · Orange Money · Visa / Mastercard</p>
+          <p className="font-semibold">Order &amp; pay</p>
+          <p className="text-muted">WhatsApp or phone · MTN Mobile Money · Orange Money</p>
           <p className="text-muted">{cooperative.email}</p>
         </div>
       </div>

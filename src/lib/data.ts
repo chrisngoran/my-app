@@ -7,6 +7,8 @@ export const cooperative = {
   shortName: "Green Venture",
   location: "Kumbo, Bui Division, North West Region, Cameroon",
   phone: "+237 6XX XXX XXX",
+  /** WhatsApp number in international format without + or spaces (placeholder until the cooperative confirms it) */
+  whatsapp: "237600000000",
   email: "contact@greenventure.example",
   story:
     "Green Venture brings together smallholder farmers across the Bui highlands, where Arabica grows between 1,600 and 2,000 metres on volcanic soil. We collect, process and sell our members' coffee together, so every farmer gets a fair price and every cup can be traced back to the hillside it came from.",
