@@ -1,0 +1,551 @@
+@import "tailwindcss";
+
+/*
+ * Direction v2, "Six farms on one ridge" (DESIGN.md). Light theme only: phones
+ * outdoors and in shops, in bright light. Token NAMES are shared with the
+ * trace, ordering and admin code; only the values changed, plus new tokens.
+ */
+:root {
+  /* Highland Mist: the page itself, a cool green-grey morning mist. */
+  --background: #eef1eb;
+  /* Basalt Ink: body text (14.96:1 on mist, 17.06:1 on white). */
+  --foreground: #231a16;
+  /* Cloud: inputs, the order summary, admin rows. */
+  --surface: #ffffff;
+  /* Lichen: meta text (6.06:1 on mist, 5.10:1 on parchment). */
+  --muted: #545c55;
+  /* Decorative hairlines only; control edges use --field-border. */
+  --border: #cdd5ca;
+  /* Input, stepper, chip and off-toggle edges (3.82:1 on white). */
+  --field-border: #7c857c;
+  /* Volcanic Soil: headings and full-bleed dark bands, never rounded cards. */
+  --brand: #33221b;
+  --brand-contrast: #ffffff;
+  /* Shade Leaf: links, trace actions, toggles, success, focus. */
+  --accent: #22573a;
+  --accent-soft: #dce7da;
+  /* Ripe Cherry: the colour of committing to buy (white on it 8.98:1). */
+  --cherry: #8c1d33;
+  --cherry-hover: #6e1628;
+  /* Cherry on soil, for graphics (5.10:1). */
+  --cherry-lift: #e9707a;
+  /* Older names now resolve to cherry (low stock, admin chips, gauge). */
+  --warm: var(--cherry);
+  --warm-ink: var(--cherry);
+  /* Sun-dried Parchment: the lot record, and text on soil (11.19:1). */
+  --sand: #eadcc0;
+  /* Secondary text on soil (9.76:1). */
+  --mist-on-soil: #c9d2c6;
+  /* White text on it is 5.89:1. */
+  --whatsapp: #19733f;
+  --whatsapp-hover: #145c33;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --ring: var(--accent);
+  /* Toasts and sticky bars only; everything else is flat at rest. */
+  --shadow-float: 0 10px 28px -12px rgb(35 26 22 / 0.35);
+
+  /* Motion. Animate transform and opacity only (plus the ripening dots). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-press: 140ms;
+  --dur-ui: 200ms;
+  --dur-enter: 260ms;
+  /* Exits run faster than entrances (toasts, undo bars). */
+  --dur-exit: 160ms;
+}
+
+/*
+ * Before Archivo arrives, Android has no Arial for Next's own size-matched
+ * "Archivo Fallback", so Roboto gets the same treatment. Values are computed
+ * from Next's font-metrics data for Archivo against Roboto.
+ */
+@font-face {
+  font-family: "Archivo Roboto";
+  src: local("Roboto");
+  size-adjust: 98.92%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+
+/*
+ * Headings run Archivo at 72-92% width. Before it arrives, a regular-width
+ * fallback wraps them onto extra lines and the page jumps when Archivo lands.
+ * These faces shrink Roboto (Android) by the measured width ratio of each
+ * heading role, so the fallback breaks lines like the real font. Line height
+ * is set by the type utilities, so only the glyphs shrink.
+ */
+@font-face {
+  font-family: "Archivo Roboto 72";
+  src: local("Roboto");
+  size-adjust: 75.6%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Roboto 78";
+  src: local("Roboto");
+  size-adjust: 80.6%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Roboto 85";
+  src: local("Roboto");
+  size-adjust: 86.7%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Roboto 92";
+  src: local("Roboto");
+  size-adjust: 92.5%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+
+@theme {
+  /* Tailwind's ease-out / ease-in-out utilities use the same strong curves. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Meta text: a touch heavier and looser than Tailwind's default text-sm. */
+  --text-sm--line-height: 1.45;
+  --text-sm--letter-spacing: 0.005em;
+  --text-sm--font-weight: 450;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-field-border: var(--field-border);
+  --color-brand: var(--brand);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-cherry: var(--cherry);
+  --color-cherry-hover: var(--cherry-hover);
+  --color-cherry-lift: var(--cherry-lift);
+  --color-warm: var(--warm);
+  --color-warm-ink: var(--warm-ink);
+  --color-sand: var(--sand);
+  --color-mist-on-soil: var(--mist-on-soil);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-hover: var(--whatsapp-hover);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-archivo), "Archivo Roboto", ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  /* Temporary alias: untouched `font-serif` classes render in Archivo. */
+  --font-serif: var(--font-archivo), "Archivo Roboto", ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  /* Lot codes only (≥ 18px). */
+  --font-stencil: var(--font-stencil-face), "Arial Narrow", sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-archivo), "Archivo Roboto", ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  font-stretch: 100%;
+}
+
+@layer base {
+  html {
+    scroll-padding-top: 1rem;
+    scrollbar-color: var(--field-border) transparent;
+    /* Android's grey tap box fights the rounded press states; every pressable has its own. */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Text and image links answer a tap at once (no transition), even on a slow phone. */
+  a:not(.btn, .press):active {
+    opacity: 0.72;
+  }
+
+  :root {
+    accent-color: var(--accent);
+  }
+
+  ::selection {
+    background-color: var(--sand);
+    color: var(--foreground);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--cherry);
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  /* Long words (a zoomed screen, an admin-edited name) wrap instead of widening the page. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /*
+   * Volcanic Soil bands. Light text on dark gets one step more weight and a
+   * little tracking; the focus ring turns parchment so it stays visible.
+   */
+  .on-dark {
+    font-weight: 450;
+    letter-spacing: 0.01em;
+  }
+
+  .on-dark:focus-visible,
+  .on-dark :focus-visible {
+    outline-color: var(--sand);
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Type scale. Archivo's width axis carries the hierarchy: the bigger the
+ * role, the narrower and tighter it gets. Reading text stays at 100%.
+ */
+@utility type-display {
+  font-family: var(--font-archivo), "Archivo Roboto 72", ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(2.25rem, 7.5vw + 1rem, 5rem);
+  line-height: 0.98;
+  font-weight: 800;
+  font-stretch: 72%;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* A phone held sideways: the home headline must not fill the whole first screen. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .type-display {
+    font-size: clamp(2rem, 7vh + 1rem, 3.25rem);
+  }
+}
+
+@utility type-h1 {
+  font-family: var(--font-archivo), "Archivo Roboto 78", ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(2rem, 3vw + 1.25rem, 3.25rem);
+  line-height: 1.02;
+  font-weight: 800;
+  font-stretch: 78%;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+@utility type-h2 {
+  font-family: var(--font-archivo), "Archivo Roboto 85", ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.5rem, 1.5vw + 1.1rem, 2.25rem);
+  line-height: 1.08;
+  font-weight: 750;
+  font-stretch: 85%;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+@utility type-title {
+  font-family: var(--font-archivo), "Archivo Roboto 92", ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.1875rem;
+  line-height: 1.25;
+  font-weight: 700;
+  font-stretch: 92%;
+  letter-spacing: 0;
+}
+
+@utility type-lead {
+  font-size: 1.125rem;
+  line-height: 1.55;
+  font-weight: 400;
+  font-stretch: 100%;
+  text-wrap: pretty;
+}
+
+@utility type-label {
+  font-size: 0.875rem;
+  line-height: 1.3;
+  font-weight: 600;
+  font-stretch: 100%;
+  letter-spacing: 0.01em;
+}
+
+/* Prices, scores and measures: inherits its size, always tabular. */
+@utility type-data {
+  line-height: 1.2;
+  font-weight: 700;
+  font-stretch: 92%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lot codes only, at 18px or larger: they really are stencilled on the sacks. */
+@utility type-stencil {
+  font-family: var(--font-stencil-face), "Arial Narrow", sans-serif;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+@layer components {
+  /* Shared button recipes. Utilities (px-*, text-sm, w-full, bg-*) still override them. */
+  .btn {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-lg);
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0;
+    text-align: center;
+    touch-action: manipulation;
+    transition:
+      transform var(--dur-press) var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .btn:active:not(:disabled, [aria-disabled="true"]) {
+    transform: scale(0.97);
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .btn-lg {
+    min-height: 3rem;
+    padding-inline: 1.75rem;
+  }
+
+  /* Cherry commits: add to order, shop, continue, save. */
+  .btn-primary {
+    background-color: var(--cherry);
+    color: var(--brand-contrast);
+  }
+
+  .btn-secondary {
+    border: 1.5px solid var(--brand);
+    background-color: transparent;
+    color: var(--brand);
+  }
+
+  /* Leaf traces: provenance actions. */
+  .btn-go {
+    background-color: var(--accent);
+    color: var(--brand-contrast);
+  }
+
+  .btn-whatsapp {
+    background-color: var(--whatsapp);
+    color: #fff;
+  }
+
+  /* The action on a Volcanic Soil band: parchment, soil text (11.19:1). */
+  .btn-on-dark {
+    background-color: var(--sand);
+    color: var(--brand);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--cherry-hover);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--brand) 6%, transparent);
+    }
+    .btn-go:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--accent) 85%, black);
+    }
+    .btn-whatsapp:hover:not(:disabled) {
+      background-color: var(--whatsapp-hover);
+    }
+    .btn-on-dark:hover:not(:disabled) {
+      background-color: #f3e9d6;
+    }
+  }
+
+  /* Press feedback for pills, chips and other pressables that are not .btn. */
+  .press {
+    transition:
+      transform var(--dur-press) var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .press:active {
+    transform: scale(0.97);
+  }
+
+  /* A count that just changed (header order badge). Re-key the element to replay. */
+  .anim-pop {
+    animation: gv-pop 220ms var(--ease-out);
+  }
+
+  /* A label that just swapped ("Add to order" → "Added"). Re-key to replay. */
+  .anim-swap {
+    animation: gv-rise 180ms var(--ease-out);
+  }
+
+  /* Content inserted after an interaction (filtered grid, inline links). */
+  .anim-enter {
+    transition:
+      opacity var(--dur-ui) var(--ease-out),
+      transform var(--dur-ui) var(--ease-out);
+  }
+
+  @starting-style {
+    .anim-enter {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  /*
+   * Delight 1: the cherries ripen. The farm dots on the home ridge turn from
+   * leaf green to cherry once per load, lowest farm first (set --i to the
+   * altitude rank). The resting style is the final cherry, so nothing waits
+   * for it and nothing is hidden without CSS.
+   */
+  .anim-ripen {
+    animation: gv-ripen var(--dur-enter) var(--ease-out) calc(150ms + var(--i, 0) * 90ms) both;
+  }
+
+  /*
+   * Below the fold on a phone the ridge waits (data-ripen="wait", set by
+   * RipenOnView) and ripens when 60% of it is in view. Removing the attribute
+   * restores the animation, which then plays from the start. Server HTML has
+   * no attribute, so without JavaScript it plays on load.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-ripen="wait"] .anim-ripen {
+      animation: none;
+      background-color: var(--accent);
+      transform: scale(0.7);
+    }
+  }
+
+  /*
+   * Shared toast motion for the order list and the admin. Enters from its own
+   * height below; leaves faster, 8px down the same edge. Transitions, so a
+   * new message interrupts cleanly. Add .toast-out alongside to dismiss.
+   */
+  .toast-in {
+    transition:
+      opacity var(--dur-enter) var(--ease-out),
+      transform var(--dur-enter) var(--ease-out);
+  }
+
+  @starting-style {
+    .toast-in {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+
+  .toast-out {
+    opacity: 0;
+    transform: translateY(8px);
+    transition-duration: var(--dur-exit);
+  }
+}
+
+@keyframes gv-pop {
+  from {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes gv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes gv-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes gv-ripen {
+  from {
+    background-color: var(--accent);
+    transform: scale(0.7);
+  }
+}
+
+/* Reduced motion: no movement, keep short fades so state changes stay visible. */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .press {
+    transition-property: background-color, border-color, color;
+  }
+
+  .btn:active:not(:disabled, [aria-disabled="true"]),
+  .press:active {
+    transform: none;
+  }
+
+  .anim-pop,
+  .anim-swap {
+    animation: gv-fade 150ms ease;
+  }
+
+  /* The dots are simply ripe. */
+  .anim-ripen {
+    animation: none;
+  }
+
+  .anim-enter {
+    transition: opacity 150ms ease;
+  }
+
+  @starting-style {
+    .anim-enter {
+      transform: none;
+    }
+  }
+
+  .toast-in,
+  .toast-out {
+    transition: opacity 150ms ease;
+  }
+
+  @starting-style {
+    .toast-in {
+      transform: none;
+    }
+  }
+
+  .toast-out {
+    transform: none;
+  }
+}
