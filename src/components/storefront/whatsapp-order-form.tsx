@@ -256,6 +256,16 @@ export function WhatsAppOrderForm() {
           Left out of this order because they are no longer available: {unavailable.map((p) => p.name).join(", ")}.
         </p>
       )}
+      {lines.some((l) => l.capped) && (
+        <p className="rounded-lg bg-surface px-4 py-3 text-sm text-muted [overflow-wrap:anywhere] lg:col-span-2">
+          We only have{" "}
+          {lines
+            .filter((l) => l.capped)
+            .map((l) => `${l.quantity.toLocaleString("en-GB")} of ${l.product.name}`)
+            .join(", ")}{" "}
+          in stock, so your order asks for that many.
+        </p>
+      )}
       <form
         noValidate
         className="min-w-0 space-y-5"
