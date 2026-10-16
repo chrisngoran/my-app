@@ -99,11 +99,14 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
 
       <div className="no-print mb-6 w-full text-center">
         <p className="text-sm text-muted">
-          <Link href={`/trace/${lot.code}`} className="hover:underline">
+          <Link
+            href={`/trace/${lot.code}`}
+            className="inline-flex min-h-11 items-center rounded-lg px-2 underline-offset-[3px] hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
             ← Back to lot {lot.code}
           </Link>
         </p>
-        <h1 className="mt-2 font-serif text-2xl font-bold text-brand">Packaging label</h1>
+        <h1 className="mt-1 font-serif text-2xl font-bold text-brand">Packaging label</h1>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted">
           Printed at 10 × 15 cm. Use a label printer or A6 sticker paper and set margins to “None”.
         </p>

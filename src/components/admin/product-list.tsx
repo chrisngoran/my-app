@@ -37,7 +37,7 @@ export function AdminProductList() {
             <li key={p.slug} className="rounded-2xl border border-border bg-surface p-3 sm:p-4">
               <Link
                 href={`/admin/products/${p.slug}`}
-                className="flex min-h-16 items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="group -m-1.5 flex min-h-16 touch-manipulation items-center gap-3 rounded-xl p-1.5 [transition:background-color_150ms_ease] hover:bg-background active:bg-accent-soft/60"
               >
                 <Image
                   src={p.image}
@@ -50,16 +50,18 @@ export function AdminProductList() {
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold leading-snug text-brand">{p.name}</span>
                   <span className="mt-0.5 block text-sm text-muted">
-                    {formatPrice(p.priceXaf)} · {p.stock <= 0 ? <span className="font-semibold text-red-700">Sold out</span> : `${p.stock} in stock`}
+                    <span className="tabular-nums">{formatPrice(p.priceXaf)}</span> · {p.stock <= 0 ? <span className="font-semibold text-danger">Sold out</span> : `${p.stock} in stock`}
                   </span>
                   <span className="mt-1 flex flex-wrap gap-1.5">
                     {p.hidden && (
                       <span className="rounded-full bg-border px-2 py-0.5 text-xs font-medium text-foreground">Hidden from website</span>
                     )}
-                    {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm">Edited</span>}
+                    {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm-ink">Edited</span>}
                   </span>
                 </span>
-                <span className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-brand">Edit</span>
+                <span className="shrink-0 rounded-lg border border-brand/30 bg-surface px-3 py-2 text-sm font-semibold text-brand transition-[scale] duration-140 ease-out group-hover:border-brand group-active:scale-97 motion-reduce:transition-none">
+                  Edit
+                </span>
               </Link>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <Toggle

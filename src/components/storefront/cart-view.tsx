@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { Price } from "@/components/price";
 import { useStore } from "@/components/store-provider";
 import { type CatalogProduct, useCatalog } from "@/lib/catalog-overrides";
@@ -30,9 +31,9 @@ export function useCartLines() {
 
 export function CartSkeleton() {
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Loading your cart">
+    <div className="space-y-3" aria-busy="true" aria-label="Loading your order list">
       {[0, 1].map((i) => (
-        <div key={i} className="h-28 animate-pulse rounded-2xl bg-border/50" />
+        <div key={i} className="h-28 animate-pulse rounded-2xl bg-border/50 motion-reduce:animate-none" />
       ))}
     </div>
   );
@@ -45,11 +46,11 @@ export function EmptyCart() {
         <path d="M14 22h36l-3 30a4 4 0 0 1-4 4H21a4 4 0 0 1-4-4z" fill="currentColor" opacity="0.15" />
         <path d="M14 22h36l-3 30a4 4 0 0 1-4 4H21a4 4 0 0 1-4-4zM24 22v-4a8 8 0 0 1 16 0v4" fill="none" stroke="currentColor" strokeWidth="3" />
       </svg>
-      <h2 className="mt-4 font-serif text-2xl font-bold text-brand">Your cart is empty</h2>
+      <h2 className="mt-4 font-serif text-2xl font-bold text-brand">Your order list is empty</h2>
       <p className="mx-auto mt-2 max-w-sm text-muted">Fresh Arabica from the Bui highlands is waiting. Every bag is traceable to the farm it came from.</p>
       <Link
         href="/shop"
-        className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-brand px-6 py-2.5 font-semibold text-brand-contrast hover:bg-brand/90"
+        className="btn btn-primary mt-6 px-6"
       >
         Browse the shop
       </Link>
@@ -57,12 +58,83 @@ export function EmptyCart() {
   );
 }
 
+const UNDO_MS = 6000;
+const UNDO_EXIT_MS = 160;
+
+interface Removed {
+  slug: string;
+  name: string;
+  quantity: number;
+  id: number;
+  leaving?: boolean;
+}
+
+/** "Removed … Undo" bar, so a mistaken tap on Remove is easy to take back. */
+function UndoToast({ removed, onUndo }: { removed: Removed | null; onUndo: () => void }) {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4" role="status" aria-live="polite">
+      {removed && (
+        <div
+          key={removed.id}
+          className={`pointer-events-auto flex max-w-md items-center gap-3 rounded-xl bg-brand py-1.5 pr-1.5 pl-4 text-sm text-brand-contrast shadow-lg transition-[opacity,translate] ease-out motion-reduce:transition-opacity ${
+            removed.leaving
+              ? "translate-y-2 opacity-0 duration-160 motion-reduce:translate-y-0"
+              : "duration-240 starting:translate-y-full starting:opacity-0 motion-reduce:duration-150"
+          }`}
+        >
+          <p className="min-w-0">
+            Removed <span className="font-semibold">{removed.name}</span>
+          </p>
+          <button
+            type="button"
+            onClick={onUndo}
+            className="on-dark press inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 font-semibold text-sand underline-offset-[3px] hover:bg-white/10 hover:underline"
+          >
+            Undo
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CartView() {
-  const { setQuantity, removeFromCart, loaded } = useStore();
+  const { cart, setQuantity, removeFromCart, addToCart, loaded } = useStore();
   const { lines, unavailable, subtotalXaf } = useCartLines();
+  const [removed, setRemoved] = useState<Removed | null>(null);
+  const removals = useRef(0);
+
+  useEffect(() => {
+    if (!removed) return;
+    const t = window.setTimeout(
+      () => setRemoved((r) => (r && r.id === removed.id ? (r.leaving ? null : { ...r, leaving: true }) : r)),
+      removed.leaving ? UNDO_EXIT_MS : UNDO_MS,
+    );
+    return () => window.clearTimeout(t);
+  }, [removed]);
+
+  function remove(product: CatalogProduct) {
+    const quantity = cart.find((i) => i.slug === product.slug)?.quantity ?? 1;
+    removeFromCart(product.slug);
+    setRemoved({ slug: product.slug, name: product.name, quantity, id: ++removals.current });
+  }
+
+  function undo() {
+    if (!removed) return;
+    addToCart(removed.slug, removed.quantity);
+    setRemoved(null);
+  }
+
+  const undoToast = <UndoToast removed={removed} onUndo={undo} />;
 
   if (!loaded) return <CartSkeleton />;
-  if (lines.length === 0 && unavailable.length === 0) return <EmptyCart />;
+  if (lines.length === 0 && unavailable.length === 0)
+    return (
+      <>
+        <EmptyCart />
+        {undoToast}
+      </>
+    );
 
   const itemCount = lines.reduce((n, l) => n + l.quantity, 0);
 
@@ -70,7 +142,7 @@ export function CartView() {
     <div className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
       <section aria-labelledby="cart-items-heading">
         <h2 id="cart-items-heading" className="sr-only">
-          Items in your cart
+          Items in your order list
         </h2>
         <ul className="space-y-3">
           {lines.map(({ product, quantity, lineXaf }) => (
@@ -89,12 +161,13 @@ export function CartView() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="font-serif font-bold leading-snug text-brand">
-                      <Link href={`/shop/${product.slug}`} className="hover:underline">
+                      <Link href={`/shop/${product.slug}`} className="rounded-sm hover:underline">
                         {product.name}
                       </Link>
                     </h3>
+                    <p className="mt-0.5 text-sm text-muted">{formatWeight(product.weightGrams)}</p>
                     <p className="text-sm text-muted">
-                      {formatWeight(product.weightGrams)} · <Price xaf={product.priceXaf} /> each
+                      <Price xaf={product.priceXaf} /> each
                     </p>
                   </div>
                   <Price xaf={lineXaf} className="shrink-0 font-bold" />
@@ -109,8 +182,8 @@ export function CartView() {
                   />
                   <button
                     type="button"
-                    onClick={() => removeFromCart(product.slug)}
-                    className="min-h-11 rounded-lg px-3 text-sm font-medium text-muted underline-offset-2 hover:text-red-700 hover:underline"
+                    onClick={() => remove(product)}
+                    className="press -mr-1 min-h-11 rounded-lg px-3 text-sm font-medium text-muted hover:text-danger hover:underline"
                   >
                     Remove<span className="sr-only"> {product.name}</span>
                   </button>
@@ -130,8 +203,8 @@ export function CartView() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => removeFromCart(p.slug)}
-                    className="min-h-11 rounded-lg px-3 font-medium text-muted underline-offset-2 hover:text-red-700 hover:underline"
+                    onClick={() => remove(p)}
+                    className="press min-h-11 rounded-lg px-3 font-medium text-muted hover:text-danger hover:underline"
                   >
                     Remove<span className="sr-only"> {p.name}</span>
                   </button>
@@ -140,7 +213,7 @@ export function CartView() {
             </ul>
           </div>
         )}
-        <Link href="/shop" className="mt-4 inline-block text-sm font-medium text-accent hover:underline">
+        <Link href="/shop" className="mt-2 -ml-1 inline-flex min-h-11 items-center rounded-lg px-1 text-sm font-medium text-accent hover:underline">
           ← Continue shopping
         </Link>
       </section>
@@ -150,35 +223,32 @@ export function CartView() {
           Order summary
         </h2>
         <dl className="mt-4 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted">
-              Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"})
-            </dt>
-            <dd>
-              <Price xaf={subtotalXaf} className="font-semibold" />
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted">Items</dt>
+            <dd className="tabular-nums">
+              {itemCount} {itemCount === 1 ? "item" : "items"}
             </dd>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-3">
             <dt className="text-muted">Delivery</dt>
-            <dd className="text-muted">Confirmed with your order</dd>
+            <dd className="text-right text-muted">Confirmed with your order</dd>
           </div>
         </dl>
-        <div className="mt-4 flex items-baseline justify-between border-t border-border pt-4">
+        <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-border pt-4">
           <span className="font-semibold">Subtotal</span>
           <Price xaf={subtotalXaf} className="text-2xl font-bold text-brand" />
         </div>
         {lines.length > 0 ? (
-        <Link
-          href="/order"
-          className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-accent px-6 py-3 font-semibold text-brand-contrast hover:bg-accent/90"
-        >
-          Continue to send order
-        </Link>
+          <Link href="/order" className="btn btn-go btn-lg mt-5 w-full">
+            Continue to send order
+          </Link>
         ) : (
-          <p className="mt-5 rounded-lg bg-background px-4 py-3 text-center text-sm text-muted">Nothing in your list can be ordered right now.</p>
+          <p className="mt-5 rounded-lg bg-background px-4 py-3 text-center text-sm text-muted">Nothing in your order list can be ordered right now.</p>
         )}
         <p className="mt-3 text-center text-xs text-muted">Order on WhatsApp or by phone. Pay by MoMo or Orange Money.</p>
       </aside>
+      {/* Fixed, so it takes no grid cell. */}
+      {undoToast}
     </div>
   );
 }

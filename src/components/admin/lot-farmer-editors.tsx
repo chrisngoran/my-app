@@ -12,7 +12,24 @@ import {
   useLotView,
 } from "@/lib/catalog-overrides";
 import { farmers, getFarmer, getLot, lots } from "@/lib/data";
-import { AdminLoading, inputClass, PageTitle, primaryButton, secondaryButton, useToast } from "./ui";
+import { AdminLoading, errorText, inputClass, PageTitle, primaryButton, secondaryButton, useToast } from "./ui";
+
+/** Shown next to Save while a card has edits that are not saved yet. */
+function UnsavedNote({ show }: { show: boolean }) {
+  return (
+    <>
+      {show && (
+        <span aria-hidden="true" className="inline-flex items-center gap-2 text-sm font-medium text-warm-ink sm:ml-1">
+          <span className="h-2 w-2 rounded-full bg-warm" />
+          Unsaved changes
+        </span>
+      )}
+      <span className="sr-only" aria-live="polite">
+        {show ? "Unsaved changes" : ""}
+      </span>
+    </>
+  );
+}
 
 type Show = (text: string, tone?: "success" | "error") => void;
 
@@ -54,6 +71,7 @@ function LotCard({ code, show }: { code: string; show: Show }) {
   const ids = useId();
   if (!lot || !original) return null;
 
+  const dirty = notes.trim() !== lot.notes.trim() || Number(score) !== lot.quality.cuppingScore;
   const names = lot.farmerIds.map((id) => getFarmer(id)?.name).filter(Boolean).join(", ");
   const edited = !!overrides.lots[code];
 
@@ -90,7 +108,7 @@ function LotCard({ code, show }: { code: string; show: Show }) {
           </p>
           <p className="text-sm text-muted">Farmers: {names}</p>
         </div>
-        {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm">Edited</span>}
+        {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm-ink">Edited</span>}
       </div>
       <label className="mt-4 block text-sm font-medium">
         Notes
@@ -110,14 +128,15 @@ function LotCard({ code, show }: { code: string; show: Show }) {
           aria-invalid={!!error}
           aria-describedby={`${ids}-score`}
         />
-        <span id={`${ids}-score`} className={`mt-1 block text-sm ${error ? "text-red-700" : "text-muted"}`}>
+        <span id={`${ids}-score`} className={error ? errorText : "mt-1 block text-sm text-muted"}>
           {error ?? "80 or more is specialty grade"}
         </span>
       </label>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <button type="submit" className={primaryButton}>
           Save lot
         </button>
+        <UnsavedNote show={dirty} />
         <Link href={`/trace/${code}`} className={secondaryButton}>
           View on website
         </Link>
@@ -175,8 +194,10 @@ function FarmerCard({ id, show }: { id: string; show: Show }) {
   const { overrides } = useCatalogOverrides();
   const [story, setStory] = useState(farmer?.story ?? "");
   const [error, setError] = useState<string | null>(null);
+  const ids = useId();
   if (!farmer || !original) return null;
   const edited = !!overrides.farmers[id];
+  const dirty = story.trim() !== farmer.story.trim();
   const lot = lots.find((l) => l.farmerIds.includes(id));
 
   return (
@@ -201,7 +222,7 @@ function FarmerCard({ id, show }: { id: string; show: Show }) {
             {farmer.village} · member since {farmer.joinedYear}
           </p>
         </div>
-        {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm">Edited</span>}
+        {edited && <span className="rounded-full bg-warm/15 px-2 py-0.5 text-xs font-medium text-warm-ink">Edited</span>}
       </div>
       <label className="mt-4 block text-sm font-medium">
         Story
@@ -210,13 +231,19 @@ function FarmerCard({ id, show }: { id: string; show: Show }) {
           value={story}
           onChange={(e) => setStory(e.target.value)}
           aria-invalid={!!error}
+          aria-describedby={error ? `${ids}-story` : undefined}
         />
-        {error && <span className="mt-1 block text-sm text-red-700">{error}</span>}
+        {error && (
+          <span id={`${ids}-story`} className={errorText}>
+            {error}
+          </span>
+        )}
       </label>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <button type="submit" className={primaryButton}>
           Save story
         </button>
+        <UnsavedNote show={dirty} />
         <Link href={lot ? `/trace/${lot.code}` : "/our-story"} className={secondaryButton}>
           View on website
         </Link>

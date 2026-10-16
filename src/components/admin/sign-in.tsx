@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn, signOut, useAdminSession } from "@/lib/admin-session";
 import { cooperative } from "@/lib/data";
-import { inputClass, primaryButton, secondaryButton } from "./ui";
+import { errorText, inputClass, primaryButton, secondaryButton } from "./ui";
 
 export function AdminSignIn() {
   const { email: signedInAs, loaded } = useAdminSession();
@@ -16,13 +16,12 @@ export function AdminSignIn() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <p className="bg-warm px-4 py-2 text-center text-sm font-semibold text-white">
+      <p className="bg-warm-ink px-4 py-2 text-center text-sm font-semibold text-white">
         Demo admin — changes are saved only in this browser
       </p>
       <div className="mx-auto w-full max-w-md flex-1 px-4 py-10">
-        <p className="text-sm font-semibold uppercase tracking-wider text-accent">Staff area</p>
-        <h1 className="mt-1 font-serif text-3xl font-bold text-brand">{cooperative.name}</h1>
-        <p className="mt-2 text-muted">Sign in to update products, prices, photos and stock on the website.</p>
+        <h1 className="font-serif text-3xl font-bold text-brand">{cooperative.name}</h1>
+        <p className="mt-2 text-muted">Staff area. Sign in to update products, prices, photos and stock on the website.</p>
 
         <p className="mt-5 rounded-xl border border-accent/30 bg-accent-soft px-4 py-3 text-sm font-semibold text-accent">
           Demo: any email and password work
@@ -66,6 +65,7 @@ export function AdminSignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-invalid={!!error && !email.trim()}
+                aria-describedby={error && !email.trim() ? "signin-error" : undefined}
               />
             </label>
             <label className="block text-sm font-medium">
@@ -77,10 +77,11 @@ export function AdminSignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 aria-invalid={!!error && !password}
+                aria-describedby={error && !password ? "signin-error" : undefined}
               />
             </label>
             {error && (
-              <p role="alert" className="text-sm font-medium text-red-700">
+              <p id="signin-error" role="alert" className={errorText}>
                 {error}
               </p>
             )}
@@ -90,7 +91,7 @@ export function AdminSignIn() {
           </form>
         )}
 
-        <Link href="/" className="mt-6 inline-flex min-h-11 items-center text-sm font-medium text-accent hover:underline">
+        <Link href="/" className="mt-6 -ml-1 inline-flex min-h-11 items-center rounded-lg px-1 text-sm font-medium text-accent hover:underline">
           ← Back to the website
         </Link>
       </div>

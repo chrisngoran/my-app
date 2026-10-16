@@ -67,28 +67,28 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+    <div className="mx-auto max-w-6xl px-4 pb-10 pt-3 sm:pb-12 sm:pt-6">
       <nav aria-label="Breadcrumb" className="text-sm text-muted">
-        <ol className="flex flex-wrap items-center gap-1.5">
+        <ol className="flex flex-wrap items-center gap-x-1.5">
           <li>
-            <Link href="/shop" className="hover:text-brand hover:underline">
+            <Link href="/shop" className="inline-flex min-h-11 items-center hover:text-brand hover:underline">
               Shop
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href={`/shop?category=${product.category}`} className="hover:text-brand hover:underline">
+            <Link href={`/shop?category=${product.category}`} className="inline-flex min-h-11 items-center hover:text-brand hover:underline">
               {CATEGORY_LABELS[product.category]}
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-foreground">
+          <li aria-current="page" className="py-3 text-foreground">
             <LiveProductName slug={product.slug} fallback={product.name} />
           </li>
         </ol>
       </nav>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
+      <div className="mt-3 grid gap-8 lg:grid-cols-2 lg:gap-12">
         <div className="overflow-hidden rounded-3xl border border-border bg-accent-soft lg:sticky lg:top-6 lg:self-start">
           <LiveProductImage
             slug={product.slug}
@@ -100,19 +100,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
 
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">{CATEGORY_LABELS[product.category]}</p>
-          <h1 className="mt-1 font-serif text-3xl font-bold leading-tight text-brand sm:text-4xl">
+          <h1 className="text-balance font-serif text-3xl font-bold leading-tight text-brand sm:text-4xl">
             <LiveProductName slug={product.slug} fallback={product.name} />
           </h1>
           <div className="mt-3">
             <LiveProductStock slug={product.slug} fallback={product.stock} />
           </div>
-          <p className="mt-4 text-lg leading-relaxed text-foreground/85">
+          <p className="mt-4 text-lg leading-relaxed text-foreground/80">
             <LiveProductDescription slug={product.slug} fallback={product.description} />
           </p>
 
           <section aria-labelledby="notes-heading" className="mt-6">
-            <h2 id="notes-heading" className="text-sm font-semibold uppercase tracking-wider text-muted">
+            <h2 id="notes-heading" className="text-sm font-semibold text-muted">
               Cupping notes
             </h2>
             <ul className="mt-2 flex flex-wrap gap-2">
@@ -132,11 +131,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <h2 id="details-heading" className="font-serif text-xl font-bold text-brand">
               Coffee details
             </h2>
-            <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border text-sm">
+            <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border text-sm">
               {details.map((d) => (
                 <div key={d.label} className="bg-surface p-3">
                   <dt className="text-muted">{d.label}</dt>
-                  <dd className="mt-0.5 font-semibold">{d.value}</dd>
+                  <dd className="mt-0.5 font-semibold tabular-nums">{d.value}</dd>
                 </div>
               ))}
             </dl>
@@ -147,7 +146,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <h2 id="origin-heading" className="font-serif text-xl font-bold text-accent">
                 Where this coffee comes from
               </h2>
-              <p className="mt-2 text-sm text-foreground/85">
+              <p className="mt-2 text-sm text-foreground/80">
                 <LiveLotNotes code={lot.code} fallback={lot.notes} />
               </p>
               {growers.length > 0 && (
@@ -157,10 +156,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </p>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Link
-                  href={`/trace/${lot.code}`}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-brand-contrast hover:bg-accent/90"
-                >
+                <Link href={`/trace/${lot.code}`} className="btn btn-go text-sm">
                   <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
                     <path d="M2 2h6v6H2zm2 2v2h2V4zm8-2h6v6h-6zm2 2v2h2V4zM2 12h6v6H2zm2 2v2h2v-2zm7-2h2v2h-2zm2 2h2v2h-2zm2-2h3v2h-3zm-4 4h2v2h-2zm4 0h3v2h-3z" />
                   </svg>
@@ -173,11 +169,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
 
-      <section aria-labelledby="related-heading" className="mt-16">
+      <section aria-labelledby="related-heading" className="mt-12 sm:mt-16">
         <h2 id="related-heading" className="font-serif text-2xl font-bold text-brand">
           You may also like
         </h2>
-        <ProductGrid products={related} className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" />
+        <ProductGrid products={related} compact className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3" />
       </section>
     </div>
   );

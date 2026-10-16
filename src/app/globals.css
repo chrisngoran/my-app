@@ -12,6 +12,29 @@
   --accent: #2f6b3f;
   --accent-soft: #e5f0e7;
   --warm: #c27a34;
+  /* Warm text on light surfaces (--warm itself is a fill colour, 3.4:1 as text). */
+  --warm-ink: #8f5420;
+  /* Text and fills on the brown band. */
+  --sand: #e9c79c;
+  /* White text on it is about 5.6:1. */
+  --whatsapp: #19733f;
+  --whatsapp-hover: #145c33;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --ring: var(--accent);
+
+  /* Motion. Animate transform and opacity only. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-press: 140ms;
+  --dur-ui: 200ms;
+  --dur-enter: 260ms;
+}
+
+@theme {
+  /* Tailwind's ease-out / ease-in-out utilities use the same strong curves. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @theme inline {
@@ -25,6 +48,13 @@
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-warm: var(--warm);
+  --color-warm-ink: var(--warm-ink);
+  --color-sand: var(--sand);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-hover: var(--whatsapp-hover);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ring: var(--ring);
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
 }
@@ -33,4 +63,208 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+@layer base {
+  html {
+    scroll-padding-top: 1rem;
+  }
+
+  :root {
+    accent-color: var(--accent);
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--foreground);
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Brown and green bands: a white ring stays visible on the dark fill. */
+  .on-dark:focus-visible,
+  .on-dark :focus-visible {
+    outline-color: #fff;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  /* Shared button recipes. Utilities (px-*, text-sm, w-full, bg-*) still override them. */
+  .btn {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-lg);
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    touch-action: manipulation;
+    transition:
+      transform var(--dur-press) var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .btn:active:not(:disabled, [aria-disabled="true"]) {
+    transform: scale(0.97);
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .btn-lg {
+    min-height: 3rem;
+    padding-inline: 1.75rem;
+  }
+
+  .btn-primary {
+    background-color: var(--brand);
+    color: var(--brand-contrast);
+  }
+
+  .btn-secondary {
+    border: 1px solid color-mix(in oklab, var(--brand) 30%, transparent);
+    background-color: var(--surface);
+    color: var(--brand);
+  }
+
+  .btn-go {
+    background-color: var(--accent);
+    color: var(--brand-contrast);
+  }
+
+  .btn-whatsapp {
+    background-color: var(--whatsapp);
+    color: #fff;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--brand) 88%, white);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--brand);
+    }
+    .btn-go:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--accent) 85%, black);
+    }
+    .btn-whatsapp:hover:not(:disabled) {
+      background-color: var(--whatsapp-hover);
+    }
+  }
+
+  /* Press feedback for pills, chips and other pressables that are not .btn. */
+  .press {
+    transition:
+      transform var(--dur-press) var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .press:active {
+    transform: scale(0.97);
+  }
+
+  /* A count that just changed (header order badge). Re-key the element to replay. */
+  .anim-pop {
+    animation: gv-pop 220ms var(--ease-out);
+  }
+
+  /* A label that just swapped ("Add to order" → "Added"). Re-key to replay. */
+  .anim-swap {
+    animation: gv-rise 180ms var(--ease-out);
+  }
+
+  /* Content inserted after an interaction (filtered grid, inline links). */
+  .anim-enter {
+    transition:
+      opacity var(--dur-ui) var(--ease-out),
+      transform var(--dur-ui) var(--ease-out);
+  }
+
+  @starting-style {
+    .anim-enter {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  /* Product image zoom, only for a real hovering pointer. */
+  .card-zoom {
+    transition: transform 250ms var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .card-zoom {
+      transform: scale(1.03);
+    }
+  }
+}
+
+@keyframes gv-pop {
+  from {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes gv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes gv-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: no movement, keep short fades so state changes stay visible. */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .press {
+    transition-property: background-color, border-color, color;
+  }
+
+  .btn:active:not(:disabled, [aria-disabled="true"]),
+  .press:active,
+  .group:hover .card-zoom {
+    transform: none;
+  }
+
+  .anim-pop,
+  .anim-swap {
+    animation: gv-fade 150ms ease;
+  }
+
+  .anim-enter {
+    transition: opacity 150ms ease;
+  }
+
+  @starting-style {
+    .anim-enter {
+      transform: none;
+    }
+  }
 }

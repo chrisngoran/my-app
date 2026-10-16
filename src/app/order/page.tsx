@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 export default function OrderPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12">
-      <Link href="/cart" className="text-sm font-medium text-accent hover:underline">
-        ← Back to your list
+      <Link href="/cart" className="-ml-1 inline-flex min-h-11 items-center rounded-lg px-1 text-sm font-medium text-accent hover:underline">
+        ← Back to your order list
       </Link>
-      <h1 className="mt-2 font-serif text-3xl font-bold text-brand sm:text-4xl">Send your order</h1>
+      <h1 className="mt-1 font-serif text-3xl font-bold text-brand sm:text-4xl">Send your order</h1>
       <p className="mt-2 text-muted">
         Your order opens in WhatsApp, ready to send. We confirm it, then you pay by MTN MoMo or Orange Money.
       </p>

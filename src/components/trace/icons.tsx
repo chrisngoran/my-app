@@ -100,12 +100,18 @@ export function CupIcon({ className = "h-5 w-5" }: IconProps) {
   );
 }
 
-/** Stylised hills used as a decorative band behind page heroes. */
+/**
+ * Stylised hills used as a decorative band at the foot of the brown heroes.
+ * The far ridges are light tints of the current colour over the brand brown;
+ * the nearest ridge is solid page background, so the hero flows into the page
+ * instead of ending in a hard, muddy seam.
+ */
 export function HillsBackdrop({ className = "" }: IconProps) {
   return (
     <svg viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true" className={className}>
-      <path d="M0 140 C 150 60, 300 60, 450 120 S 750 40, 900 100 S 1100 80, 1200 60 V200 H0z" fill="currentColor" opacity="0.18" />
-      <path d="M0 170 C 200 110, 350 130, 550 160 S 850 100, 1000 140 S 1150 150, 1200 130 V200 H0z" fill="currentColor" opacity="0.3" />
+      <path d="M0 120 C 150 50, 300 50, 450 105 S 750 30, 900 85 S 1100 65, 1200 50 V200 H0z" fill="currentColor" opacity="0.08" />
+      <path d="M0 150 C 200 90, 350 110, 550 140 S 850 80, 1000 120 S 1150 130, 1200 110 V200 H0z" fill="currentColor" opacity="0.14" />
+      <path d="M0 182 C 200 150, 380 160, 600 176 S 950 148, 1200 168 V200 H0z" fill="var(--background)" />
     </svg>
   );
 }

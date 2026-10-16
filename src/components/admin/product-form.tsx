@@ -9,7 +9,7 @@ import { getProduct } from "@/lib/data";
 import type { Product } from "@/lib/types";
 import { LiveVersionNote } from "./product-list";
 import { resizeImage } from "./resize-image";
-import { AdminLoading, ConfirmButton, inputClass, primaryButton, secondaryButton, Toggle, useToast } from "./ui";
+import { AdminLoading, ConfirmButton, errorText, inputClass, primaryButton, secondaryButton, Spinner, Toggle, useToast } from "./ui";
 
 export function AdminProductEdit({ slug }: { slug: string }) {
   const { loaded, resets } = useCatalogOverrides();
@@ -38,7 +38,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
   const [errors, setErrors] = useState<Errors>({});
   const [saved, setSaved] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  const { toast, show } = useToast();
+  const { toast, show } = useToast({ raised: true });
   const ids = useId();
 
   const touch = () => setSaved(false);
@@ -91,6 +91,14 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
   }
 
   const shownImage = photo ?? original.image;
+  // Compared with what the website shows now, so it clears after a save.
+  const dirty =
+    name.trim() !== product.name ||
+    Number(price) !== product.priceXaf ||
+    stock.trim() !== String(product.stock) ||
+    description.trim() !== product.description.trim() ||
+    visible !== !product.hidden ||
+    shownImage !== product.image;
 
   return (
     <div>
@@ -102,7 +110,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
       <LiveVersionNote />
 
       <form noValidate onSubmit={onSubmit} className="mt-6 space-y-5 rounded-2xl border border-border bg-surface p-4 sm:p-5">
-        <section aria-labelledby={`${ids}-photo`}>
+        <section aria-labelledby={`${ids}-photo`} aria-busy={photoBusy}>
           <h2 id={`${ids}-photo`} className="text-sm font-medium">
             Photo
           </h2>
@@ -120,15 +128,21 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             {photo ? "Your uploaded photo." : "Original demo photo."} Photos are made smaller (max 800 px wide) before saving.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <label className={`${secondaryButton} cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent`}>
+            <label
+              className={`${secondaryButton} cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring ${
+                photoBusy ? "pointer-events-none opacity-70" : ""
+              }`}
+            >
               <input
                 ref={fileInput}
                 type="file"
                 accept="image/*"
                 className="sr-only"
+                disabled={photoBusy}
                 onChange={(e) => onPhotoChosen(e.target.files?.[0])}
               />
-              {photoBusy ? "Preparing photo…" : photo ? "Choose another photo" : "Upload a photo"}
+              {photoBusy && <Spinner />}
+              <span aria-live="polite">{photoBusy ? "Preparing photo…" : photo ? "Choose another photo" : "Upload a photo"}</span>
             </label>
             {photo && (
               <button
@@ -144,7 +158,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             )}
           </div>
           {photoError && (
-            <p role="alert" className="mt-2 text-sm font-medium text-red-700">
+            <p role="alert" className={`${errorText} mt-2`}>
               {photoError}
             </p>
           )}
@@ -163,7 +177,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             aria-describedby={errors.name ? `${ids}-name-err` : undefined}
           />
           {errors.name && (
-            <span id={`${ids}-name-err`} className="mt-1 block text-sm text-red-700">
+            <span id={`${ids}-name-err`} className={errorText}>
               {errors.name}
             </span>
           )}
@@ -186,7 +200,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
               aria-invalid={!!errors.price}
               aria-describedby={`${ids}-price-hint`}
             />
-            <span id={`${ids}-price-hint`} className={`mt-1 block text-sm ${errors.price ? "text-red-700" : "text-muted"}`}>
+            <span id={`${ids}-price-hint`} className={errors.price ? errorText : "mt-1 block text-sm text-muted"}>
               {errors.price ?? (Number(price) > 0 ? `Shown as ${formatPrice(Number(price))}` : "Price in FCFA")}
             </span>
           </label>
@@ -206,7 +220,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
               aria-invalid={!!errors.stock}
               aria-describedby={`${ids}-stock-hint`}
             />
-            <span id={`${ids}-stock-hint`} className={`mt-1 block text-sm ${errors.stock ? "text-red-700" : "text-muted"}`}>
+            <span id={`${ids}-stock-hint`} className={errors.stock ? errorText : "mt-1 block text-sm text-muted"}>
               {errors.stock ?? "0 shows “Sold out” on the website"}
             </span>
           </label>
@@ -234,16 +248,31 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
           }}
         />
 
-        <div className="flex flex-col gap-2 border-t border-border pt-5 sm:flex-row sm:items-center">
-          <button type="submit" className={primaryButton} disabled={photoBusy}>
-            Save changes
-          </button>
-          <Link href={`/shop/${original.slug}`} className={secondaryButton}>
-            View on website
-          </Link>
+        {/* On phones the actions stay at the bottom of the screen, so Save is always in reach on this long form. */}
+        <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:px-0 sm:pt-5 sm:pb-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="submit" className={`${primaryButton} flex-1 whitespace-nowrap max-sm:px-3 sm:flex-none`} disabled={photoBusy}>
+              Save changes
+            </button>
+            <Link href={`/shop/${original.slug}`} className={`${secondaryButton} flex-1 whitespace-nowrap max-sm:px-3 sm:flex-none`}>
+              View on website
+            </Link>
+            {!saved && dirty && (
+              <span
+                aria-hidden="true"
+                className="order-first inline-flex w-full items-center gap-2 text-sm font-medium text-warm-ink sm:order-none sm:ml-1 sm:w-auto"
+              >
+                <span className="h-2 w-2 rounded-full bg-warm" />
+                Unsaved changes
+              </span>
+            )}
+            <span className="sr-only" aria-live="polite">
+              {!saved && dirty ? "Unsaved changes" : ""}
+            </span>
+          </div>
         </div>
         {saved && (
-          <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm font-semibold text-accent">
+          <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm font-semibold text-accent transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150">
             Saved.{" "}
             <Link href={`/shop/${original.slug}`} className="underline">
               View on website

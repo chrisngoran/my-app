@@ -14,13 +14,17 @@ const NAV = [
   { href: "/admin/farmers", label: "Farmers" },
 ];
 
-const navItem =
-  "flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+const tab =
+  "press flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold";
 
-function AdminNavView({ pathname, onSignOut }: { pathname: string | null; onSignOut: () => void }) {
+/** Small text actions on the brown header ("View website", "Sign out"). */
+const headerAction =
+  "press inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-2.5 text-sm font-medium text-brand-contrast/90 hover:bg-white/10 hover:text-brand-contrast";
+
+function AdminTabs({ pathname }: { pathname: string | null }) {
   return (
     <nav aria-label="Admin">
-      <ul className="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap">
+      <ul className="grid grid-cols-3 gap-1.5 sm:flex">
         {NAV.map((item) => {
           const active = !!pathname && (pathname === item.href || pathname.startsWith(`${item.href}/`));
           return (
@@ -28,30 +32,20 @@ function AdminNavView({ pathname, onSignOut }: { pathname: string | null; onSign
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`${navItem} ${active ? "bg-surface text-brand" : "bg-white/10 text-brand-contrast hover:bg-white/20"}`}
+                className={`${tab} ${active ? "bg-surface text-brand" : "bg-white/10 text-brand-contrast hover:bg-white/20"}`}
               >
                 {item.label}
               </Link>
             </li>
           );
         })}
-        <li className="col-span-2 sm:col-span-1 sm:ml-auto">
-          <Link href="/" className={`${navItem} border border-white/30 text-brand-contrast hover:bg-white/10`}>
-            View website
-          </Link>
-        </li>
-        <li>
-          <button type="button" onClick={onSignOut} className={`${navItem} w-full border border-white/30 text-brand-contrast hover:bg-white/10`}>
-            Sign out
-          </button>
-        </li>
       </ul>
     </nav>
   );
 }
 
-function AdminNav({ onSignOut }: { onSignOut: () => void }) {
-  return <AdminNavView pathname={usePathname()} onSignOut={onSignOut} />;
+function AdminNav() {
+  return <AdminTabs pathname={usePathname()} />;
 }
 
 /** Layout for signed-in staff pages. Signed-out visitors are sent to the sign-in screen. */
@@ -72,19 +66,30 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <p className="bg-warm px-4 py-2 text-center text-sm font-semibold text-white">
+      <p className="bg-warm-ink px-4 py-2 text-center text-sm font-semibold text-white">
         Demo admin — changes are saved only in this browser
       </p>
-      <header className="bg-brand text-brand-contrast">
-        <div className="mx-auto max-w-3xl px-4 py-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-            <p className="font-serif text-lg font-bold leading-tight">{cooperative.name}</p>
-            <p className="text-xs text-brand-contrast/70">Staff admin{email ? ` · ${email}` : ""}</p>
+      <header className="on-dark bg-brand text-brand-contrast">
+        <div className="mx-auto max-w-3xl px-4 pt-3 pb-3">
+          <p className="font-serif text-lg font-bold leading-tight">{cooperative.name}</p>
+          {/* One compact row: who is signed in, then the two secondary actions. The section tabs stay the only large row. */}
+          <div className="mt-0.5 flex items-center justify-between gap-2">
+            <p className="min-w-0 truncate text-xs text-brand-contrast/75">Staff admin{email ? ` · ${email}` : ""}</p>
+            {loaded && email && (
+              <div className="-mr-2.5 flex shrink-0 items-center">
+                <Link href="/" className={headerAction}>
+                  View website
+                </Link>
+                <button type="button" onClick={handleSignOut} className={headerAction}>
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
           {loaded && email && (
-            <div className="mt-3">
-              <Suspense fallback={<AdminNavView pathname={null} onSignOut={handleSignOut} />}>
-                <AdminNav onSignOut={handleSignOut} />
+            <div className="mt-1.5">
+              <Suspense fallback={<AdminTabs pathname={null} />}>
+                <AdminNav />
               </Suspense>
             </div>
           )}

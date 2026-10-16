@@ -50,31 +50,32 @@ function initials(name: string) {
     .join("");
 }
 
-const AVATAR_COLOURS = ["bg-brand", "bg-accent", "bg-warm", "bg-[#7a4a33]", "bg-[#245432]", "bg-[#a6662a]"];
+// Brand, leaf and warm-ink: each carries white initials at 4.5:1 or better.
+const AVATAR_COLOURS = ["bg-brand", "bg-accent", "bg-warm-ink"];
 
 export default function OurStoryPage() {
   return (
     <>
       <section className="bg-gradient-to-b from-accent-soft/60 to-background">
         <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:py-16">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">Our story</p>
-          <h1 className="mt-2 font-serif text-4xl font-bold leading-tight text-brand sm:text-5xl">
+          <h1 className="text-balance font-serif text-4xl font-bold leading-tight text-brand sm:text-5xl">
             A cooperative of coffee families in the Bui highlands
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-foreground/80">{cooperative.story}</p>
+          <p className="mx-auto mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-foreground/80">{cooperative.story}</p>
           <p className="mt-4 text-sm text-muted">{cooperative.location}</p>
         </div>
       </section>
 
-      <section aria-labelledby="values-heading" className="mx-auto max-w-6xl px-4 py-12">
+      <section aria-labelledby="values-heading" className="mx-auto max-w-6xl px-4 pb-12 pt-4 sm:pb-14">
         <h2 id="values-heading" className="sr-only">
           What we stand for
         </h2>
-        <ul className="grid gap-5 md:grid-cols-3">
+        {/* A typographic statement row, divided by hairlines rather than boxed. */}
+        <ul className="grid divide-y divide-border border-y border-border md:grid-cols-3 md:divide-x md:divide-y-0">
           {VALUES.map((v) => (
-            <li key={v.title} className="rounded-2xl border border-border bg-surface p-6">
-              <h3 className="font-serif text-xl font-bold text-brand">{v.title}</h3>
-              <p className="mt-2 text-foreground/80">{v.text}</p>
+            <li key={v.title} className="py-6 md:px-8 md:py-8 md:first:pl-0 md:last:pr-0">
+              <h3 className="font-serif text-2xl font-bold text-brand">{v.title}</h3>
+              <p className="mt-2 max-w-sm text-pretty leading-relaxed text-foreground/80">{v.text}</p>
             </li>
           ))}
         </ul>
@@ -82,13 +83,16 @@ export default function OurStoryPage() {
 
       <section aria-labelledby="journey-heading" className="bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">How it works</p>
-          <h2 id="journey-heading" className="mt-1 font-serif text-3xl font-bold text-brand">
+          <h2 id="journey-heading" className="font-serif text-3xl font-bold text-brand">
             From farm to cup
           </h2>
-          <ol className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {/* On phones a hairline joins the numbered discs so the steps read as one journey. */}
+          <ol className="mt-8 grid gap-x-8 gap-y-8 sm:mt-10 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-3">
             {STEPS.map((s, i) => (
-              <li key={s.title} className="relative pl-14">
+              <li
+                key={s.title}
+                className="relative pl-14 before:absolute before:-bottom-7 before:left-5 before:top-11 before:w-px before:bg-border last:before:hidden sm:before:hidden"
+              >
                 <span
                   aria-hidden="true"
                   className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-brand font-serif text-lg font-bold text-brand-contrast"
@@ -96,7 +100,7 @@ export default function OurStoryPage() {
                   {i + 1}
                 </span>
                 <h3 className="font-semibold text-foreground">{s.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/75">{s.text}</p>
+                <p className="mt-1 text-sm leading-relaxed text-foreground/80">{s.text}</p>
               </li>
             ))}
           </ol>
@@ -105,8 +109,7 @@ export default function OurStoryPage() {
 
       <section aria-labelledby="farmers-heading" className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">Meet the farmers</p>
-          <h2 id="farmers-heading" className="mt-1 font-serif text-3xl font-bold text-brand">
+          <h2 id="farmers-heading" className="font-serif text-3xl font-bold text-brand">
             The people behind your cup
           </h2>
           <p className="mt-3 text-foreground/80">
@@ -134,28 +137,31 @@ export default function OurStoryPage() {
                     </p>
                   </div>
                 </div>
-                <p className="mt-4 flex-1 text-sm leading-relaxed text-foreground/85">
+                <p className="mt-4 flex-1 text-sm leading-relaxed text-foreground/80">
                   <LiveFarmerStory id={f.id} fallback={f.story} />
                 </p>
-                <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-lg bg-background p-2.5">
-                    <dt className="text-xs text-muted">Altitude</dt>
-                    <dd className="font-semibold">{f.altitudeMetres.toLocaleString("en-GB")} m</dd>
+                <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-3 text-sm">
+                  <div className="flex gap-1.5">
+                    <dt className="text-muted">Altitude</dt>
+                    <dd className="font-semibold tabular-nums">{f.altitudeMetres.toLocaleString("en-GB")} m</dd>
                   </div>
-                  <div className="rounded-lg bg-background p-2.5">
-                    <dt className="text-xs text-muted">Coffee plot</dt>
-                    <dd className="font-semibold">{f.plotHectares} ha</dd>
+                  <div className="flex gap-1.5">
+                    <dt className="text-muted">Coffee plot</dt>
+                    <dd className="font-semibold tabular-nums">{f.plotHectares} ha</dd>
                   </div>
                 </dl>
                 {farmerLots.length > 0 && (
-                  <p className="mt-3 text-xs text-muted">
-                    In lots:{" "}
+                  <p className="mt-1 flex flex-wrap items-center gap-x-1 text-sm text-muted">
+                    <span className="mr-1">In lots:</span>
                     {farmerLots.map((l, j) => (
-                      <span key={l.code}>
-                        {j > 0 && ", "}
-                        <Link href={`/trace/${l.code}`} className="font-mono text-accent hover:underline">
+                      <span key={l.code} className="inline-flex items-center">
+                        <Link
+                          href={`/trace/${l.code}`}
+                          className="inline-flex min-h-11 items-center font-mono font-semibold text-accent hover:underline"
+                        >
                           {l.code}
                         </Link>
+                        {j < farmerLots.length - 1 && ","}
                       </span>
                     ))}
                   </p>
@@ -167,16 +173,13 @@ export default function OurStoryPage() {
         <p className="mt-6 text-xs text-muted">Farmer names and stories on this demo are illustrative.</p>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-4">
-        <div className="flex flex-col items-start justify-between gap-5 rounded-3xl bg-brand px-6 py-10 text-brand-contrast sm:flex-row sm:items-center sm:px-10">
+      <section className="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:pt-6">
+        <div className="on-dark flex flex-col items-start justify-between gap-5 rounded-3xl bg-brand px-6 py-10 text-brand-contrast sm:flex-row sm:items-center sm:px-10">
           <div>
             <h2 className="font-serif text-2xl font-bold sm:text-3xl">Support these farmers with every cup</h2>
             <p className="mt-2 text-brand-contrast/80">Order direct from the cooperative, delivered across Cameroon and abroad.</p>
           </div>
-          <Link
-            href="/shop"
-            className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-lg bg-surface px-7 py-3 font-semibold text-brand hover:bg-accent-soft"
-          >
+          <Link href="/shop" className="btn btn-lg shrink-0 bg-surface text-brand hover:bg-accent-soft">
             Shop the harvest
           </Link>
         </div>

@@ -9,15 +9,20 @@ export function AddToCartButton({
   quantity = 1,
   disabled = false,
   className = "",
+  onAdded,
 }: {
   slug: string;
   name: string;
   quantity?: number;
   disabled?: boolean;
   className?: string;
+  /** Called after the item is added, e.g. to show a link to the order list. */
+  onAdded?: () => void;
 }) {
   const { addToCart } = useStore();
   const [added, setAdded] = useState(false);
+  // Whether the label has swapped at least once: the first render never animates.
+  const [swapped, setSwapped] = useState(false);
 
   useEffect(() => {
     if (!added) return;
@@ -33,26 +38,29 @@ export function AddToCartButton({
         onClick={() => {
           addToCart(slug, quantity);
           setAdded(true);
+          setSwapped(true);
+          onAdded?.();
         }}
-        className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 ${
-          added ? "bg-accent text-brand-contrast" : "bg-brand text-brand-contrast hover:bg-brand/90"
-        } ${className}`}
+        className={`btn px-4 text-sm ${added ? "bg-accent text-brand-contrast" : "btn-primary"} ${className}`}
       >
-        {added ? (
-          <>
-            <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
-              <path d="M7.7 14.3 3.4 10l1.4-1.4 2.9 2.9 7.5-7.5 1.4 1.4z" />
-            </svg>
-            Added
-          </>
-        ) : disabled ? (
-          "Sold out"
-        ) : (
-          "Add to cart"
-        )}
+        {/* Keyed so the label crossfades in each time it changes. */}
+        <span key={added ? "added" : "add"} className={`inline-flex items-center gap-2 ${swapped ? "anim-swap" : ""}`}>
+          {added ? (
+            <>
+              <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
+                <path d="M7.7 14.3 3.4 10l1.4-1.4 2.9 2.9 7.5-7.5 1.4 1.4z" />
+              </svg>
+              Added
+            </>
+          ) : disabled ? (
+            "Sold out"
+          ) : (
+            "Add to order"
+          )}
+        </span>
       </button>
       <span role="status" aria-live="polite" className="sr-only">
-        {added ? `${quantity} × ${name} added to your cart` : ""}
+        {added ? `${quantity} × ${name} added to your order` : ""}
       </span>
     </>
   );

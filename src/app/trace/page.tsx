@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRightIcon, CalendarIcon, CupIcon, HillsBackdrop, LeafIcon, MountainIcon, QrIcon } from "@/components/trace/icons";
 import { LiveLotScore } from "@/components/storefront/live-catalog";
 import { LotSearch } from "@/components/trace/lot-search";
+import { arrowNudge, linkedCard } from "@/components/trace/buttons";
 import { altitudeRange, formatHarvestDate, lotFarmers } from "@/components/trace/lot-utils";
 import { lots } from "@/lib/data";
 
@@ -46,11 +47,10 @@ export default function TracePage() {
   return (
     <div>
       <section className="relative overflow-hidden bg-brand text-brand-contrast">
-        <HillsBackdrop className="pointer-events-none absolute inset-x-0 bottom-0 h-24 w-full text-accent-soft sm:h-32" />
+        <HillsBackdrop className="pointer-events-none absolute inset-x-0 bottom-0 h-24 w-full text-background sm:h-32" />
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 pt-12 pb-20 sm:pt-16 sm:pb-28 lg:grid-cols-[1.1fr_1fr] lg:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-contrast/70">Farm-to-cup traceability</p>
-            <h1 className="mt-3 font-serif text-3xl font-bold leading-tight sm:text-5xl">Meet the farmers behind your cup</h1>
+            <h1 className="font-serif text-balance text-3xl font-bold leading-tight sm:text-5xl">Meet the farmers behind your cup</h1>
             <p className="mt-4 max-w-xl text-base text-brand-contrast/85 sm:text-lg">
               Every bag of Green Venture coffee carries a lot code. Scan the QR code or type the code below to see
               who grew your coffee, where, when it was harvested and how it scored.
@@ -72,17 +72,21 @@ export default function TracePage() {
           From a hillside in Kumbo to your kitchen, each step is recorded by the cooperative so the story of your
           coffee is never lost.
         </p>
-        <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {/* One connected journey: a vertical rule on phones, a horizontal one through the discs on desktop. */}
+        <ol className="mt-10 grid lg:grid-cols-5">
           {STEPS.map((step, i) => (
-            <li key={step.title} className="relative rounded-xl border border-border bg-surface p-5">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-                  <step.icon />
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted">Step {i + 1}</span>
-              </div>
-              <h3 className="mt-4 font-semibold text-foreground">{step.title}</h3>
-              <p className="mt-1 text-sm text-muted">{step.text}</p>
+            <li key={step.title} className="relative pb-8 pl-14 last:pb-0 lg:pb-0 lg:pl-0 lg:pr-6">
+              {i < STEPS.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-12 bottom-2 left-5 w-px bg-border lg:top-5 lg:right-2 lg:bottom-auto lg:left-12 lg:h-px lg:w-auto"
+                />
+              )}
+              <span className="absolute top-0 left-0 flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent lg:static">
+                <step.icon />
+              </span>
+              <h3 className="pt-2 font-semibold text-foreground lg:mt-4 lg:pt-0">{step.title}</h3>
+              <p className="mt-1 max-w-prose text-sm text-muted">{step.text}</p>
             </li>
           ))}
         </ol>
@@ -106,7 +110,7 @@ export default function TracePage() {
                 <li key={lot.code}>
                   <Link
                     href={`/trace/${lot.code}`}
-                    className="group flex h-full flex-col rounded-xl border border-border bg-background p-5 transition hover:border-accent hover:shadow-md focus-visible:outline-2 focus-visible:outline-accent"
+                    className={`${linkedCard} flex h-full flex-col rounded-2xl border border-border bg-background p-5`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -116,10 +120,10 @@ export default function TracePage() {
                         </p>
                       </div>
                       <div className="shrink-0 rounded-lg bg-accent-soft px-2.5 py-1 text-center text-accent">
-                        <p className="text-lg font-bold leading-none">
+                        <p className="text-lg font-bold leading-none tabular-nums">
                           <LiveLotScore code={lot.code} fallback={lot.quality.cuppingScore} />
                         </p>
-                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider">SCA</p>
+                        <p className="mt-0.5 text-xs font-semibold tracking-wider">SCA</p>
                       </div>
                     </div>
                     <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -136,8 +140,8 @@ export default function TracePage() {
                         <dd className="font-medium">{farmers.map((f) => f.name).join(", ")}</dd>
                       </div>
                     </dl>
-                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent group-hover:gap-2">
-                      View provenance <ArrowRightIcon />
+                    <span className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-accent">
+                      View provenance <ArrowRightIcon className={arrowNudge} />
                     </span>
                   </Link>
                 </li>

@@ -14,7 +14,7 @@ export function QuantityStepper({
   label: string;
 }) {
   const btn =
-    "flex h-11 w-11 items-center justify-center text-lg font-semibold text-brand hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40";
+    "flex h-11 w-11 items-center justify-center text-lg font-semibold text-brand transition-[scale,background-color] duration-120 ease-out active:scale-94 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100 pointer-fine:hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40";
   return (
     <div role="group" aria-label={label} className="inline-flex items-center overflow-hidden rounded-lg border border-border bg-surface">
       <button type="button" className={btn} onClick={() => onChange(value - 1)} disabled={value <= min} aria-label="Decrease quantity">

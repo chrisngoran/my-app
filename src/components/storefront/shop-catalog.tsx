@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useCatalog } from "@/lib/catalog-overrides";
 import type { Product, ProductCategory } from "@/lib/types";
 import { CATEGORIES, CATEGORY_LABELS, isCategory } from "./catalog";
@@ -20,8 +21,11 @@ export function ShopCatalog({ products: all }: { products: Product[] }) {
   const raw = searchParams.get("category");
   const active: ProductCategory | null = isCategory(raw) ? raw : null;
   const visible = active ? products.filter((p) => p.category === active) : products;
+  // Only fade the grid in after the visitor changes the filter, never on first paint.
+  const [filtered, setFiltered] = useState(false);
 
   function select(category: ProductCategory | null) {
+    setFiltered(true);
     router.replace(category ? `${pathname}?category=${category}` : pathname, { scroll: false });
   }
 
@@ -32,7 +36,8 @@ export function ShopCatalog({ products: all }: { products: Product[] }) {
 
   return (
     <div>
-      <div className="-mx-4 overflow-x-auto px-4 pb-1">
+      {/* The right-edge fade shows that the chip row scrolls on narrow screens. */}
+      <div className="-mx-4 overflow-x-auto px-4 py-1 [mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent)] lg:[mask-image:none]">
         <div role="group" aria-label="Filter by category" className="flex w-max gap-2">
           {options.map((o) => {
             const pressed = o.id === active;
@@ -42,7 +47,7 @@ export function ShopCatalog({ products: all }: { products: Product[] }) {
                 type="button"
                 aria-pressed={pressed}
                 onClick={() => select(o.id)}
-                className={`min-h-10 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                className={`press min-h-11 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium ${
                   pressed
                     ? "border-brand bg-brand text-brand-contrast"
                     : "border-border bg-surface text-foreground hover:border-brand hover:text-brand"
@@ -58,11 +63,14 @@ export function ShopCatalog({ products: all }: { products: Product[] }) {
         Showing {visible.length} {visible.length === 1 ? "product" : "products"}
       </p>
       {visible.length === 0 ? (
-        <p className="mt-10 rounded-xl border border-dashed border-border p-8 text-center text-muted">
+        <p className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center text-muted">
           No products in this category yet — check back after the next harvest.
         </p>
       ) : (
-        <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul
+          key={active ?? "all"}
+          className={`mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 ${filtered ? "anim-enter" : ""}`}
+        >
           {visible.map((p) => (
             <li key={p.slug} className="flex">
               <div className="flex w-full flex-col [&>article]:flex-1">
@@ -80,8 +88,8 @@ export function ShopCatalogFallback({ products: all }: { products: Product[] }) 
   const products = useShownProducts(all);
   return (
     <div>
-      <div className="h-11" aria-hidden="true" />
-      <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="h-[3.25rem]" aria-hidden="true" />
+      <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((p) => (
           <li key={p.slug} className="flex">
             <div className="flex w-full flex-col [&>article]:flex-1">

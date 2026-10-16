@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { LiveCuppingGauge, LiveFarmerStory, LiveLotNotes, LiveLotScore } from "@/components/storefront/live-catalog";
+import { LiveCuppingGauge, LiveFarmerStory, LiveLotNotes } from "@/components/storefront/live-catalog";
 import {
   CalendarIcon,
   DropIcon,
@@ -20,6 +20,7 @@ import {
   normaliseLotCode,
   safeDecode,
 } from "@/components/trace/lot-utils";
+import { btnPrimary, btnSecondary } from "@/components/trace/buttons";
 import { LotProducts } from "@/components/trace/lot-products";
 import { LotQrCode } from "@/components/trace/qr-code";
 import { cooperative, getLot, lots } from "@/lib/data";
@@ -71,6 +72,11 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
   const products = lotProducts(lot);
   const villages = [...new Set(farmers.map((f) => f.village))];
   const q = lot.quality;
+  // Split the trace URL so a narrow screen wraps before the lot code, never inside it.
+  const fullUrl = traceUrl(lot.code);
+  const codeSegment = encodeURIComponent(lot.code);
+  const urlBase = fullUrl.endsWith(codeSegment) ? fullUrl.slice(0, -codeSegment.length) : fullUrl;
+  const urlCode = fullUrl.endsWith(codeSegment) ? codeSegment : "";
 
   const facts = [
     { icon: CalendarIcon, label: "Harvested", value: formatHarvestDate(lot.harvestDate) },
@@ -102,12 +108,15 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
     <article>
       {/* Hero */}
       <header className="relative overflow-hidden bg-brand text-brand-contrast">
-        <HillsBackdrop className="pointer-events-none absolute inset-x-0 bottom-0 h-20 w-full text-accent-soft sm:h-28" />
-        <div className="relative mx-auto max-w-6xl px-4 pt-6 pb-16 sm:pb-24">
-          <nav aria-label="Breadcrumb" className="text-sm text-brand-contrast/70">
+        <HillsBackdrop className="pointer-events-none absolute inset-x-0 bottom-0 h-20 w-full text-background sm:h-28" />
+        <div className="relative mx-auto max-w-6xl px-4 pt-3 pb-16 sm:pb-24">
+          <nav aria-label="Breadcrumb" className="text-sm text-brand-contrast/80">
             <ol className="flex flex-wrap items-center gap-1.5">
               <li>
-                <Link href="/trace" className="hover:text-brand-contrast hover:underline">
+                <Link
+                  href="/trace"
+                  className="-mx-2 inline-flex min-h-11 items-center rounded-lg px-2 underline-offset-4 hover:text-brand-contrast hover:underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-white"
+                >
                   Trace
                 </Link>
               </li>
@@ -117,13 +126,13 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
               </li>
             </ol>
           </nav>
-          <div className="mt-8 grid gap-10 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="mt-5 grid gap-10 md:grid-cols-[1fr_auto] md:items-center">
             <div>
-              <p className="inline-flex items-center gap-2 rounded-full bg-brand-contrast/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em]">
+              <p className="inline-flex items-center gap-2 rounded-full bg-brand-contrast/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
                 <span className="h-2 w-2 rounded-full bg-accent-soft" aria-hidden="true" />
                 Verified lot · {lot.code}
               </p>
-              <h1 className="mt-4 font-serif text-3xl font-bold leading-tight sm:text-5xl">
+              <h1 className="mt-4 font-serif text-balance text-3xl font-bold leading-tight sm:text-5xl">
                 {lot.processingMethod} Arabica from {villages.join(villages.length > 2 ? ", " : " & ")}
               </h1>
               <p className="mt-4 max-w-2xl text-base text-brand-contrast/85 sm:text-lg">
@@ -153,7 +162,7 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
                 <f.icon className="h-4 w-4 text-accent" />
                 {f.label}
               </dt>
-              <dd className="mt-1.5 font-semibold leading-snug text-foreground">{f.value}</dd>
+              <dd className="mt-1.5 font-semibold leading-snug text-foreground tabular-nums">{f.value}</dd>
             </div>
           ))}
         </dl>
@@ -161,27 +170,24 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
 
       <div className="mx-auto max-w-6xl space-y-14 px-4 py-14">
         {/* Process & quality */}
-        <section aria-labelledby="quality-heading" className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+        <section aria-labelledby="quality-heading" className="grid gap-6 lg:grid-cols-[1fr_1.4fr] lg:items-start">
           <div className="rounded-2xl border border-border bg-accent-soft p-6">
             <h2 className="flex items-center gap-2 font-serif text-xl font-bold text-accent">
               <DropIcon /> {lot.processingMethod} process
             </h2>
-            <p className="mt-3 text-foreground/85">{PROCESS_TEXT[lot.processingMethod]}</p>
-            <p className="mt-3 text-sm text-muted">
-              <LiveLotNotes code={lot.code} fallback={lot.notes} />
-            </p>
+            <p className="mt-3 max-w-prose text-foreground/80">{PROCESS_TEXT[lot.processingMethod]}</p>
           </div>
           <div className="rounded-2xl border border-border bg-surface p-6">
             <h2 id="quality-heading" className="font-serif text-xl font-bold text-brand">
               Quality record
             </h2>
             <p className="mt-1 text-sm text-muted">Tested by the cooperative&apos;s quality team before export.</p>
-            <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+            <dl className="mt-5 grid divide-y divide-border border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {quality.map((item) => (
-                <div key={item.label} className="rounded-xl border border-border bg-background p-4">
+                <div key={item.label} className="py-4 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                   <dt className="text-xs font-medium uppercase tracking-wider text-muted">{item.label}</dt>
                   <dd className="mt-1">
-                    <span className="text-2xl font-bold text-foreground">{item.value}</span>
+                    <span className="text-2xl font-bold text-foreground tabular-nums">{item.value}</span>
                     {item.unit && <span className="ml-1 text-sm text-muted">{item.unit}</span>}
                     <span className="mt-1 flex items-start gap-1 text-xs text-muted">
                       {item.ok && (
@@ -195,16 +201,9 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
                 </div>
               ))}
             </dl>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-brand p-4 text-brand-contrast">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-brand-contrast/70">Cupping score</p>
-                <p className="text-sm text-brand-contrast/85">80+ points is specialty grade</p>
-              </div>
-              <p className="font-serif text-3xl font-bold">
-                <LiveLotScore code={lot.code} fallback={q.cuppingScore} />
-                <span className="ml-1 text-base font-normal text-brand-contrast/70">/ 100</span>
-              </p>
-            </div>
+            <p className="mt-4 text-sm text-muted">
+              The cupping score above is out of 100 on the Specialty Coffee Association scale.
+            </p>
           </div>
         </section>
 
@@ -219,7 +218,7 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
               : `This lot brings together coffee from ${farmers.length} member farms.`}{" "}
             Farmers are paid directly by mobile money once the lot is sold.
           </p>
-          <ul className="mt-6 grid gap-4 md:grid-cols-2">
+          <ul className={`mt-6 grid gap-4 ${farmers.length === 1 ? "" : "md:grid-cols-2"}`}>
             {farmers.map((f) => (
               <li key={f.id} className="flex gap-4 rounded-2xl border border-border bg-surface p-5">
                 <div
@@ -240,7 +239,7 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
                     <span>{f.plotHectares} ha</span>
                     <span>Member since {f.joinedYear}</span>
                   </p>
-                  <p className="mt-3 text-foreground/85">
+                  <p className="mt-3 max-w-prose text-foreground/80">
                     <LiveFarmerStory id={f.id} fallback={f.story} />
                   </p>
                 </div>
@@ -271,18 +270,16 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
               This is the QR code printed on every bag from lot <span className="font-mono font-semibold">{lot.code}</span>.
               Scan it with your phone camera to open this page.
             </p>
-            <p className="mt-2 break-all font-mono text-xs text-muted">{traceUrl(lot.code)}</p>
+            <p className="mt-2 font-mono text-xs text-muted [overflow-wrap:anywhere]">
+              {urlBase}
+              <wbr />
+              <span className="whitespace-nowrap">{urlCode}</span>
+            </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3 sm:justify-start">
-              <Link
-                href={`/trace/${lot.code}/label`}
-                className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-contrast hover:opacity-90"
-              >
+              <Link href={`/trace/${lot.code}/label`} className={btnPrimary}>
                 Printable bag label
               </Link>
-              <Link
-                href="/trace"
-                className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:border-brand"
-              >
+              <Link href="/trace" className={btnSecondary}>
                 Trace another lot
               </Link>
             </div>

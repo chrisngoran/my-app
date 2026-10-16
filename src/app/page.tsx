@@ -28,36 +28,32 @@ export default function Home() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-b from-accent-soft/60 to-background">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-16 lg:grid-cols-2 lg:py-20">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 sm:py-16 lg:grid-cols-2 lg:gap-10 lg:py-20">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent shadow-sm">
-              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-accent" />
+            <p className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium text-accent">
+              <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-accent" />
               Kumbo · Bui Division · North West Cameroon
             </p>
-            <h1 className="mt-5 font-serif text-4xl font-bold leading-tight text-brand sm:text-5xl">
+            <h1 className="mt-4 font-serif text-4xl font-bold leading-tight text-brand sm:text-5xl">
               Highland Arabica, grown by smallholders, traceable to the hillside.
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-foreground/80">
+            <p className="mt-5 max-w-xl text-pretty text-lg leading-relaxed text-foreground/80">
               On the volcanic slopes of the Bui highlands, our member farmers grow Arabica between 1,600 and 2,000 metres. We
               process and sell it together — so every family earns a fair price and every bag tells you exactly where it came
               from.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/shop"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-7 py-3 font-semibold text-brand-contrast shadow-sm hover:bg-brand/90"
-              >
+              <Link href="/shop" className="btn btn-primary btn-lg shadow-sm">
                 Shop our coffee
               </Link>
-              <Link
-                href="/our-story"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-brand/30 bg-surface px-7 py-3 font-semibold text-brand hover:border-brand"
-              >
+              <Link href="/our-story" className="btn btn-secondary btn-lg">
                 Meet the farmers
               </Link>
             </div>
           </div>
-          <HeroArt className="h-auto w-full drop-shadow-sm" />
+          <div className="overflow-hidden rounded-3xl">
+            <HeroArt className="block h-48 w-full sm:h-64 lg:aspect-[4/3] lg:h-auto" />
+          </div>
         </div>
       </section>
 
@@ -67,34 +63,30 @@ export default function Home() {
           {STATS.map((s) => (
             <div key={s.label} className="flex flex-col">
               <dt className="order-2 text-sm text-muted">{s.label}</dt>
-              <dd className="font-serif text-2xl font-bold text-brand sm:text-3xl">{s.value}</dd>
+              <dd className="font-serif text-2xl font-bold text-brand tabular-nums sm:text-3xl">{s.value}</dd>
             </div>
           ))}
         </dl>
       </section>
 
       {/* Featured products */}
-      <section aria-labelledby="featured-heading" className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-accent">From this harvest</p>
-            <h2 id="featured-heading" className="mt-1 font-serif text-3xl font-bold text-brand">
-              Featured coffees
-            </h2>
-          </div>
-          <Link href="/shop" className="font-medium text-accent hover:underline">
+      <section aria-labelledby="featured-heading" className="mx-auto max-w-6xl px-4 pb-14 pt-10 sm:pb-16 sm:pt-12">
+        <div className="flex flex-wrap items-end justify-between gap-x-4">
+          <h2 id="featured-heading" className="font-serif text-3xl font-bold text-brand">
+            Featured coffees
+          </h2>
+          <Link href="/shop" className="inline-flex min-h-11 items-center font-medium text-accent hover:underline">
             See all products →
           </Link>
         </div>
-        <ProductGrid products={featured} />
+        <ProductGrid products={featured} className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" />
       </section>
 
       {/* Traceability */}
       <section aria-labelledby="trace-heading" className="bg-brand text-brand-contrast">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:py-16 lg:grid-cols-[1.1fr_1fr]">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-[#e9c79c]">Farm to cup, in the open</p>
-            <h2 id="trace-heading" className="mt-1 font-serif text-3xl font-bold sm:text-4xl">
+          <div className="on-dark">
+            <h2 id="trace-heading" className="font-serif text-3xl font-bold sm:text-4xl">
               Every bag is traceable
             </h2>
             <p className="mt-4 max-w-xl leading-relaxed text-brand-contrast/85">
@@ -108,42 +100,39 @@ export default function Home() {
                 "Check the cupping score and quality records",
               ].map((step, i) => (
                 <li key={step} className="flex items-start gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-warm text-sm font-bold text-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sand text-sm font-bold text-brand">
                     {i + 1}
                   </span>
                   <span className="pt-0.5">{step}</span>
                 </li>
               ))}
             </ol>
-            <Link
-              href="/trace"
-              className="mt-8 inline-flex min-h-12 items-center justify-center rounded-lg bg-surface px-7 py-3 font-semibold text-brand hover:bg-accent-soft"
-            >
+            <Link href="/trace" className="btn btn-lg mt-8 bg-surface text-brand hover:bg-accent-soft">
               Trace a lot
             </Link>
           </div>
           <div className="rounded-2xl bg-surface p-5 text-foreground shadow-lg sm:p-6">
             <div className="flex items-center gap-4">
               <svg viewBox="0 0 21 21" className="h-20 w-20 shrink-0 rounded-md border border-border p-1" aria-hidden="true" shapeRendering="crispEdges">
-                <g fill="#2a1d16">
+                <g fill="currentColor" className="text-foreground">
                   <path d="M0 0h7v7H0zM1 1v5h5V1zM2 2h3v3H2zM14 0h7v7h-7zM15 1v5h5V1zM16 2h3v3h-3zM0 14h7v7H0zM1 15v5h5v-5zM2 16h3v3H2z" fillRule="evenodd" />
                   <path d="M8 0h1v2H8zM10 1h2v1h-2zM9 3h2v2H9zM12 4h1v3h-1zM8 6h2v2H8zM0 8h2v1H0zM3 8h3v1H3zM10 8h3v2h-3zM14 8h2v1h-2zM18 8h3v2h-3zM1 10h2v2H1zM5 10h3v1H5zM8 11h2v2H8zM13 11h3v1h-3zM17 11h2v3h-2zM4 12h2v1H4zM11 13h2v2h-2zM14 13h2v2h-2zM8 14h2v2H8zM19 15h2v2h-2zM12 16h3v1h-3zM8 17h1v3H8zM10 18h3v2h-3zM15 18h3v1h-3zM14 20h2v1h-2zM19 19h2v2h-2z" />
                 </g>
               </svg>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">Lot code</p>
+                <p className="text-sm text-muted">Lot code</p>
                 <p className="font-mono text-xl font-bold text-brand">{exampleLot.code}</p>
                 <p className="text-sm text-muted">{exampleLot.processingMethod} · {exampleLot.variety}</p>
               </div>
             </div>
-            <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg bg-background p-3">
+            <dl className="mt-5 grid grid-cols-2 border-y border-border text-sm">
+              <div className="py-3 pr-3">
                 <dt className="text-muted">Cupping score</dt>
-                <dd className="text-lg font-bold text-accent">
+                <dd className="text-lg font-bold text-accent tabular-nums">
                   <LiveLotScore code={exampleLot.code} fallback={exampleLot.quality.cuppingScore} />
                 </dd>
               </div>
-              <div className="rounded-lg bg-background p-3">
+              <div className="border-l border-border py-3 pl-4">
                 <dt className="text-muted">Harvested</dt>
                 <dd className="text-lg font-bold">
                   {new Date(exampleLot.harvestDate).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" })}
@@ -153,7 +142,10 @@ export default function Home() {
             <p className="mt-4 text-sm text-foreground/80">
               <LiveLotNotes code={exampleLot.code} fallback={exampleLot.notes} />
             </p>
-            <Link href={`/trace/${exampleLot.code}`} className="mt-4 inline-block text-sm font-semibold text-accent hover:underline">
+            <Link
+              href={`/trace/${exampleLot.code}`}
+              className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-accent hover:underline"
+            >
               See the full journey of this lot →
             </Link>
           </div>
@@ -174,8 +166,8 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section aria-labelledby="cta-heading" className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
-        <div className="relative overflow-hidden rounded-3xl bg-accent px-6 py-10 text-brand-contrast sm:px-12 sm:py-14">
+      <section aria-labelledby="cta-heading" className="mx-auto max-w-6xl px-4 pb-6 pt-14 sm:pb-8 sm:pt-20">
+        <div className="on-dark relative overflow-hidden rounded-3xl bg-accent px-6 py-10 text-brand-contrast sm:px-12 sm:py-14">
           <svg aria-hidden="true" viewBox="0 0 200 200" className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 opacity-15">
             <ellipse cx="100" cy="100" rx="70" ry="95" fill="currentColor" transform="rotate(30 100 100)" />
             <path d="M60 30 C110 80 90 120 140 170" stroke="#245432" strokeWidth="10" fill="none" />
@@ -188,16 +180,10 @@ export default function Home() {
             the bag.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/shop"
-              className="inline-flex min-h-12 items-center justify-center rounded-lg bg-surface px-7 py-3 font-semibold text-accent hover:bg-accent-soft"
-            >
+            <Link href="/shop" className="btn btn-lg bg-surface text-accent hover:bg-accent-soft">
               Order now
             </Link>
-            <Link
-              href="/shop?category=subscription"
-              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/50 px-7 py-3 font-semibold text-brand-contrast hover:bg-white/10"
-            >
+            <Link href="/shop?category=subscription" className="btn btn-lg border border-white/50 text-brand-contrast hover:bg-white/10">
               Start a subscription
             </Link>
           </div>
