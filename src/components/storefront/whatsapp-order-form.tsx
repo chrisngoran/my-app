@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Price } from "@/components/price";
 import { useStore } from "@/components/store-provider";
 import { formatPrice } from "@/lib/currency";
 import { cooperative } from "@/lib/data";
 import { phoneLink, whatsappLink } from "@/lib/whatsapp";
-import { AlertMark, CartSkeleton, EmptyCart, useCartLines } from "./cart-view";
-import { type DeliveryOption, deliveryFee, formatWeight } from "./catalog";
+import { AlertMark, EmptyCart, useCartLines } from "./cart-view";
+import { type DeliveryOption, deliveryFee, formatWeight, SHIPPING_XAF } from "./catalog";
 
 const inputClass =
   "mt-1.5 block min-h-12 w-full rounded-lg border border-field-border bg-surface px-3 py-2 text-base font-normal tracking-normal text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent aria-[invalid=true]:border-danger";
@@ -17,7 +17,7 @@ const labelClass = "type-label block text-foreground";
 
 /** Inline field error, with an icon so it is not colour alone. It fades in when it appears. */
 const errorClass =
-  "mt-1.5 flex items-start gap-1.5 text-sm font-medium tracking-normal text-danger transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150";
+  "mt-1.5 flex items-start gap-1.5 text-sm font-medium tracking-normal text-danger transition-[opacity,translate] duration-(--dur-ui) ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150";
 
 /** Required-field marker: the word, not only an asterisk. */
 function Required() {
@@ -30,19 +30,61 @@ function isKumbo(town: string) {
 }
 
 /**
+ * True once the page is in front of the buyer. Tapping Send opens WhatsApp (an
+ * app or a new tab) at the same moment the sent panel mounts, so a line drawn
+ * straight away would finish behind WhatsApp. If the page hides before the
+ * draw has had time to play, this turns false again, so the line remounts and
+ * draws when the buyer comes back. After that it stays drawn.
+ */
+function useInFrontOnce(settleMs: number) {
+  const [inFront, setInFront] = useState(() => typeof document === "undefined" || document.visibilityState === "visible");
+  useEffect(() => {
+    let settled = false;
+    let timer: number | undefined;
+    const arm = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        settled = true;
+      }, settleMs);
+    };
+    const onChange = () => {
+      if (settled) return;
+      const visible = document.visibilityState === "visible";
+      if (visible) arm();
+      else window.clearTimeout(timer);
+      setInFront(visible);
+    };
+    if (document.visibilityState === "visible") arm();
+    document.addEventListener("visibilitychange", onChange);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onChange);
+    };
+  }, [settleMs]);
+  return inFront;
+}
+
+/** 150ms delay + 400ms draw, plus a frame or two of margin. */
+const ROUTE_SETTLE_MS = 650;
+
+/**
  * Delight 3, "From your town to Kumbo": a leaf dot for the buyer's town joined
  * by a dashed Volcanic Soil line to a cherry dot for Kumbo. The line draws once
- * (clip-path, 400ms); with reduced motion it is already drawn and only fades in.
+ * (clip-path, 400ms) when the page is in front; with reduced motion it is
+ * already drawn and only fades in. The dots and labels hold their place, so
+ * nothing moves when the line arrives.
  */
-function RouteLine({ town }: { town: string }) {
+function RouteLine({ town, draw }: { town: string; draw: boolean }) {
   return (
     <div className="mt-6 w-full max-w-[240px]" aria-hidden="true">
       <div className="relative h-6">
-        <div className="absolute inset-y-0 right-3 left-3 [clip-path:inset(0)] transition-[clip-path] delay-150 duration-400 ease-out starting:[clip-path:inset(0_100%_0_0)] motion-reduce:transition-opacity motion-reduce:delay-0 motion-reduce:duration-150 motion-reduce:starting:opacity-0 motion-reduce:starting:[clip-path:inset(0)]">
-          <svg viewBox="0 0 216 24" preserveAspectRatio="none" className="block h-6 w-full">
-            <line x1="0" y1="12" x2="216" y2="12" stroke="var(--brand)" strokeWidth="1.5" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
-          </svg>
-        </div>
+        {draw && (
+          <div className="absolute inset-y-0 right-3 left-3 [clip-path:inset(0)] transition-[clip-path] delay-150 duration-400 ease-out starting:[clip-path:inset(0_100%_0_0)] motion-reduce:transition-opacity motion-reduce:delay-0 motion-reduce:duration-150 motion-reduce:starting:opacity-0 motion-reduce:starting:[clip-path:inset(0)]">
+            <svg viewBox="0 0 216 24" preserveAspectRatio="none" className="block h-6 w-full">
+              <line x1="0" y1="12" x2="216" y2="12" stroke="var(--brand)" strokeWidth="1.5" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+            </svg>
+          </div>
+        )}
         <span className="absolute top-1/2 left-0 h-3 w-3 -translate-y-1/2 rounded-full bg-accent" />
         <span className="absolute top-1/2 right-0 h-3 w-3 -translate-y-1/2 rounded-full bg-cherry" />
       </div>
@@ -52,6 +94,69 @@ function RouteLine({ town }: { town: string }) {
         </span>
         <span className="text-cherry">Kumbo</span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * After Send: WhatsApp has opened with the order written, but nothing has
+ * reached the cooperative until the buyer presses Send there, so the copy says
+ * exactly that. Focus and scroll move to the heading, because the page has
+ * just shrunk from the long form to this panel.
+ */
+function SentPanel({ town, onNewOrder }: { town: string; onNewOrder: () => void }) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  const inFront = useInFrontOnce(ROUTE_SETTLE_MS);
+  const route = town !== "" && !isKumbo(town);
+
+  useEffect(() => {
+    const h = heading.current;
+    if (!h) return;
+    h.focus({ preventScroll: true });
+    // Instant on purpose: no smooth scroll on slow phones or with reduced motion.
+    h.scrollIntoView({ block: "start" });
+  }, []);
+
+  return (
+    <div className="anim-enter max-w-2xl rounded-2xl border border-border bg-surface p-6 sm:p-8">
+      <h2 ref={heading} tabIndex={-1} className="type-h2 scroll-mt-6 text-brand outline-none">
+        Thank you. Now press Send in WhatsApp.
+      </h2>
+      {route && <RouteLine town={town} draw={inFront} />}
+      <p className="mt-6 max-w-[60ch] text-foreground [overflow-wrap:anywhere]">
+        WhatsApp opened with your order {route ? `from ${town} to Kumbo ` : ""}already written. Once it reaches us, we confirm what is
+        available, the delivery fee and how to pay by MTN MoMo or Orange Money.
+      </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button type="button" onClick={onNewOrder} className="btn btn-primary btn-lg">
+          Start a new order
+        </button>
+        <Link href="/shop" className="btn btn-secondary btn-lg">
+          Back to the shop
+        </Link>
+      </div>
+      <p className="mt-4 text-sm text-muted">
+        WhatsApp didn&apos;t open?{" "}
+        <a
+          href={phoneLink()}
+          className="inline-flex min-h-11 items-center font-semibold text-accent underline underline-offset-[3px] hover:decoration-2"
+        >
+          <span className="whitespace-nowrap">
+            Call <span className="tabular-nums">{cooperative.phone}</span>
+          </span>
+        </a>
+      </p>
+    </div>
+  );
+}
+
+/** Stands in for the order card until the saved order is read, at about its real height so the page does not jump. */
+function SummarySkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading your order" className="min-h-[22rem] space-y-3">
+      <div className="h-6 w-32 animate-pulse rounded-md bg-border/50 motion-reduce:animate-none" />
+      <div className="h-24 animate-pulse rounded-lg bg-border/50 motion-reduce:animate-none" />
+      <div className="h-12 animate-pulse rounded-lg bg-border/50 motion-reduce:animate-none" />
     </div>
   );
 }
@@ -84,8 +189,8 @@ export function WhatsAppOrderForm() {
   const cityInput = useRef<HTMLInputElement>(null);
   const ids = useId();
 
-  if (!loaded) return <CartSkeleton />;
-  if (lines.length === 0 && !sent) return <EmptyCart />;
+  // The details form does not depend on the saved order, so it renders at once; only the order card waits.
+  if (loaded && lines.length === 0 && !sent) return <EmptyCart />;
 
   const feeXaf = deliveryFee(delivery, city);
   const totalXaf = subtotalXaf + feeXaf;
@@ -134,31 +239,13 @@ export function WhatsAppOrderForm() {
 
   if (sent) {
     return (
-      <div className="anim-enter max-w-2xl rounded-2xl border border-border bg-surface p-6 sm:p-8">
-        <h2 className="type-h2 text-brand [overflow-wrap:anywhere]">
-          {town && !isKumbo(town) ? `Thank you. Your order is on its way from ${town} to Kumbo.` : "Thank you, your order is on its way to us"}
-        </h2>
-        {town && !isKumbo(town) && <RouteLine town={town} />}
-        <p className="mt-6 max-w-[60ch] text-foreground">
-          Send the message in WhatsApp if you haven&apos;t yet. We will confirm availability, the delivery fee and how to pay by MTN
-          MoMo or Orange Money.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              clearCart();
-              setSent(false);
-            }}
-            className="btn btn-primary btn-lg"
-          >
-            Start a new order
-          </button>
-          <Link href="/shop" className="btn btn-secondary btn-lg">
-            Back to the shop
-          </Link>
-        </div>
-      </div>
+      <SentPanel
+        town={town}
+        onNewOrder={() => {
+          clearCart();
+          setSent(false);
+        }}
+      />
     );
   }
 
@@ -171,13 +258,13 @@ export function WhatsAppOrderForm() {
       )}
       <form
         noValidate
-        className="min-w-0 space-y-5 lg:rounded-2xl lg:border lg:border-border lg:bg-surface lg:p-6"
+        className="min-w-0 space-y-5"
         onSubmit={(e) => {
           e.preventDefault();
           checkFields();
         }}
       >
-        <h2 className="type-h2 text-brand">Your details</h2>
+        <h2 className="type-title text-brand">Your details</h2>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-5 sm:grid-cols-[repeat(2,minmax(0,1fr))]">
           <label className={labelClass}>
             Full name
@@ -237,7 +324,7 @@ export function WhatsAppOrderForm() {
             />
           </label>
         </div>
-        <fieldset>
+        <fieldset aria-describedby={`${ids}-delivery-hint`}>
           <legend className="type-label text-foreground">Delivery</legend>
           <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-[repeat(2,minmax(0,1fr))]">
             {(
@@ -264,6 +351,10 @@ export function WhatsAppOrderForm() {
               </label>
             ))}
           </div>
+          <p id={`${ids}-delivery-hint`} className="mt-2 max-w-[60ch] text-sm text-muted">
+            Kumbo and Bamenda: <Price xaf={SHIPPING_XAF.local} />. Elsewhere in Cameroon: <Price xaf={SHIPPING_XAF.national} />.
+            Outside Cameroon: about <Price xaf={SHIPPING_XAF.international} />. We confirm the exact fee.
+          </p>
         </fieldset>
         <label className={labelClass}>
           Notes <span className="font-normal text-muted">(optional)</span>
@@ -280,68 +371,90 @@ export function WhatsAppOrderForm() {
         <h2 id="order-summary-heading" className="type-title text-brand">
           Your order
         </h2>
-        <ul className="mt-3 space-y-2 text-sm">
-          {lines.map((l) => (
-            <li key={l.product.slug} className="flex justify-between gap-3">
-              <span className="min-w-0 [overflow-wrap:anywhere]">
-                <span className="tabular-nums">{l.quantity.toLocaleString("en-GB")}</span> × {l.product.name}
+        {!loaded ? (
+          <div className="mt-3">
+            <SummarySkeleton />
+          </div>
+        ) : (
+          <>
+            {/* A co-op docket: a dashed tear line, then each bag with the lot code stencilled on its sack. */}
+            <ul className="mt-3 space-y-3 border-t border-dashed border-field-border pt-3 text-sm">
+              {lines.map((l) => (
+                <li key={l.product.slug}>
+                  <div className="flex justify-between gap-3">
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      <span className="tabular-nums">{l.quantity.toLocaleString("en-GB")}</span> × {l.product.name}
+                    </span>
+                    <Price xaf={l.lineXaf} className="max-w-[55%] shrink-0 text-right [overflow-wrap:anywhere]" />
+                  </div>
+                  {l.product.category === "subscription" ? (
+                    <p className="mt-1 text-sm text-muted">Rotating lots</p>
+                  ) : (
+                    <p className="mt-1.5">
+                      <span className="sr-only">Lot </span>
+                      <span className="type-stencil text-lg text-brand">{l.product.lotCode}</span>
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <dl className="mt-4 space-y-1.5 border-t border-border pt-3 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted">Coffee total</dt>
+                <dd className="min-w-0 text-right [overflow-wrap:anywhere]">
+                  <Price xaf={subtotalXaf} />
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted">Delivery (estimate)</dt>
+                <dd className="min-w-0 text-right [overflow-wrap:anywhere]">
+                  <Price xaf={feeXaf} />
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3 border-t border-border pt-3 text-brand">
+                <dt className="type-label">Estimated total</dt>
+                <dd className="min-w-0 text-right [overflow-wrap:anywhere]">
+                  <Price xaf={totalXaf} className="type-data text-lg" />
+                </dd>
+              </div>
+            </dl>
+            {/* Always shown. With fields missing, a tap points to them instead of opening WhatsApp. */}
+            <a
+              href={whatsappLink(message)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (!checkFields()) {
+                  e.preventDefault();
+                  return;
+                }
+                setSent(true);
+              }}
+              id={`${ids}-send`}
+              aria-describedby={ready ? undefined : `${ids}-send-hint`}
+              className="btn btn-whatsapp btn-lg mt-5 w-full"
+            >
+              <WhatsAppGlyph />
+              Send order on WhatsApp
+            </a>
+            <p
+              id={`${ids}-send-hint`}
+              aria-live="polite"
+              className={`mt-2 text-sm ${attempted && !ready ? "font-medium text-danger" : "text-muted"} ${ready ? "sr-only" : ""}`}
+            >
+              {ready ? "" : "Add your name and town to send the order."}
+            </p>
+            <a href={phoneLink()} className="btn btn-secondary mt-3 w-full">
+              <span className="whitespace-nowrap">
+                Call <span className="tabular-nums">{cooperative.phone}</span>
               </span>
-              <Price xaf={l.lineXaf} className="max-w-[55%] shrink-0 text-right [overflow-wrap:anywhere]" />
-            </li>
-          ))}
-        </ul>
-        <dl className="mt-4 space-y-1.5 border-t border-border pt-3 text-sm">
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Subtotal</dt>
-            <dd className="min-w-0 text-right [overflow-wrap:anywhere]">
-              <Price xaf={subtotalXaf} />
-            </dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Delivery (estimate)</dt>
-            <dd className="min-w-0 text-right [overflow-wrap:anywhere]">
-              <Price xaf={feeXaf} />
-            </dd>
-          </div>
-          <div className="flex items-baseline justify-between gap-3 border-t border-border pt-3 text-brand">
-            <dt className="type-label">Estimated total</dt>
-            <dd className="min-w-0 text-right [overflow-wrap:anywhere]">
-              <Price xaf={totalXaf} className="type-data text-lg" />
-            </dd>
-          </div>
-        </dl>
-        {/* Always shown. With fields missing, a tap points to them instead of opening WhatsApp. */}
-        <a
-          href={whatsappLink(message)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => {
-            if (!checkFields()) {
-              e.preventDefault();
-              return;
-            }
-            setSent(true);
-          }}
-          id={`${ids}-send`}
-          aria-describedby={ready ? undefined : `${ids}-send-hint`}
-          className="btn btn-whatsapp btn-lg mt-5 w-full"
-        >
-          <WhatsAppGlyph />
-          Send order on WhatsApp
-        </a>
-        <p
-          id={`${ids}-send-hint`}
-          aria-live="polite"
-          className={`mt-2 text-sm ${attempted && !ready ? "font-medium text-danger" : "text-muted"} ${ready ? "sr-only" : ""}`}
-        >
-          {ready ? "" : "Add your name and town to send the order."}
-        </p>
-        <a href={phoneLink()} className="btn btn-secondary mt-3 w-full">
-          Or call us: <span className="tabular-nums">{cooperative.phone}</span>
-        </a>
-        <p className="mt-3 text-sm text-muted">
-          No payment now. We confirm your order, then you pay by MTN MoMo or Orange Money.
-        </p>
+            </a>
+            <p className="mt-3 text-sm text-muted">
+              No payment now. We confirm your order, then you pay by MTN MoMo or Orange Money.
+              {/* The number is a placeholder until the cooperative supplies its own. */} The phone number is a demo number.
+            </p>
+          </>
+        )}
       </aside>
     </div>
   );

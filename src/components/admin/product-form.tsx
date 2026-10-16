@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
 import { type CatalogProduct, resetProduct, updateProduct, useCatalogOverrides, useProductView } from "@/lib/catalog-overrides";
-import { formatPrice } from "@/lib/currency";
+import { formatFcfaText, formatPrice } from "@/lib/currency";
 import { getProduct } from "@/lib/data";
 import type { Product } from "@/lib/types";
 import { LiveVersionNote } from "./product-list";
@@ -23,6 +23,7 @@ import {
   primaryButton,
   secondaryButton,
   Spinner,
+  STORAGE_BLOCKED,
   Toggle,
   useToast,
 } from "./ui";
@@ -32,6 +33,14 @@ const NAME_MAX = 80;
 const DESCRIPTION_MAX = 600;
 const PRICE_MAX = 10_000_000;
 const STOCK_MAX = 100_000;
+
+/** "100 000": the site's number style, with non-breaking spaces so it never wraps inside the number. */
+function formatCount(n: number) {
+  return n.toLocaleString("fr-FR").replace(/[\s\u202f]/g, "\u00a0");
+}
+
+/** Field names as the labels show them, for the "Check … fields" message. */
+const FIELD_NAMES: Record<keyof Errors, string> = { name: "Name", price: "Price", stock: "Stock" };
 
 export function AdminProductEdit({ slug }: { slug: string }) {
   const { loaded, resets } = useCatalogOverrides();
@@ -89,12 +98,13 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
     else if (name.trim().length > NAME_MAX) next.name = `Keep the name to ${NAME_MAX} characters or fewer.`;
     if (price.trim() === "" || !Number.isFinite(priceValue) || priceValue <= 0) next.price = "Enter a price above 0 FCFA.";
     else if (!Number.isInteger(priceValue)) next.price = "FCFA prices are whole numbers, e.g. 4500.";
-    else if (priceValue > PRICE_MAX) next.price = "Enter a price up to 10 000 000 FCFA.";
+    else if (priceValue > PRICE_MAX) next.price = `Enter a price up to ${formatFcfaText(PRICE_MAX)}.`;
     if (stock.trim() === "" || !Number.isInteger(stockValue) || stockValue < 0) next.stock = "Enter a whole number, 0 or more.";
-    else if (stockValue > STOCK_MAX) next.stock = "Enter a stock up to 100,000 bags.";
+    else if (stockValue > STOCK_MAX) next.stock = `Enter a stock up to ${formatCount(STOCK_MAX)} bags.`;
     setErrors(next);
-    if (Object.keys(next).length) {
-      show("Please check the highlighted fields.", "error");
+    const wrong = (Object.keys(next) as (keyof Errors)[]).map((k) => FIELD_NAMES[k]);
+    if (wrong.length) {
+      show(wrong.length === 1 ? `Check the ${wrong[0]} field.` : `Check ${wrong.length} fields: ${wrong.join(", ")}.`, "error");
       return;
     }
 
@@ -109,9 +119,9 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
     });
     if (ok) {
       setSaved(true);
-      show("Saved. The website now shows your changes.");
+      show("Saved. The website shows your change in this browser.");
     } else {
-      show("Could not save. The photo may be too large for this browser. Try a smaller photo.", "error");
+      show("Not saved. The photo may be too large for this browser. Try a smaller photo.", "error");
     }
   }
 
@@ -236,7 +246,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             />
             <FieldHint id={`${ids}-price-hint`} error={errors.price}>
               <span className="[overflow-wrap:anywhere]">
-                {Number(price) > 0 && Number(price) <= PRICE_MAX ? `Shown as ${formatPrice(Number(price))}` : "Price in FCFA, up to 10 000 000"}
+                {Number(price) > 0 && Number(price) <= PRICE_MAX ? `Shown as ${formatPrice(Number(price))}` : `Price in FCFA, up to ${formatCount(PRICE_MAX)}`}
               </span>
             </FieldHint>
           </label>
@@ -324,12 +334,13 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             </span>
           </div>
         </div>
+        {/* A quiet fade only: the button's "Saved" and the toast already carry the motion. */}
         {saved && (
-          <p className="flex flex-wrap items-center gap-x-2 rounded-lg bg-accent-soft px-4 py-1 text-sm font-semibold text-accent transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150">
+          <p className="flex flex-wrap items-center gap-x-2 rounded-lg bg-accent-soft px-4 py-1 text-sm font-semibold text-accent transition-opacity duration-(--dur-ui) ease-out starting:opacity-0">
             <CheckMark />
             Saved.
             <Link href={`/shop/${original.slug}`} className="inline-flex min-h-11 items-center underline underline-offset-[3px]">
-              View on website
+              See it on the shop
             </Link>
           </p>
         )}
@@ -337,12 +348,12 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
 
       <div className="mt-6">
         <ConfirmButton
-          label="Undo all changes to this product"
+          label="Undo my changes"
           question={`Put ${original.name} back to the original demo details and photo?`}
           confirmLabel="Yes, undo changes"
           onConfirm={() => {
             if (!resetProduct(original.slug)) {
-              show("Could not reset: this browser is blocking storage.", "error");
+              show(`Not reset. ${STORAGE_BLOCKED}`, "error");
               return;
             }
             const fresh: CatalogProduct = { ...original, hidden: false };
@@ -354,7 +365,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
             setPhoto(null);
             setErrors({});
             setSaved(false);
-            show("Product put back to the original.");
+            show("Changes undone.");
           }}
         />
       </div>

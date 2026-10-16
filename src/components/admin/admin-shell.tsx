@@ -6,7 +6,7 @@ import { Suspense, useEffect } from "react";
 import { signOut, useAdminSession } from "@/lib/admin-session";
 import { resetAllOverrides } from "@/lib/catalog-overrides";
 import { cooperative } from "@/lib/data";
-import { AdminLoading, ConfirmButton, useToast } from "./ui";
+import { AdminLoading, ConfirmButton, STORAGE_BLOCKED, useToast } from "./ui";
 
 const NAV = [
   { href: "/admin/products", label: "Products" },
@@ -75,8 +75,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <header className="on-dark bg-brand text-white">
         <div className="mx-auto max-w-3xl px-4 pt-3 pb-3">
           <p className="type-title text-sand">{cooperative.name}</p>
-          {/* One compact row: who is signed in, then the two secondary actions. It wraps at large text sizes instead of clipping. */}
-          <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2">
+          {/*
+            One compact row: who is signed in, then the two secondary actions. Its height is held (min-h-11)
+            before the session is read, so the header does not grow when the actions arrive. It wraps at
+            large text sizes instead of clipping.
+          */}
+          <div className="mt-0.5 flex min-h-11 flex-wrap items-center justify-between gap-x-2">
             <p className="min-w-0 flex-1 basis-40 truncate text-xs text-mist-on-soil" title={email ?? undefined}>
               {email ? `Signed in as ${email}` : "Staff admin"}
             </p>
@@ -91,13 +95,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
           </div>
-          {loaded && email && (
-            <div className="mt-1.5">
-              <Suspense fallback={<AdminTabs pathname={null} />}>
-                <AdminNav />
-              </Suspense>
-            </div>
-          )}
+          {/* Always rendered: they are plain links, and drawing them late pushed the whole page down. */}
+          <div className="mt-1.5">
+            <Suspense fallback={<AdminTabs pathname={null} />}>
+              <AdminNav />
+            </Suspense>
+          </div>
         </div>
       </header>
 
@@ -121,7 +124,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   confirmLabel="Yes, reset everything"
                   onConfirm={() => {
                     if (resetAllOverrides()) show("Demo data reset. The website shows the original products again.");
-                    else show("Could not reset: this browser is blocking storage.", "error");
+                    else show(`Not reset. ${STORAGE_BLOCKED}`, "error");
                   }}
                 />
               </div>

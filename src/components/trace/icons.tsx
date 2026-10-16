@@ -117,19 +117,3 @@ export function CupIcon({ className = "h-5 w-5" }: IconProps) {
     </svg>
   );
 }
-
-/**
- * Stylised hills at the foot of the Volcanic Soil heroes. The far ridges are
- * light tints of the current colour over the soil; the nearest ridge is solid
- * page background (Highland Mist), so the hero settles into the page like
- * mist on the lower slopes instead of ending in a hard seam.
- */
-export function HillsBackdrop({ className = "" }: IconProps) {
-  return (
-    <svg viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true" className={className}>
-      <path d="M0 120 C 150 50, 300 50, 450 105 S 750 30, 900 85 S 1100 65, 1200 50 V200 H0z" fill="currentColor" opacity="0.08" />
-      <path d="M0 150 C 200 90, 350 110, 550 140 S 850 80, 1000 120 S 1150 130, 1200 110 V200 H0z" fill="currentColor" opacity="0.14" />
-      <path d="M0 182 C 200 150, 380 160, 600 176 S 950 148, 1200 168 V200 H0z" fill="var(--background)" />
-    </svg>
-  );
-}

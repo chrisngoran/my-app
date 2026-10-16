@@ -6,7 +6,7 @@ import { Price } from "@/components/price";
 import { useCatalog } from "@/lib/catalog-overrides";
 import { products as baseProducts } from "@/lib/data";
 import { textLink } from "./buttons";
-import { formatWeight } from "./lot-utils";
+import { formatWeight, notesSentence } from "./lot-utils";
 
 /** Only images we produced: bundled files or a photo uploaded in admin. */
 function safeImage(src: unknown, fallback: string) {
@@ -56,8 +56,8 @@ export function LotProducts({ slugs }: { slugs: string[] }) {
               <p className="mt-0.5 text-sm text-muted">{meta}</p>
               {p.cuppingNotes.length > 0 && (
                 <p className="mt-1 text-sm text-foreground">
-                  <span className="sr-only">Tasting notes: </span>
-                  {p.cuppingNotes.join(", ")}
+                  <span className="sr-only">Tastes like: </span>
+                  {notesSentence(p.cuppingNotes)}
                 </p>
               )}
             </div>

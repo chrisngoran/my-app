@@ -23,6 +23,8 @@ export function LotSearch({
   const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Re-keys the error on every failed submit, so a repeat tap visibly checks again.
+  const [attempt, setAttempt] = useState(0);
   // Keeps the button in a "Finding lot…" state until the lot page has loaded,
   // so a slow connection does not feel like a dead tap.
   const [isPending, startTransition] = useTransition();
@@ -37,6 +39,7 @@ export function LotSearch({
     const code = normaliseLotCode(value);
     if (!code) {
       setError("Enter the lot code printed under the QR code on your bag.");
+      setAttempt((n) => n + 1);
       return;
     }
     setError(null);
@@ -66,7 +69,7 @@ export function LotSearch({
           onChange={(e) => setValue(e.target.value)}
           aria-describedby={error ? `${hintId} ${errorId}` : hintId}
           aria-invalid={error ? true : undefined}
-          className={`min-h-11 min-w-0 flex-1 rounded-lg border bg-surface px-3 py-2 font-mono text-base text-foreground uppercase tracking-wide transition-[border-color,box-shadow] duration-(--dur-ui) ease-(--ease-out) placeholder:normal-case placeholder:tracking-normal placeholder:text-muted focus:ring-2 focus:outline-none ${
+          className={`min-h-11 min-w-0 flex-1 rounded-lg border bg-surface px-3 py-2 font-mono text-base text-foreground uppercase tracking-wide placeholder:normal-case placeholder:tracking-normal placeholder:text-muted focus:ring-2 focus:outline-none ${
             dark
               ? "border-transparent focus:ring-offset-2 focus:ring-sand focus:ring-offset-brand aria-invalid:border-danger"
               : "border-field-border focus:border-accent focus:ring-accent aria-invalid:border-danger"
@@ -104,9 +107,10 @@ export function LotSearch({
       </p>
       {error && (
         <p
+          key={attempt}
           id={errorId}
           role="alert"
-          className={`mt-1 flex items-start gap-1.5 text-sm font-semibold transition-[opacity,translate] duration-180 ease-(--ease-out) starting:-translate-y-1 starting:opacity-0 motion-reduce:starting:translate-y-0 ${
+          className={`mt-1 flex items-start gap-1.5 text-sm font-semibold transition-[opacity,translate] duration-(--dur-ui) ease-(--ease-out) starting:-translate-y-1 starting:opacity-0 motion-reduce:starting:translate-y-0 ${
             dark ? "text-sand" : "text-danger"
           }`}
         >

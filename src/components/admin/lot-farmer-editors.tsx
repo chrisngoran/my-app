@@ -23,6 +23,7 @@ import {
   PageTitle,
   primaryButton,
   secondaryButton,
+  STORAGE_BLOCKED,
   useToast,
 } from "./ui";
 
@@ -119,8 +120,9 @@ function LotCard({ code, show }: { code: string; show: Show }) {
         setError("Enter a score from 0 to 100.");
         return;
       }
-      if (Math.round(value * 10) / 10 !== value) {
-        setError("Use at most one decimal, e.g. 86.5.");
+      // Cuppers score in quarter points (the sample lots hold 86.75 and 83.25).
+      if (Math.round(value * 4) / 4 !== value) {
+        setError("Use whole, half or quarter points, e.g. 86.75.");
         return;
       }
     }
@@ -130,7 +132,7 @@ function LotCard({ code, show }: { code: string; show: Show }) {
       notes: notes.trim() !== original.notes ? notes.trim() : undefined,
       cuppingScore: value !== original.quality.cuppingScore ? value : undefined,
     });
-    show(ok ? `Lot ${code} saved.` : "Could not save: this browser is blocking storage.", ok ? "success" : "error");
+    show(ok ? `Lot ${code} saved.` : `Not saved. ${STORAGE_BLOCKED}`, ok ? "success" : "error");
   }
 
   return (
@@ -168,7 +170,7 @@ function LotCard({ code, show }: { code: string; show: Show }) {
           inputMode="decimal"
           min={0}
           max={100}
-          step={0.1}
+          step={0.25}
           value={score}
           onChange={(e) => setScore(e.target.value)}
           aria-invalid={!!error}
@@ -191,12 +193,12 @@ function LotCard({ code, show }: { code: string; show: Show }) {
             type="button"
             className={secondaryButton}
             onClick={() => {
-              if (!resetLot(code)) return show("Could not reset: this browser is blocking storage.", "error");
+              if (!resetLot(code)) return show(`Not reset. ${STORAGE_BLOCKED}`, "error");
               setNotes(original.notes);
               setScore(String(original.quality.cuppingScore));
               setError(null);
               setNotesError(null);
-              show(`Lot ${code} put back to the original.`);
+              show(`Lot ${code}: changes undone.`);
             }}
           >
             Undo changes
@@ -263,7 +265,7 @@ function FarmerCard({ id, show }: { id: string; show: Show }) {
         }
         setError(null);
         const ok = updateFarmer(id, { story: story.trim() !== original.story ? story.trim() : undefined });
-        show(ok ? `${farmer.name}'s story saved.` : "Could not save: this browser is blocking storage.", ok ? "success" : "error");
+        show(ok ? `${farmer.name}'s story saved.` : `Not saved. ${STORAGE_BLOCKED}`, ok ? "success" : "error");
       }}
     >
       <div className="flex items-start gap-3">
@@ -306,10 +308,10 @@ function FarmerCard({ id, show }: { id: string; show: Show }) {
             type="button"
             className={secondaryButton}
             onClick={() => {
-              if (!resetFarmer(id)) return show("Could not reset: this browser is blocking storage.", "error");
+              if (!resetFarmer(id)) return show(`Not reset. ${STORAGE_BLOCKED}`, "error");
               setStory(original.story);
               setError(null);
-              show(`${farmer.name}'s story put back to the original.`);
+              show(`${farmer.name}'s story: changes undone.`);
             }}
           >
             Undo changes

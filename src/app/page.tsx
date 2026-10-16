@@ -1,29 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SHIPPING_XAF } from "@/components/storefront/catalog";
 import { HeroRidge } from "@/components/storefront/hero-art";
+import { LiveProductList } from "@/components/storefront/live-product";
 import { LotTag } from "@/components/storefront/lot-tag";
-import { PaymentBadges } from "@/components/storefront/payment-badges";
-import { ProductGrid } from "@/components/storefront/product-card";
+import { NoCoffeeOnSale, ProductCard } from "@/components/storefront/product-card";
+import { RipenOnView } from "@/components/storefront/ripen-on-view";
 import { LotSearch } from "@/components/trace/lot-search";
-import { cooperative, farmers, getFarmer, lots, products } from "@/lib/data";
+import { formatFcfaText } from "@/lib/currency";
+import { cooperative, farmers, getFarmer, getLot, lots, products } from "@/lib/data";
+import { phoneLink, whatsappLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: { absolute: "Green Venture Cooperative Coffee · Traceable Arabica from Kumbo, Cameroon" },
   description: cooperative.story,
 };
 
-const FEATURED = ["meluf-natural-micro-lot", "bui-highlands-medium-roast", "kumbo-honey-espresso"];
-
-const SCAN_STEPS = [
-  "Scan the QR code on the back of your bag",
-  "See the farmers, harvest date and processing method",
-  "Check the cupping score and quality records",
-];
+/** The lead lot (the highest-scoring micro-lot), then two everyday coffees as compact rows. */
+const LEAD = "meluf-natural-micro-lot";
+const ALSO = ["bui-highlands-medium-roast", "kumbo-honey-espresso"];
 
 export default function Home() {
-  const featured = FEATURED.flatMap((slug) => products.filter((p) => p.slug === slug));
-  const exampleLot = lots.find((l) => l.code === "GV-2026-014") ?? lots[0];
-  const exampleGrowers = exampleLot.farmerIds.flatMap((id) => getFarmer(id) ?? []);
+  const lead = products.find((p) => p.slug === LEAD) ?? products[0];
+  const also = ALSO.flatMap((slug) => products.filter((p) => p.slug === slug && p.slug !== lead.slug));
+  const leadLot = getLot(lead.lotCode) ?? lots[0];
+  const leadGrowers = leadLot.farmerIds.flatMap((id) => getFarmer(id) ?? []);
+  const harvestYear = new Date(leadLot.harvestDate).getUTCFullYear();
 
   return (
     <>
@@ -32,12 +34,11 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-x-10 gap-y-8 px-4 pt-8 sm:pt-12 lg:grid-cols-[repeat(12,minmax(0,1fr))] lg:items-end lg:pt-16">
           <div className="lg:col-span-6 lg:pb-14">
             <h1 id="hero-heading" className="type-display text-brand">
-              Highland Arabica, grown by smallholders, traceable to the hillside.
+              Highland Arabica from the family farms around Kumbo.
             </h1>
             <p className="type-lead mt-5 max-w-[60ch] text-foreground">
-              On the volcanic slopes of the Bui highlands around Kumbo, our member families grow Arabica between 1,600 and 2,000
-              metres. We process and sell it together, so every family earns a fair price and every bag tells you exactly where it
-              came from.
+              Our member families grow it on the volcanic slopes of the Bui highlands, between 1,600 and 2,000 metres. We process
+              and sell it together, so every family earns a fair price and every bag tells you exactly where it came from.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/shop" className="btn btn-primary btn-lg">
@@ -48,11 +49,10 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <HeroRidge
-            farmers={farmers}
-            labelledBy="ridge-caption"
-            className="h-72 sm:h-80 lg:col-span-6 lg:h-[26rem]"
-          />
+          {/* On a phone the ridge is below the fold: its one moment waits until it is in view. */}
+          <RipenOnView className="h-72 sm:h-80 lg:col-span-6 lg:h-[26rem]">
+            <HeroRidge farmers={farmers} labelledBy="ridge-caption" className="h-full" />
+          </RipenOnView>
         </div>
 
         <div className="on-dark bg-brand text-sand">
@@ -67,12 +67,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured products */}
-      <section aria-labelledby="featured-heading" className="mx-auto max-w-6xl px-4 pb-14 pt-12 sm:pb-16 sm:pt-16">
-        <div className="flex flex-wrap items-end justify-between gap-x-4">
-          <h2 id="featured-heading" className="type-h2 text-brand">
-            Featured coffees
-          </h2>
+      {/*
+        One lead lot with its record beside it, then two everyday coffees as
+        rows. How ordering works sits right here, where people pick.
+      */}
+      <section aria-labelledby="harvest-heading" className="mx-auto max-w-6xl px-4 pb-14 pt-10 sm:pb-16 sm:pt-14">
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+          <div className="max-w-[62ch]">
+            <h2 id="harvest-heading" className="type-h2 text-brand">
+              From the {harvestYear} harvest
+            </h2>
+            <p className="mt-3 text-foreground">
+              Order on WhatsApp or by phone. We confirm stock and the delivery fee, then you pay by MTN MoMo or Orange Money.
+            </p>
+          </div>
           <Link
             href="/shop"
             className="inline-flex min-h-11 items-center font-semibold text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
@@ -80,81 +88,103 @@ export default function Home() {
             All coffee
           </Link>
         </div>
-        <ProductGrid
-          products={featured}
-          className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-10 sm:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]"
+        <LiveProductList
+          className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-x-10 gap-y-6 sm:grid-cols-[repeat(2,minmax(0,1fr))]"
+          empty={<NoCoffeeOnSale />}
+          items={[
+            {
+              slug: lead.slug,
+              className: "min-w-0 sm:col-span-2",
+              node: (
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-8 border-b border-border pb-10 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:items-start lg:gap-14">
+                  <ProductCard product={lead} layout="stack" headingLevel="h3" />
+                  <LotTag lot={leadLot} growers={leadGrowers} headingLevel="h3" action="link" />
+                </div>
+              ),
+            },
+            ...also.map((p) => ({
+              slug: p.slug,
+              node: <ProductCard product={p} layout="row" headingLevel="h3" />,
+            })),
+          ]}
         />
       </section>
 
-      {/* Traceability */}
-      <section aria-labelledby="trace-heading" className="border-y border-border bg-background">
-        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-10 px-4 py-14 sm:py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16">
-          <div>
+      {/* Traceability: one sentence and the way in. The lot record above is the example. */}
+      <section aria-labelledby="trace-heading" className="border-y border-border">
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-12 sm:py-14 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
+          <div className="max-w-[60ch]">
             <h2 id="trace-heading" className="type-h2 text-brand">
               Every bag is traceable
             </h2>
-            <p className="mt-4 max-w-[60ch] text-foreground">
+            <p className="mt-4 text-foreground">
               Each bag carries a QR code with its lot number. Scan it with your phone camera to see who grew your coffee, which
-              village and altitude it came from, how it was processed, its quality scores, and when the farmers were paid.
+              village and altitude it came from, how it was processed and how it scored.
             </p>
-            {/* A real sequence, so it is numbered: three steps on one rail. */}
-            <ol className="mt-7 space-y-5">
-              {SCAN_STEPS.map((step, i) => (
-                <li
-                  key={step}
-                  className="relative flex items-start gap-4 before:absolute before:-bottom-5 before:left-[13.5px] before:top-7 before:w-px before:bg-border last:before:hidden"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="type-data relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-brand bg-background text-sm text-brand"
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="pt-0.5">{step}</span>
-                </li>
-              ))}
-            </ol>
-            <Link href="/trace" className="btn btn-go btn-lg mt-8">
-              Trace a lot
-            </Link>
           </div>
-          <LotTag lot={exampleLot} growers={exampleGrowers} headingLevel="h3" action="link" />
+          <Link href="/trace" className="btn btn-go btn-lg shrink-0">
+            Trace a bag
+          </Link>
         </div>
       </section>
 
-      {/* Payment methods */}
-      <section aria-labelledby="pay-heading" className="mx-auto max-w-6xl px-4 py-10">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-[60ch]">
-            <h2 id="pay-heading" className="type-title text-brand">
-              Order on WhatsApp, pay with mobile money
+      {/* Closing: a fact, the two ways to buy, and how to reach the cooperative. */}
+      <section aria-labelledby="cta-heading" className="mx-auto max-w-6xl px-4 pb-4 pt-12 sm:pt-14">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-16">
+          <div>
+            <h2 id="cta-heading" className="type-h2 max-w-2xl text-brand">
+              Delivered across Cameroon from {formatFcfaText(SHIPPING_XAF.local)}, and shipped worldwide.
             </h2>
-            <p className="mt-1 text-sm text-muted">
-              Choose your coffee, send the order on WhatsApp or call us, then pay by MTN MoMo or Orange Money once we confirm.
-            </p>
+            <p className="mt-3 max-w-[60ch] text-foreground">Cafés and roasters: ask us about green coffee by the bag.</p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link href="/shop" className="btn btn-primary btn-lg">
+                Shop the harvest
+              </Link>
+              <Link href="/shop?category=subscription" prefetch={false} className="btn btn-secondary btn-lg">
+                Start a subscription
+              </Link>
+            </div>
           </div>
-          <PaymentBadges />
-        </div>
-      </section>
-
-      {/* Closing call to action */}
-      <section aria-labelledby="cta-heading" className="mx-auto max-w-6xl px-4 pb-4 pt-2">
-        <div className="border-t border-brand/20 pt-12">
-          <h2 id="cta-heading" className="type-h2 max-w-2xl text-brand">
-            Taste the Bui highlands and know who grew it.
-          </h2>
-          <p className="mt-3 max-w-[60ch] text-foreground">
-            Delivered across Cameroon from 1,000 FCFA, and shipped worldwide. Cafés and roasters: ask us about green coffee by
-            the bag.
-          </p>
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link href="/shop" className="btn btn-primary btn-lg">
-              Order now
-            </Link>
-            <Link href="/shop?category=subscription" className="btn btn-secondary btn-lg">
-              Start a subscription
-            </Link>
-          </div>
+          <dl className="grid content-start gap-y-4 border-t border-border pt-6 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-1">
+            <div>
+              <dt className="type-label text-muted">WhatsApp or phone</dt>
+              <dd className="type-data mt-1 text-lg text-foreground">
+                <span className="whitespace-nowrap">{cooperative.phone}</span>{" "}
+                <span className="text-sm font-normal text-muted">(demo number)</span>
+              </dd>
+              <dd className="flex flex-wrap gap-x-6">
+                <a
+                  href={whatsappLink(`Hello ${cooperative.shortName}, I have a question about your coffee.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center font-semibold text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
+                >
+                  Message on WhatsApp
+                </a>
+                <a
+                  href={phoneLink()}
+                  className="inline-flex min-h-11 items-center font-semibold text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
+                >
+                  Call
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt className="type-label text-muted">Email</dt>
+              <dd className="mt-1">
+                <a
+                  href={`mailto:${cooperative.email}`}
+                  className="inline-flex min-h-11 max-w-full items-center text-accent underline decoration-1 underline-offset-4 [overflow-wrap:anywhere] hover:decoration-2"
+                >
+                  {cooperative.email}
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt className="type-label text-muted">Where we are</dt>
+              <dd className="mt-1 text-foreground">{cooperative.location}</dd>
+            </div>
+          </dl>
         </div>
       </section>
     </>

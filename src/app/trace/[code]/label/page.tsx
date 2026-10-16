@@ -104,10 +104,12 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
             className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 font-medium underline-offset-[3px] hover:text-foreground hover:underline"
           >
             <ChevronLeftIcon className="h-4 w-4 shrink-0" />
-            Back to lot {lot.code}
+            Back to lot <span className="whitespace-nowrap">{lot.code}</span>
           </Link>
         </p>
-        <h1 className="type-h1 mt-1 text-brand">Packaging label</h1>
+        <h1 className="type-h1 mt-1 text-balance text-brand">
+          Bag label for <span className="whitespace-nowrap">{lot.code}</span>
+        </h1>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted">
           Prints at 10 × 15 cm. Use a label printer or A6 sticker paper and set margins to “None”.
         </p>
@@ -153,7 +155,7 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
         <div className="l-pad mt-auto flex items-center gap-[4cqw]">
           <LotQrCode code={lot.code} className="l-qr shrink-0" />
           <div className="min-w-0">
-            <p className="l-lg font-extrabold leading-tight [font-stretch:85%]">Scan to meet your farmer</p>
+            <p className="l-lg font-extrabold leading-tight [font-stretch:85%]">Scan to see who grew it</p>
             <p className="l-xs mt-[1.5cqw] font-mono text-muted [overflow-wrap:anywhere]">
               {shortBase}
               <wbr />

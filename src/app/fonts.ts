@@ -8,6 +8,10 @@
  * - Big Shoulders Stencil 800: lot codes only, the way they are stencilled on
  *   export sacks. Not preloaded: most routes (admin, cart, order) never use it.
  *
+ * No `fallback` arrays: with one set, Next skips its size-matched
+ * "Archivo Fallback" face and text jumps when the font arrives. Android has no
+ * Arial, so globals.css adds a matching "Archivo Roboto" face after it.
+ *
  * Import `stencil` from here (for example on the bag label); never call a
  * loader a second time.
  */
@@ -19,7 +23,6 @@ export const archivo = Archivo({
   style: "normal",
   axes: ["wdth"],
   variable: "--font-archivo",
-  fallback: ["system-ui", "Roboto", "Arial", "sans-serif"],
 });
 
 export const stencil = Big_Shoulders_Stencil({
@@ -28,5 +31,4 @@ export const stencil = Big_Shoulders_Stencil({
   weight: "800",
   variable: "--font-stencil-face",
   preload: false,
-  fallback: ["Arial Narrow", "Arial", "sans-serif"],
 });

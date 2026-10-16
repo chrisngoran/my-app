@@ -41,6 +41,8 @@ export function AdminSignIn() {
         <p className="type-title text-brand">{cooperative.name}</p>
         <h1 className="type-h2 mt-1 text-brand">Staff sign in</h1>
         <p className="mt-2 text-muted">Sign in to update products, prices, photos and stock on the website.</p>
+        {/* First visit: what lives in each of the three sections. */}
+        <p className="mt-2 text-sm text-muted">Products: price, photo, stock. Coffee lots: tasting notes and score. Farmers: their stories.</p>
 
         <p className="mt-5 flex items-start gap-2 rounded-lg bg-accent-soft p-3 text-sm font-semibold text-accent">
           <InfoMark />
@@ -48,7 +50,10 @@ export function AdminSignIn() {
         </p>
 
         {!canKeepSession && (
-          <p role="status" className="mt-3 flex items-start gap-2 rounded-lg bg-danger-soft p-3 text-sm font-medium text-danger">
+          <p
+            role="status"
+            className="mt-3 flex items-start gap-2 rounded-lg bg-danger-soft p-3 text-sm font-medium text-danger transition-opacity duration-(--dur-ui) ease-out starting:opacity-0"
+          >
             <AlertMark />
             <span>Your browser blocks storage, so you will need to sign in again if you reload or open a new tab.</span>
           </p>

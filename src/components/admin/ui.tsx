@@ -15,7 +15,10 @@ export const secondaryButton = "btn btn-secondary min-h-12";
 
 /** Field-level error text. It fades in when it appears. Pair it with <AlertMark /> so it is never colour alone. */
 export const errorText =
-  "mt-1.5 flex items-start gap-1.5 text-sm font-medium tracking-normal text-danger transition-[opacity,translate] duration-180 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150";
+  "mt-1.5 flex items-start gap-1.5 text-sm font-medium tracking-normal text-danger transition-[opacity,translate] duration-(--dur-ui) ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150";
+
+/** What staff see when the browser refuses to store an edit: the problem, then the way out. */
+export const STORAGE_BLOCKED = "This browser is blocking storage. Turn off private browsing or allow site data, then try again.";
 
 /** Muted hint under a field. */
 export const hintText = "mt-1.5 block text-sm font-normal tracking-normal text-muted";
@@ -103,7 +106,8 @@ export function Spinner({ className = "h-4 w-4" }: { className?: string }) {
 
 /**
  * Large on/off switch with its label, easy to tap on a phone. The bordered
- * variant stands alone in a form; `bare` sits in a list row (no box inside a box).
+ * variant stands alone in a form; `bare` sits in a list row (no box inside a
+ * box), with the switch right after its own label so the two read as a pair.
  */
 export function Toggle({
   checked,
@@ -124,8 +128,8 @@ export function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`group flex min-h-12 w-full min-w-0 touch-manipulation items-center justify-between gap-3 rounded-lg py-2 text-left [transition:background-color_150ms_ease] ${
-        bare ? "px-0" : "border border-field-border bg-surface px-3 pointer-fine:hover:bg-background active:bg-background"
+      className={`group flex min-h-12 w-full min-w-0 touch-manipulation items-center gap-3 rounded-lg py-2 text-left [transition:background-color_150ms_ease] ${
+        bare ? "justify-start px-0" : "justify-between border border-field-border bg-surface px-3 pointer-fine:hover:bg-background active:bg-background"
       }`}
     >
       <span className="min-w-0">
@@ -149,6 +153,7 @@ export interface ToastMessage {
   tone: "success" | "error";
 }
 
+/** Matches --dur-exit, the .toast-out duration in globals.css. */
 const TOAST_EXIT_MS = 160;
 
 /**
@@ -186,13 +191,9 @@ export function useToast({ raised = false }: { raised?: boolean } = {}) {
       {message && (
         <p
           key={message.id}
-          className={`pointer-events-auto flex max-w-md min-w-0 items-start gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-[var(--shadow-float)] [overflow-wrap:anywhere] transition-[opacity,translate] ease-out motion-reduce:transition-opacity ${
+          className={`toast-in pointer-events-auto flex max-w-md min-w-0 items-start gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-[var(--shadow-float)] [overflow-wrap:anywhere] ${
             message.tone === "error" ? "bg-danger text-white" : "on-dark bg-brand text-sand"
-          } ${
-            message.leaving
-              ? "translate-y-2 opacity-0 duration-160 motion-reduce:translate-y-0"
-              : "duration-240 starting:translate-y-full starting:opacity-0 motion-reduce:duration-150"
-          }`}
+          } ${message.leaving ? "toast-out" : ""}`}
         >
           {message.tone === "error" ? <AlertMark /> : <CheckMark className="mt-0.5 h-4 w-4" />}
           <span>{message.text}</span>
@@ -273,10 +274,11 @@ export function ConfirmButton({
   );
 }
 
+/** Placeholder at about the height of the product list (four 96px rows), so the page does not jump when it loads. */
 export function AdminLoading({ label = "Loading…" }: { label?: string }) {
   return (
     <div className="space-y-3" aria-busy="true" aria-label={label}>
-      {[0, 1, 2].map((i) => (
+      {[0, 1, 2, 3].map((i) => (
         <div key={i} className="h-24 animate-pulse rounded-2xl bg-border/50 motion-reduce:animate-none" />
       ))}
     </div>

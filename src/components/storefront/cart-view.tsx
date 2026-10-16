@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Price } from "@/components/price";
 import { useStore } from "@/components/store-provider";
 import { type CatalogProduct, useCatalog } from "@/lib/catalog-overrides";
-import { formatWeight } from "./catalog";
+import { formatWeight, SHIPPING_XAF } from "./catalog";
 import { QuantityStepper } from "./quantity-stepper";
 
 /** "250 g, light roast" / "1 kg, unroasted": the weight and roast as one comma phrase. */
@@ -69,12 +69,29 @@ export function useCartLines() {
   return { lines, unavailable, subtotalXaf };
 }
 
+const pulse = "animate-pulse bg-border/50 motion-reduce:animate-none";
+
+/**
+ * Placeholder in the shape of the real order: two lines at a real line's
+ * height (image, text, stepper) and the totals card, so nothing below jumps
+ * when the saved order arrives.
+ */
 export function CartSkeleton() {
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Loading your order list">
-      {[0, 1].map((i) => (
-        <div key={i} className="h-28 animate-pulse rounded-2xl bg-border/50 motion-reduce:animate-none" />
-      ))}
+    <div
+      aria-busy="true"
+      aria-label="Loading your order"
+      className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-12"
+    >
+      <div className="divide-y divide-border border-y border-border">
+        {[0, 1].map((i) => (
+          <div key={i} className="flex gap-4 py-5">
+            <div className={`h-18 w-18 shrink-0 rounded-lg ${pulse}`} />
+            <div className={`h-31 flex-1 rounded-lg ${pulse}`} />
+          </div>
+        ))}
+      </div>
+      <div className={`h-68 rounded-2xl ${pulse}`} />
     </div>
   );
 }
@@ -92,7 +109,7 @@ export function EmptyCart() {
           strokeLinejoin="round"
         />
       </svg>
-      <h2 className="type-h2 mt-4 text-brand">Your order list is empty</h2>
+      <h2 className="type-h2 mt-4 text-brand">Your order is empty</h2>
       <p className="mt-3 max-w-[50ch] text-foreground">Pick a coffee from this harvest, then send the order on WhatsApp.</p>
       <Link href="/shop" className="btn btn-primary btn-lg mt-6">
         Shop the harvest
@@ -102,6 +119,7 @@ export function EmptyCart() {
 }
 
 const UNDO_MS = 6000;
+/** Matches --dur-exit, the .toast-out duration in globals.css. */
 const UNDO_EXIT_MS = 160;
 
 interface Removed {
@@ -119,10 +137,8 @@ function UndoToast({ removed, onUndo }: { removed: Removed | null; onUndo: () =>
       {removed && (
         <div
           key={removed.id}
-          className={`on-dark pointer-events-auto flex max-w-md min-w-0 items-center gap-3 rounded-lg bg-brand py-1.5 pr-1.5 pl-4 text-sm text-brand-contrast shadow-[var(--shadow-float)] transition-[opacity,translate] ease-out motion-reduce:transition-opacity ${
-            removed.leaving
-              ? "translate-y-2 opacity-0 duration-160 motion-reduce:translate-y-0"
-              : "duration-240 starting:translate-y-full starting:opacity-0 motion-reduce:duration-150"
+          className={`on-dark toast-in pointer-events-auto flex max-w-md min-w-0 items-center gap-3 rounded-lg bg-brand py-1.5 pr-1.5 pl-4 text-sm text-brand-contrast shadow-[var(--shadow-float)] ${
+            removed.leaving ? "toast-out" : ""
           }`}
         >
           <p className="line-clamp-2 min-w-0 [overflow-wrap:anywhere]">
@@ -141,12 +157,12 @@ function UndoToast({ removed, onUndo }: { removed: Removed | null; onUndo: () =>
   );
 }
 
-/** Shown when the browser refuses to save the order list (private mode, blocked or full storage). */
+/** Shown when the browser refuses to save the order (private mode, blocked or full storage). */
 function NotSavedNote() {
   return (
     <p role="status" className="mb-6 flex max-w-2xl items-start gap-2 rounded-lg bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
       <AlertMark className="mt-0.5 h-4 w-4" />
-      <span>Your browser is not saving your order list. Send it before you leave this page.</span>
+      <span>Your browser is not saving your order. Send it before you leave this page.</span>
     </p>
   );
 }
@@ -156,6 +172,8 @@ export function CartView() {
   const { lines, unavailable, subtotalXaf } = useCartLines();
   const [removed, setRemoved] = useState<Removed | null>(null);
   const removals = useRef(0);
+  /** The line Undo just put back, so it rises in where it returned instead of appearing without a cue. */
+  const [restored, setRestored] = useState<string | null>(null);
 
   useEffect(() => {
     if (!removed) return;
@@ -175,6 +193,7 @@ export function CartView() {
   function undo() {
     if (!removed) return;
     addToCart(removed.slug, removed.quantity);
+    setRestored(removed.slug);
     setRemoved(null);
   }
 
@@ -191,20 +210,18 @@ export function CartView() {
       </>
     );
 
-  const itemCount = lines.reduce((n, l) => n + l.quantity, 0);
-
   return (
     <>
       {notSaved}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-12">
         <section aria-labelledby="cart-items-heading" className="min-w-0">
           <h2 id="cart-items-heading" className="sr-only">
-            Items in your order list
+            Coffee in your order
           </h2>
           {lines.length > 0 && (
             <ul className="divide-y divide-border border-y border-border">
               {lines.map(({ product, quantity, lineXaf, capped }) => (
-                <li key={product.slug} className="flex gap-4 py-5">
+                <li key={product.slug} className={`flex gap-4 py-5 ${product.slug === restored ? "anim-enter" : ""}`}>
                   <Link href={`/shop/${product.slug}`} className="shrink-0" tabIndex={-1} aria-hidden="true">
                     <Image
                       src={product.image}
@@ -283,33 +300,30 @@ export function CartView() {
           </Link>
         </section>
 
-        <aside aria-labelledby="cart-summary-heading" className="min-w-0 rounded-2xl border border-border bg-surface p-5 lg:sticky lg:top-6">
-          <h2 id="cart-summary-heading" className="type-title text-brand">
-            Order summary
-          </h2>
-          <dl className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between gap-3">
-              <dt className="text-muted">Items</dt>
-              <dd className="text-right tabular-nums">
-                {itemCount.toLocaleString("en-GB")} {itemCount === 1 ? "item" : "items"}
+        {/* The one card on the page: the totals, in the same words /order uses. */}
+        <aside aria-labelledby="cart-total-heading" className="min-w-0 rounded-2xl border border-border bg-surface p-5 lg:sticky lg:top-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h2 id="cart-total-heading" className="type-label text-brand">
+              Coffee total
+            </h2>
+            <Price xaf={subtotalXaf} className="type-data ml-auto text-right text-2xl text-brand" />
+          </div>
+          <dl className="mt-3 border-t border-border pt-3 text-sm">
+            <div className="flex flex-wrap justify-between gap-x-3">
+              <dt className="text-muted">Delivery (estimate)</dt>
+              <dd className="ml-auto text-right">
+                From <Price xaf={SHIPPING_XAF.local} />
               </dd>
             </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-muted">Delivery</dt>
-              <dd className="text-right text-muted">Confirmed with your order</dd>
-            </div>
           </dl>
-          <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border pt-4">
-            <span className="type-label">Subtotal</span>
-            <Price xaf={subtotalXaf} className="type-data ml-auto text-right text-2xl text-brand [overflow-wrap:anywhere]" />
-          </div>
+          <p className="mt-1 text-sm text-muted">The fee for your town is shown on the next step and confirmed on WhatsApp.</p>
           {lines.length > 0 ? (
             <Link href="/order" className="btn btn-primary btn-lg mt-5 w-full">
               Continue to send order
             </Link>
           ) : (
             <p className="mt-5 rounded-lg bg-background px-4 pt-3 pb-1 text-sm text-muted">
-              Nothing in your order list can be ordered right now.{" "}
+              Nothing in your order can be ordered right now.{" "}
               <Link href="/shop" className="inline-flex min-h-11 items-center font-semibold text-accent underline underline-offset-[3px]">
                 Shop the harvest
               </Link>

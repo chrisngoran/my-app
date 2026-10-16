@@ -51,6 +51,62 @@
   --dur-press: 140ms;
   --dur-ui: 200ms;
   --dur-enter: 260ms;
+  /* Exits run faster than entrances (toasts, undo bars). */
+  --dur-exit: 160ms;
+}
+
+/*
+ * Before Archivo arrives, Android has no Arial for Next's own size-matched
+ * "Archivo Fallback", so Roboto gets the same treatment. Values are computed
+ * from Next's font-metrics data for Archivo against Roboto.
+ */
+@font-face {
+  font-family: "Archivo Roboto";
+  src: local("Roboto");
+  size-adjust: 98.92%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+
+/*
+ * Headings run Archivo at 72-92% width. Before it arrives, a regular-width
+ * fallback wraps them onto extra lines and the page jumps when Archivo lands.
+ * These faces shrink Roboto (Android) by the measured width ratio of each
+ * heading role, so the fallback breaks lines like the real font. Line height
+ * is set by the type utilities, so only the glyphs shrink.
+ */
+@font-face {
+  font-family: "Archivo Roboto 72";
+  src: local("Roboto");
+  size-adjust: 75.6%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Roboto 78";
+  src: local("Roboto");
+  size-adjust: 80.6%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Roboto 85";
+  src: local("Roboto");
+  size-adjust: 86.7%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Roboto 92";
+  src: local("Roboto");
+  size-adjust: 92.5%;
+  ascent-override: 88.76%;
+  descent-override: 21.23%;
+  line-gap-override: 0%;
 }
 
 @theme {
@@ -86,9 +142,9 @@
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-ring: var(--ring);
-  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  --font-sans: var(--font-archivo), "Archivo Roboto", ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
   /* Temporary alias: untouched `font-serif` classes render in Archivo. */
-  --font-serif: var(--font-archivo), ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  --font-serif: var(--font-archivo), "Archivo Roboto", ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
   /* Lot codes only (≥ 18px). */
   --font-stencil: var(--font-stencil-face), "Arial Narrow", sans-serif;
 }
@@ -96,7 +152,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-archivo), ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
+  font-family: var(--font-archivo), "Archivo Roboto", ui-sans-serif, system-ui, Roboto, Arial, sans-serif;
   font-stretch: 100%;
 }
 
@@ -104,6 +160,13 @@ body {
   html {
     scroll-padding-top: 1rem;
     scrollbar-color: var(--field-border) transparent;
+    /* Android's grey tap box fights the rounded press states; every pressable has its own. */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Text and image links answer a tap at once (no transition), even on a slow phone. */
+  a:not(.btn, .press):active {
+    opacity: 0.72;
   }
 
   :root {
@@ -165,6 +228,7 @@ body {
  * role, the narrower and tighter it gets. Reading text stays at 100%.
  */
 @utility type-display {
+  font-family: var(--font-archivo), "Archivo Roboto 72", ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(2.25rem, 7.5vw + 1rem, 5rem);
   line-height: 0.98;
   font-weight: 800;
@@ -173,7 +237,15 @@ body {
   text-wrap: balance;
 }
 
+/* A phone held sideways: the home headline must not fill the whole first screen. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .type-display {
+    font-size: clamp(2rem, 7vh + 1rem, 3.25rem);
+  }
+}
+
 @utility type-h1 {
+  font-family: var(--font-archivo), "Archivo Roboto 78", ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(2rem, 3vw + 1.25rem, 3.25rem);
   line-height: 1.02;
   font-weight: 800;
@@ -183,6 +255,7 @@ body {
 }
 
 @utility type-h2 {
+  font-family: var(--font-archivo), "Archivo Roboto 85", ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(1.5rem, 1.5vw + 1.1rem, 2.25rem);
   line-height: 1.08;
   font-weight: 750;
@@ -192,6 +265,7 @@ body {
 }
 
 @utility type-title {
+  font-family: var(--font-archivo), "Archivo Roboto 92", ui-sans-serif, system-ui, sans-serif;
   font-size: 1.1875rem;
   line-height: 1.25;
   font-weight: 700;
@@ -362,15 +436,42 @@ body {
     animation: gv-ripen var(--dur-enter) var(--ease-out) calc(150ms + var(--i, 0) * 90ms) both;
   }
 
-  /* Product image zoom, only for a real hovering pointer. */
-  .card-zoom {
-    transition: transform 250ms var(--ease-out);
+  /*
+   * Below the fold on a phone the ridge waits (data-ripen="wait", set by
+   * RipenOnView) and ripens when 60% of it is in view. Removing the attribute
+   * restores the animation, which then plays from the start. Server HTML has
+   * no attribute, so without JavaScript it plays on load.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-ripen="wait"] .anim-ripen {
+      animation: none;
+      background-color: var(--accent);
+      transform: scale(0.7);
+    }
   }
 
-  @media (hover: hover) and (pointer: fine) {
-    .group:hover .card-zoom {
-      transform: scale(1.03);
+  /*
+   * Shared toast motion for the order list and the admin. Enters from its own
+   * height below; leaves faster, 8px down the same edge. Transitions, so a
+   * new message interrupts cleanly. Add .toast-out alongside to dismiss.
+   */
+  .toast-in {
+    transition:
+      opacity var(--dur-enter) var(--ease-out),
+      transform var(--dur-enter) var(--ease-out);
+  }
+
+  @starting-style {
+    .toast-in {
+      opacity: 0;
+      transform: translateY(100%);
     }
+  }
+
+  .toast-out {
+    opacity: 0;
+    transform: translateY(8px);
+    transition-duration: var(--dur-exit);
   }
 }
 
@@ -409,8 +510,7 @@ body {
   }
 
   .btn:active:not(:disabled, [aria-disabled="true"]),
-  .press:active,
-  .group:hover .card-zoom {
+  .press:active {
     transform: none;
   }
 
@@ -432,5 +532,20 @@ body {
     .anim-enter {
       transform: none;
     }
+  }
+
+  .toast-in,
+  .toast-out {
+    transition: opacity 150ms ease;
+  }
+
+  @starting-style {
+    .toast-in {
+      transform: none;
+    }
+  }
+
+  .toast-out {
+    transform: none;
   }
 }

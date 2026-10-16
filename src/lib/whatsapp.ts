@@ -8,3 +8,8 @@ export function whatsappLink(message: string) {
 export function phoneLink() {
   return `tel:+${cooperative.whatsapp}`;
 }
+
+/** "When is the next roast?" for empty and not-on-sale states. A separate chat; the order message is untouched. */
+export function askNextRoastLink() {
+  return whatsappLink(`Hello ${cooperative.shortName}, when is the next roast?`);
+}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { updateProduct, useCatalog, useCatalogOverrides } from "@/lib/catalog-overrides";
 import { formatPrice } from "@/lib/currency";
 import { getProduct } from "@/lib/data";
-import { EditedChip, InfoMark, PageTitle, Toggle, useToast } from "./ui";
+import { EditedChip, InfoMark, PageTitle, STORAGE_BLOCKED, Toggle, useToast } from "./ui";
 
 export function LiveVersionNote() {
   return (
@@ -22,7 +22,7 @@ export function AdminProductList() {
   const { toast, show } = useToast();
 
   function save(ok: boolean, message: string) {
-    show(ok ? message : "Could not save: this browser is blocking storage.", ok ? "success" : "error");
+    show(ok ? message : `Not saved. ${STORAGE_BLOCKED}`, ok ? "success" : "error");
   }
 
   return (
@@ -68,30 +68,35 @@ export function AdminProductList() {
                   Edit<span className="sr-only"> {p.name}</span>
                 </Link>
               </div>
-              <div className="mt-2 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-x-4">
-                <Toggle
-                  bare
-                  label="Visible on website"
-                  checked={!p.hidden}
-                  onChange={(visible) =>
-                    save(
-                      updateProduct(p.slug, { hidden: visible ? undefined : true }),
-                      visible ? `${p.name} is back on the website.` : `${p.name} is now hidden from the website.`,
-                    )
-                  }
-                />
-                <Toggle
-                  bare
-                  label="Sold out"
-                  description={p.stock <= 0 ? "Customers cannot order it" : undefined}
-                  checked={p.stock <= 0}
-                  onChange={(soldOut) =>
-                    save(
-                      updateProduct(p.slug, { stock: soldOut ? 0 : originalStock > 0 ? undefined : 10 }),
-                      soldOut ? `${p.name} is marked sold out.` : `${p.name} is back in stock.`,
-                    )
-                  }
-                />
+              {/* Each switch sits right after its own label; the rule between the halves keeps the pairs apart. */}
+              <div className="mt-2 grid grid-cols-[repeat(2,minmax(0,1fr))] sm:grid-cols-[repeat(2,max-content)]">
+                <div className="min-w-0 pr-4 sm:pr-6">
+                  <Toggle
+                    bare
+                    label="Visible on website"
+                    checked={!p.hidden}
+                    onChange={(visible) =>
+                      save(
+                        updateProduct(p.slug, { hidden: visible ? undefined : true }),
+                        visible ? `${p.name} is back on the website.` : `${p.name} is now hidden from the website.`,
+                      )
+                    }
+                  />
+                </div>
+                <div className="min-w-0 border-l border-border pl-4 sm:pl-6">
+                  <Toggle
+                    bare
+                    label="Sold out"
+                    description={p.stock <= 0 ? "Customers cannot order it" : undefined}
+                    checked={p.stock <= 0}
+                    onChange={(soldOut) =>
+                      save(
+                        updateProduct(p.slug, { stock: soldOut ? 0 : originalStock > 0 ? undefined : 10 }),
+                        soldOut ? `${p.name} is marked sold out.` : `${p.name} is back in stock.`,
+                      )
+                    }
+                  />
+                </div>
               </div>
             </li>
           );

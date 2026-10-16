@@ -1,3 +1,4 @@
+import { ridgeGeometry } from "@/lib/ridge";
 import type { Farmer } from "@/lib/types";
 
 /*
@@ -8,39 +9,10 @@ import type { Farmer } from "@/lib/types";
  *
  * Delight 1: the farm dots ripen from leaf green to cherry once per load,
  * lowest farm first (.anim-ripen in globals.css; reduced motion shows them
- * ripe straight away).
+ * ripe straight away). On a phone the ridge sits below the fold, so the page
+ * wraps it in <RipenOnView>, which holds the moment until it is in view.
+ * The geometry lives in src/lib/ridge.ts, shared with the trace hero edge.
  */
-
-const LOW = 1600;
-const HIGH = 2000;
-
-/** Height on the ridge as a percentage of the plot, clamped to the two contours. */
-function heightPct(altitude: number) {
-  return Math.min(100, Math.max(0, ((altitude - LOW) / (HIGH - LOW)) * 100));
-}
-
-/** Lowest farms at the two ends, the highest in the middle: a0, a2, a4, … a5, a3, a1. */
-function ridgeOrder<T>(ascending: T[]) {
-  const up = ascending.filter((_, i) => i % 2 === 0);
-  const down = ascending.filter((_, i) => i % 2 === 1).reverse();
-  return [...up, ...down];
-}
-
-/** A smooth line through the points (Catmull-Rom converted to cubic Béziers). */
-function smoothPath(points: [number, number][]) {
-  const f = (n: number) => Number(n.toFixed(2));
-  let d = `M${f(points[0][0])} ${f(points[0][1])}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
-    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    d += ` C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(p2[0])} ${f(p2[1])}`;
-  }
-  return d;
-}
 
 const metres = (m: number) => `${m.toLocaleString("en-GB")} m`;
 
@@ -54,30 +26,15 @@ export function HeroRidge({
   labelledBy: string;
   className?: string;
 }) {
-  const ascending = [...farmers].sort((a, b) => a.altitudeMetres - b.altitudeMetres);
-  const rank = new Map(ascending.map((f, i) => [f.id, i]));
-  const ridge = ridgeOrder(ascending);
-  const n = ridge.length;
-  const span = n > 1 ? 84 / (n - 1) : 0;
-  const peak = ridge.reduce((best, f, i) => (f.altitudeMetres > ridge[best].altitudeMetres ? i : best), 0);
-  const marks = ridge.map((f, i) => ({
-    farmer: f,
-    x: n > 1 ? 8 + i * span : 50,
-    h: heightPct(f.altitudeMetres),
-    rank: rank.get(f.id) ?? i,
+  const { ascending, marks: placed, peak, line } = ridgeGeometry(farmers);
+  const marks = placed.map((m) => ({
+    ...m,
     // Only the summit is labelled above its dot. Every other label hangs below
     // its dot on the downhill side, under the ridge line, so labels never cross
     // the line or each other: left of the summit they run right, right of it they run left.
-    above: i === peak,
-    align: i === peak ? "center" : i < peak ? "start" : "end",
+    above: m.index === peak,
+    align: m.index === peak ? "center" : m.index < peak ? "start" : "end",
   }));
-
-  // SVG y runs downwards; the ridge falls away past the first and last farm.
-  const pts: [number, number][] = marks.map((m) => [m.x, 100 - m.h]);
-  const line =
-    pts.length > 0
-      ? smoothPath([[0, Math.min(100, pts[0][1] + 14)], ...pts, [100, Math.min(100, pts[pts.length - 1][1] + 14)]])
-      : "M0 100 L100 100";
 
   return (
     <figure aria-labelledby={labelledBy} className={`relative ${className}`}>
@@ -120,7 +77,7 @@ export function HeroRidge({
                 style={{ "--i": m.rank } as React.CSSProperties}
               />
               <span
-                className={`absolute flex flex-col whitespace-nowrap leading-tight ${m.above ? "bottom-2.5" : "top-2.5"} ${
+                className={`absolute flex flex-col whitespace-nowrap leading-tight ${m.above ? "bottom-2.5" : "top-3.5"} ${
                   m.align === "start" ? "-left-[5px]" : m.align === "end" ? "-right-[5px] items-end" : "left-0 -translate-x-1/2 items-center"
                 }`}
               >

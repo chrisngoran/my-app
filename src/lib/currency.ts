@@ -26,3 +26,12 @@ export function formatPrice(amountXaf: number, currency: Currency = "XAF") {
   if (value > 0 && value < 0.01) return `< ${fmt.format(0.01)}`;
   return fmt.format(value);
 }
+
+/**
+ * An FCFA amount for running text ("1 000 FCFA"), with non-breaking spaces so
+ * it never wraps between the number and the unit. Prices on screen use
+ * formatPrice through <Price>; the WhatsApp message keeps formatPrice as is.
+ */
+export function formatFcfaText(amountXaf: number) {
+  return `${Math.round(amountXaf).toLocaleString("fr-FR").replace(/[\s\u202f]/g, "\u00a0")}\u00a0FCFA`;
+}

@@ -16,11 +16,11 @@ export default function OrderPage() {
         className="-ml-1 inline-flex min-h-11 items-center gap-1 rounded-lg px-1 text-sm font-semibold text-accent underline underline-offset-[3px] hover:decoration-2"
       >
         <ChevronLeft />
-        Back to your order list
+        Back to your order
       </Link>
       <h1 className="type-h1 mt-2 text-brand">Send your order</h1>
       <p className="type-lead mt-3 max-w-[60ch] text-foreground">
-        Your order opens in WhatsApp, ready to send. We confirm it, then you pay by MTN MoMo or Orange Money.
+        Add your name and town. Your order opens in WhatsApp, ready to send.
       </p>
       <div className="mt-8">
         <WhatsAppOrderForm />

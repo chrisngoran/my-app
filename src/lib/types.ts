@@ -14,6 +14,11 @@ export interface Farmer {
   joinedYear: number;
   story: string;
   phone: string;
+  /**
+   * Portrait under /public, taken with the farmer's consent. None in the demo:
+   * pages show initials until the cooperative supplies real photographs.
+   */
+  photo?: string;
 }
 
 export interface QualityRecord {

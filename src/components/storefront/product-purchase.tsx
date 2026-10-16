@@ -7,7 +7,7 @@ import { useStore } from "@/components/store-provider";
 import { useProductView } from "@/lib/catalog-overrides";
 import { formatPrice } from "@/lib/currency";
 import { cooperative } from "@/lib/data";
-import { whatsappLink } from "@/lib/whatsapp";
+import { askNextRoastLink, whatsappLink } from "@/lib/whatsapp";
 import { AddToCartButton } from "./add-to-cart-button";
 import { QuantityStepper } from "./quantity-stepper";
 
@@ -29,7 +29,7 @@ export function ProductPurchase({
   const stock = live?.stock ?? defaultStock;
   const hidden = live?.hidden ?? false;
   // Never let the order list hold more bags than are in stock.
-  const { cart } = useStore();
+  const { cart, currency } = useStore();
   const inList = cart.find((i) => i.slug === slug)?.quantity ?? 0;
   const remaining = Math.max(0, stock - inList);
   const allInList = stock > 0 && remaining === 0;
@@ -46,21 +46,24 @@ export function ProductPurchase({
       <div className="border-y border-border py-4">
         <p className="font-semibold text-brand">This coffee is not on sale at the moment.</p>
         <p className="mt-1 text-sm text-muted">Browse the shop for coffee available now, or ask us on WhatsApp when it will be back.</p>
+        <a href={askNextRoastLink()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-3">
+          <WhatsAppGlyph />
+          Ask on WhatsApp
+        </a>
       </div>
     );
   }
 
   return (
-    // No card on phones (the page is the panel); a quiet white panel beside the image on desktop.
-    <div className="lg:rounded-2xl lg:bg-surface lg:p-5">
+    // No card at any width: hairlines set it apart, so the parchment lot record stays the page's only filled panel.
+    <div className="border-y border-border py-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <Price xaf={priceXaf} className="type-data min-w-0 text-[2rem] text-brand [overflow-wrap:anywhere]" />
-        {quantity > 1 && (
-          <p className="text-sm text-muted">
-            <span className="tabular">{quantity}</span> bags:{" "}
-            <Price xaf={priceXaf * quantity} className="type-data text-foreground" />
-          </p>
-        )}
+        {/* Always laid out, hidden at one bag, so the first "+" tap does not push the stepper down. */}
+        <p className={`text-sm text-muted ${quantity > 1 ? "" : "invisible"}`} aria-hidden={quantity > 1 ? undefined : true}>
+          <span className="tabular">{quantity}</span> bags:{" "}
+          <Price xaf={priceXaf * quantity} className="type-data text-foreground" />
+        </p>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <QuantityStepper
@@ -94,9 +97,13 @@ export function ProductPurchase({
         </Link>
       )}
       {soldOut ? (
-        <p className="mt-3 flex min-h-11 w-full items-center justify-center rounded-lg bg-accent-soft px-6 py-2.5 text-center font-semibold text-muted text-pretty">
-          Sold out. Ask us on WhatsApp about the next harvest.
-        </p>
+        <div className="mt-3">
+          <p className="font-semibold text-muted">Sold out until the next harvest.</p>
+          <a href={askNextRoastLink()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-2 w-full">
+            <WhatsAppGlyph />
+            Ask on WhatsApp
+          </a>
+        </div>
       ) : (
         <a
           href={whatsappLink(
@@ -107,11 +114,12 @@ export function ProductPurchase({
           className="btn mt-3 w-full border-[1.5px] border-whatsapp bg-surface text-whatsapp pointer-fine:hover:bg-whatsapp/5"
         >
           <WhatsAppGlyph />
-          Order this on WhatsApp
+          Send this order on WhatsApp
         </a>
       )}
-      <p className="mt-3 text-xs text-muted">
-        Prices are in FCFA; other currencies are shown for reference. Pay by MTN MoMo or Orange Money once we confirm your order.
+      <p className="mt-3 text-sm text-muted">
+        Add to order, send it on WhatsApp, then pay by MTN MoMo or Orange Money once we confirm.
+        {currency !== "XAF" && " You pay in FCFA; other currencies are shown for reference."}
       </p>
     </div>
   );

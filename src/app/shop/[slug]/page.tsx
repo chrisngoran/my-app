@@ -7,9 +7,9 @@ import {
   LiveProductImage,
   LiveProductName,
   LiveProductStock,
-} from "@/components/storefront/live-catalog";
+} from "@/components/storefront/live-product";
 import { LotTag } from "@/components/storefront/lot-tag";
-import { ProductGrid } from "@/components/storefront/product-card";
+import { isRotating, ProductGrid } from "@/components/storefront/product-card";
 import { ProductPurchase } from "@/components/storefront/product-purchase";
 import { getFarmer, getLot, getProduct, products } from "@/lib/data";
 
@@ -33,7 +33,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = getProduct(slug);
   if (!product) notFound();
 
-  const lot = getLot(product.lotCode);
+  // A subscription is filled from rotating lots, so it shows no single lot record.
+  const rotating = isRotating(product);
+  const lot = rotating ? undefined : getLot(product.lotCode);
   const growers = lot ? lot.farmerIds.flatMap((id) => getFarmer(id) ?? []) : [];
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 3);
 
@@ -75,8 +77,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </ol>
       </nav>
 
-      <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-8 lg:mt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
-        <div className="relative overflow-hidden rounded-2xl bg-accent-soft lg:sticky lg:top-6 lg:self-start">
+      {/* Two columns from md, so a tablet or a phone held sideways sees the price without scrolling two screens. */}
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10 lg:mt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
+        <div className="relative overflow-hidden rounded-2xl bg-accent-soft md:sticky md:top-6 md:self-start">
           <LiveProductImage
             slug={product.slug}
             fallbackSrc={product.image}
@@ -84,13 +87,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             preload
             className="aspect-[4/3] h-auto w-full object-cover"
           />
-          {/* On phones the lot record is a screen away, so the code is tagged on the photo; on desktop the lot record sits beside it. */}
-          <span
-            aria-hidden="true"
-            className="type-stencil absolute bottom-4 left-4 rounded-md bg-sand px-2.5 py-1 text-2xl text-brand lg:hidden"
-          >
-            {product.lotCode}
-          </span>
+          {/* The bag's lot code, tagged on the image at every width, as on the shop cards. */}
+          {rotating ? (
+            <span aria-hidden="true" className="type-label absolute bottom-4 left-4 rounded-md bg-sand px-2.5 py-1.5 text-brand">
+              Rotating lots
+            </span>
+          ) : (
+            <span aria-hidden="true" className="type-stencil absolute bottom-4 left-4 rounded-md bg-sand px-2.5 py-1 text-2xl text-brand">
+              {product.lotCode}
+            </span>
+          )}
         </div>
 
         <div className="min-w-0">
@@ -109,7 +115,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {product.cuppingNotes.length > 0 && (
             <section aria-labelledby="notes-heading" className="mt-6">
               <h2 id="notes-heading" className="type-label text-muted">
-                Cupping notes
+                Tastes like
               </h2>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {product.cuppingNotes.map((n) => (
@@ -126,6 +132,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {lot && <LotTag lot={lot} growers={growers} className="mt-8" />}
+          {rotating && (
+            <p className="mt-8 max-w-[60ch] border-y border-border py-4 text-foreground">
+              Each month&apos;s bags come from the freshest lots we have. Every bag carries its own lot code, so you can trace
+              it to the farms that grew it.
+            </p>
+          )}
 
           <section aria-labelledby="details-heading" className="mt-8">
             <h2 id="details-heading" className="type-label text-muted">
@@ -145,11 +157,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <section aria-labelledby="related-heading" className="mt-14 sm:mt-16">
         <h2 id="related-heading" className="type-h2 text-brand">
-          You may also like
+          Other coffee from this harvest
         </h2>
         <ProductGrid
           products={related}
-          compact
+          layout="row"
+          prefetch={false}
           className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-4 sm:mt-6 sm:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]"
         />
       </section>

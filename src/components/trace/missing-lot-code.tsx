@@ -17,7 +17,7 @@ export function MissingLotCode() {
   return (
     <>
       lot{" "}
-      <span title={code} className="font-mono [overflow-wrap:anywhere]">
+      <span title={code} className="[overflow-wrap:anywhere]">
         {short}
       </span>
     </>

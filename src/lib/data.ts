@@ -11,7 +11,7 @@ export const cooperative = {
   whatsapp: "237600000000",
   email: "contact@greenventure.example",
   story:
-    "Green Venture brings together smallholder farmers across the Bui highlands, where Arabica grows between 1,600 and 2,000 metres on volcanic soil. We collect, process and sell our members' coffee together, so every farmer gets a fair price and every cup can be traced back to the hillside it came from.",
+    "Green Venture brings together family coffee farmers across the Bui highlands, where Arabica grows between 1,600 and 2,000 metres on volcanic soil. We collect, process and sell our members' coffee together, so every farmer gets a fair price and every cup can be traced back to the hillside it came from.",
 };
 
 export const farmers: Farmer[] = [

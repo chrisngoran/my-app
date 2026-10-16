@@ -8,11 +8,11 @@ import { CURRENCIES } from "@/lib/currency";
 import type { Currency } from "@/lib/types";
 import { useStore } from "./store-provider";
 
+/* One name per destination, the same in the header, footer and buttons ("Trace a bag"). */
 const NAV = [
-  { href: "/shop", label: "Shop", short: null },
-  { href: "/our-story", label: "Our story", short: null },
-  // Below 420px only "Trace" shows; the full name stays the link's accessible name.
-  { href: "/trace", label: "Trace your coffee", short: "Trace" },
+  { href: "/shop", label: "Shop" },
+  { href: "/our-story", label: "Our story" },
+  { href: "/trace", label: "Trace a bag" },
 ];
 
 function NavLinks({ pathname }: { pathname: string | null }) {
@@ -29,15 +29,7 @@ function NavLinks({ pathname }: { pathname: string | null }) {
               current ? "font-semibold text-brand underline decoration-cherry" : "font-medium text-foreground"
             }`}
           >
-            {item.short ? (
-              // One inline wrapper: as direct flex items the leading space would collapse ("Traceyour").
-              <span>
-                {item.short}
-                <span className="max-[419px]:sr-only">{item.label.slice(item.short.length)}</span>
-              </span>
-            ) : (
-              item.label
-            )}
+            {item.label}
           </Link>
         );
       })}
@@ -136,28 +128,29 @@ export function SiteHeader() {
         Demo version — sample products, farmers and orders for illustration only.
       </div>
       {/*
-        Below lg: two rows (logo + My order, then nav + currency).
-        lg and up: one row (logo, nav, currency, My order).
+        Below md: two rows (logo + My order, then nav + currency).
+        md and up: one row (logo, nav, currency, My order), so a phone held
+        sideways keeps most of its short screen for the page.
       */}
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 lg:flex-nowrap lg:gap-x-8 lg:py-2.5">
-        <Link href="/" className="order-1 mr-auto inline-flex min-h-11 items-center gap-2 text-brand lg:mr-0">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 md:flex-nowrap md:gap-x-5 md:py-2 lg:gap-x-8 lg:py-2.5">
+        <Link href="/" className="order-1 mr-auto inline-flex min-h-11 items-center gap-2 text-brand md:mr-0">
           <CherryMark />
           <span className="type-title font-extrabold [font-stretch:80%] sm:text-xl">
             Green Venture<span className="sr-only"> Coffee, home</span>
           </span>
         </Link>
-        <OrderPill className="order-2 lg:order-5" />
-        <div aria-hidden="true" className="order-3 basis-full lg:hidden" />
+        <OrderPill className="order-2 md:order-5" />
+        <div aria-hidden="true" className="order-3 basis-full md:hidden" />
         {/* Scrolls sideways rather than overlapping the currency menu on very narrow or zoomed screens. */}
         <nav
           aria-label="Main"
-          className="relative order-4 flex min-w-0 flex-1 gap-x-4 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1rem),transparent)] [scrollbar-width:none] sm:gap-x-6 lg:order-2 lg:flex-none lg:overflow-visible lg:[mask-image:none]"
+          className="relative order-4 flex min-w-0 flex-1 gap-x-4 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1rem),transparent)] [scrollbar-width:none] sm:gap-x-6 md:order-2 md:flex-none md:gap-x-5 md:overflow-visible md:[mask-image:none] lg:gap-x-6"
         >
           <Suspense fallback={<NavLinks pathname={null} />}>
             <ActiveNavLinks />
           </Suspense>
         </nav>
-        <div className="order-5 shrink-0 lg:order-3 lg:ml-auto">
+        <div className="order-5 shrink-0 md:order-3 md:ml-auto">
           <label className="sr-only" htmlFor="currency">
             Display currency
           </label>

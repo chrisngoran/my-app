@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { LiveFarmerStory } from "@/components/storefront/live-catalog";
 import { cooperative, farmers, lots } from "@/lib/data";
+import { ridgeHeightPct } from "@/lib/ridge";
+import type { Farmer } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Our story",
   description:
-    "How Green Venture Cooperative brings together smallholder Arabica farmers in Kumbo, Bui Division, and how your coffee travels from farm to cup.",
+    "How Green Venture Cooperative brings together smallholder Arabica farmers in Kumbo, Bui Division, and how each lot goes from picking to payment.",
 };
 
 const STEPS = [
   {
-    title: "Grown on smallholder plots",
+    title: "Grown on family plots",
     text: "Member families farm Arabica on plots of 0.5 to 2 hectares between 1,600 and 2,000 m, often intercropped with beans and plantain.",
   },
   {
@@ -24,22 +27,17 @@ const STEPS = [
   },
   {
     title: "Graded and cupped",
-    text: "Each lot is checked for moisture, screen size and defects, then cupped and scored so you know exactly what you are buying.",
+    text: "Each lot is checked for moisture, screen size and defects, then cupped and scored.",
   },
   {
     title: "Roasted and packed in Kumbo",
     text: "We roast in small batches and print a QR code with the lot number on every bag before it leaves the cooperative.",
   },
   {
-    title: "Farmers paid, transparently",
-    text: "Farmers are paid by MTN MoMo or Orange Money, and every payment is linked to the lot, so you can see it when you trace your bag.",
+    title: "Farmers paid",
+    // farmerPayments in data.ts includes a cash payment, so mobile money is "mostly", not "always".
+    text: "Farmers are paid once their lot is sold, mostly by MTN MoMo or Orange Money, and each payment is recorded against the lot.",
   },
-];
-
-const VALUES = [
-  { title: "Fair prices", text: "Selling together lets members earn more than selling cherries alone to middlemen." },
-  { title: "Quality first", text: "Training on selective picking and drying lifts quality, and with it the price each farmer receives." },
-  { title: "Full transparency", text: "From farmer to cup, every lot is recorded and open for customers to see." },
 ];
 
 function initials(name: string) {
@@ -50,15 +48,81 @@ function initials(name: string) {
     .join("");
 }
 
-const LOW = 1600;
-const HIGH = 2000;
+const metres = (m: number) => `${m.toLocaleString("en-GB")} m`;
 
-/** Where a farm sits between the 1,600 m and 2,000 m contours, as a percentage. */
-function altitudePct(m: number) {
-  return Math.min(100, Math.max(0, ((m - LOW) / (HIGH - LOW)) * 100));
+/**
+ * Label positions for the altitude rail: each label starts level with its
+ * farm's dot, then is nudged just far enough apart (in % of the rail) that
+ * no two overlap; a short leader joins a nudged label to its dot.
+ */
+function railLabels(sorted: Farmer[], gap: number) {
+  const pos = sorted.map((f) => ridgeHeightPct(f.altitudeMetres));
+  for (let i = 1; i < pos.length; i++) pos[i] = Math.min(pos[i], pos[i - 1] - gap);
+  if (pos.length && pos[pos.length - 1] < 0) {
+    pos[pos.length - 1] = 0;
+    for (let i = pos.length - 2; i >= 0; i--) pos[i] = Math.max(pos[i], pos[i + 1] + gap);
+  }
+  return pos.map((p) => Math.min(100, p));
+}
+
+/**
+ * One shared altitude axis for every member family on the page: the home
+ * ridge, unrolled into a single ruler. A strip above the list on phones, a
+ * sticky rail beside it on large screens.
+ */
+function AltitudeRail({ sorted }: { sorted: Farmer[] }) {
+  const labels = railLabels(sorted, 9);
+  return (
+    <figure aria-hidden="true" className="relative h-56 lg:sticky lg:top-6 lg:h-[26rem] lg:self-start">
+      <span className="absolute left-0 top-0 text-xs text-muted tabular">2,000 m</span>
+      <span className="absolute bottom-0 left-0 text-xs text-muted tabular">1,600 m</span>
+      <div className="absolute bottom-2 left-16 right-0 top-2">
+        {/* The axis, and dashed contours at its two ends as on the home ridge. */}
+        <span className="absolute -left-px bottom-0 top-0 w-0.5 rounded-full bg-border" />
+        <span className="absolute -left-2 right-0 top-0 border-t border-dashed border-field-border" />
+        <span className="absolute -left-2 bottom-0 right-0 border-t border-dashed border-field-border" />
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute bottom-0 left-0 top-0 h-full w-6 overflow-visible">
+          {sorted.map((f, i) => (
+            <line
+              key={f.id}
+              x1="0"
+              y1={100 - ridgeHeightPct(f.altitudeMetres)}
+              x2="100"
+              y2={100 - labels[i]}
+              stroke="var(--field-border)"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
+        {sorted.map((f) => (
+          <span
+            key={f.id}
+            className="absolute -left-[5px] h-2.5 w-2.5 translate-y-1/2 rounded-full bg-cherry ring-2 ring-background"
+            style={{ bottom: `${ridgeHeightPct(f.altitudeMetres)}%` }}
+          />
+        ))}
+        {sorted.map((f, i) => (
+          <span
+            key={f.id}
+            className="absolute left-7 flex translate-y-1/2 items-baseline gap-2 whitespace-nowrap leading-tight"
+            style={{ bottom: `${labels[i]}%` }}
+          >
+            <span className="text-[0.8125rem] font-semibold text-brand [font-stretch:85%]">{f.village}</span>
+            <span className="text-xs text-muted tabular">{metres(f.altitudeMetres)}</span>
+          </span>
+        ))}
+      </div>
+    </figure>
+  );
 }
 
 export default function OurStoryPage() {
+  // Highest farm first, the same order the ridge reads from its summit down.
+  const byAltitude = [...farmers].sort((a, b) => b.altitudeMetres - a.altitudeMetres);
+  const highest = byAltitude[0];
+  const lowest = byAltitude[byAltitude.length - 1];
+
   return (
     <>
       <section aria-labelledby="story-heading" className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:pb-12 sm:pt-14">
@@ -67,28 +131,17 @@ export default function OurStoryPage() {
             A cooperative of coffee families in the Bui highlands
           </h1>
           <p className="type-lead mt-5 max-w-[60ch] text-foreground">{cooperative.story}</p>
+          <p className="mt-4 max-w-[60ch] text-foreground">
+            Selling together earns members more than selling cherries alone to middlemen. Training in selective picking and
+            drying lifts quality, and with it the price each farmer receives. Every lot is recorded and open for you to see.
+          </p>
           <p className="mt-4 text-sm text-muted">{cooperative.location}</p>
         </div>
       </section>
 
-      <section aria-labelledby="values-heading" className="mx-auto max-w-6xl px-4 pb-12 sm:pb-14">
-        <h2 id="values-heading" className="sr-only">
-          What we stand for
-        </h2>
-        {/* A typographic statement row, divided by hairlines rather than boxed. */}
-        <ul className="grid divide-y divide-border border-y border-border md:grid-cols-3 md:divide-x md:divide-y-0">
-          {VALUES.map((v) => (
-            <li key={v.title} className="py-6 md:px-8 md:py-8 md:first:pl-0 md:last:pr-0">
-              <h3 className="type-h2 text-brand">{v.title}</h3>
-              <p className="mt-2 max-w-sm text-foreground">{v.text}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       <section aria-labelledby="journey-heading" className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <h2 id="journey-heading" className="type-h2 text-brand">
-          From farm to cup
+          From picking to payment
         </h2>
         {/*
           A real sequence, so it is numbered, on one rail: a vertical line on
@@ -116,89 +169,84 @@ export default function OurStoryPage() {
       <section aria-labelledby="farmers-heading" className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <div className="max-w-2xl">
           <h2 id="farmers-heading" className="type-h2 text-brand">
-            The people behind your cup
+            Member families, from {highest.village} down to {lowest.village}
           </h2>
-          <p className="mt-3 text-foreground">A few of the member families whose coffee is in this season&apos;s lots.</p>
+          <p className="mt-3 text-foreground">
+            Some of the families whose coffee is in this season&apos;s lots, from the highest farm to the lowest.
+          </p>
         </div>
-        <ul className="mt-8 divide-y divide-border border-y border-border">
-          {farmers.map((f) => {
-            const farmerLots = lots.filter((l) => l.farmerIds.includes(f.id));
-            return (
-              <li
-                key={f.id}
-                className="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-4 gap-y-3 py-6 sm:grid-cols-[3rem_minmax(0,1fr)_14rem] sm:gap-x-8"
-              >
-                <span
-                  aria-hidden="true"
-                  className="type-data flex h-12 w-12 items-center justify-center rounded-full bg-sand text-lg text-brand"
+        <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
+          <AltitudeRail sorted={byAltitude} />
+          <ul className="divide-y divide-border border-y border-border">
+            {byAltitude.map((f) => {
+              const farmerLots = lots.filter((l) => l.farmerIds.includes(f.id));
+              return (
+                <li
+                  key={f.id}
+                  className="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-4 gap-y-3 py-6 sm:grid-cols-[3rem_minmax(0,1fr)_11rem] sm:gap-x-8"
                 >
-                  {initials(f.name)}
-                </span>
-                <div className="min-w-0 self-center">
-                  <h3 className="type-title text-brand [overflow-wrap:anywhere]">{f.name}</h3>
-                  <p className="text-sm text-muted">
-                    {f.village}, member since {f.joinedYear}
-                  </p>
-                </div>
-                <p className="col-span-2 max-w-[62ch] text-foreground [overflow-wrap:anywhere] sm:col-span-1 sm:col-start-2">
-                  <LiveFarmerStory id={f.id} fallback={f.story} />
-                </p>
-                <div className="col-span-2 sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1">
-                  {/* The farm on the same 1,600 to 2,000 m scale as the home page ridge. */}
-                  <div aria-hidden="true" className="relative mt-2 h-1 rounded-full bg-border">
+                  {/* Portrait slot: initials until the cooperative supplies a consented photograph (Farmer.photo). */}
+                  {f.photo ? (
+                    <Image src={f.photo} alt="" width={96} height={96} className="h-12 w-12 rounded-full object-cover" />
+                  ) : (
                     <span
-                      className="absolute -top-[3px] h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-cherry"
-                      style={{ left: `${altitudePct(f.altitudeMetres)}%` }}
-                    />
+                      aria-hidden="true"
+                      className="type-data flex h-12 w-12 items-center justify-center rounded-full bg-sand text-lg text-brand"
+                    >
+                      {initials(f.name)}
+                    </span>
+                  )}
+                  <div className="min-w-0 self-center">
+                    <h3 className="type-title text-brand [overflow-wrap:anywhere]">{f.name}</h3>
+                    <p className="text-sm text-muted">
+                      {f.village}, member since {f.joinedYear}
+                    </p>
                   </div>
-                  <div aria-hidden="true" className="mt-1 flex justify-between text-xs text-muted tabular">
-                    <span>1,600 m</span>
-                    <span>2,000 m</span>
+                  <div className="col-span-2 sm:col-span-1 sm:col-start-2">
+                    <p className="max-w-[62ch] text-foreground [overflow-wrap:anywhere]">
+                      <LiveFarmerStory id={f.id} fallback={f.story} />
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                      <span className="sr-only">Altitude and coffee plot: </span>
+                      <span className="type-data text-foreground">{metres(f.altitudeMetres)}</span>,{" "}
+                      <span className="tabular">{f.plotHectares}</span> ha of coffee
+                    </p>
                   </div>
-                  <dl className="mt-2 flex flex-wrap gap-x-4 text-sm">
-                    <div className="flex gap-1.5">
-                      <dt className="sr-only">Altitude</dt>
-                      <dd className="type-data text-foreground">{f.altitudeMetres.toLocaleString("en-GB")} m</dd>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <dt className="sr-only">Coffee plot</dt>
-                      <dd className="text-muted">
-                        <span className="tabular">{f.plotHectares}</span> ha coffee plot
-                      </dd>
-                    </div>
-                  </dl>
                   {farmerLots.length > 0 && (
-                    <div className="mt-1 flex flex-wrap items-center gap-x-4">
-                      <span className="w-full pt-2 text-sm text-muted">In lots</span>
-                      {farmerLots.map((l) => (
-                        <Link
-                          key={l.code}
-                          href={`/trace/${l.code}`}
-                          className="type-stencil inline-flex min-h-11 items-center text-lg text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
-                        >
-                          {l.code}
-                        </Link>
-                      ))}
+                    <div className="col-span-2 sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1">
+                      <p className="text-sm text-muted">In lots</p>
+                      <div className="flex flex-wrap items-center gap-x-4">
+                        {farmerLots.map((l) => (
+                          <Link
+                            key={l.code}
+                            href={`/trace/${l.code}`}
+                            prefetch={false}
+                            className="type-stencil inline-flex min-h-11 items-center text-lg text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
+                          >
+                            {l.code}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
         <p className="mt-6 text-xs text-muted">Farmer names and stories on this demo are illustrative.</p>
       </section>
 
-      {/* Full-bleed soil band; it runs straight into the footer's soil ground. */}
-      <section aria-labelledby="support-heading" className="on-dark -mb-12 mt-4 border-b border-white/15 bg-brand">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 py-12 sm:flex-row sm:items-center">
+      {/* Ends on mist, so it does not run into the footer's soil as one oversized band. */}
+      <section aria-labelledby="support-heading" className="mx-auto max-w-6xl px-4 pb-4 pt-2">
+        <div className="flex flex-col items-start justify-between gap-6 border-t border-brand/20 pt-10 sm:flex-row sm:items-center">
           <div>
-            <h2 id="support-heading" className="type-h2 text-brand-contrast">
-              Support these farmers with every cup
+            <h2 id="support-heading" className="type-h2 text-brand">
+              Order from these farms
             </h2>
-            <p className="mt-2 text-mist-on-soil">Order direct from the cooperative, delivered across Cameroon and abroad.</p>
+            <p className="mt-2 text-foreground">Order direct from the cooperative, delivered across Cameroon and abroad.</p>
           </div>
-          <Link href="/shop" className="btn btn-on-dark btn-lg shrink-0">
+          <Link href="/shop" className="btn btn-primary btn-lg shrink-0">
             Shop the harvest
           </Link>
         </div>

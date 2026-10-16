@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import {
-  AlertIcon,
-  CheckIcon,
-  HillsBackdrop,
-  LeafIcon,
-  MountainIcon,
-  PinIcon,
-  ScaleIcon,
-} from "@/components/trace/icons";
+import { AlertIcon, CheckIcon, MountainIcon, PinIcon } from "@/components/trace/icons";
 import {
   altitudeRange,
   formatHarvestDate,
   formatMetres,
   initials,
+  joinList,
   lotFarmers,
   lotProducts,
   normaliseLotCode,
@@ -24,7 +17,8 @@ import { btnPrimary, btnSecondary } from "@/components/trace/buttons";
 import { FarmerStory, LotGauge, LotNotes, LotScoreWithGrade } from "@/components/trace/live-lot";
 import { LotProducts } from "@/components/trace/lot-products";
 import { LotQrCode } from "@/components/trace/qr-code";
-import { cooperative, getLot, lots } from "@/lib/data";
+import { RidgeEdge } from "@/components/trace/ridge-edge";
+import { farmerPayments, getLot, lots } from "@/lib/data";
 import { traceUrl } from "@/lib/qr";
 import type { ProcessingMethod } from "@/lib/types";
 
@@ -53,13 +47,31 @@ const PROCESS_TEXT: Record<ProcessingMethod, string> = {
   Honey: "Pulped with some sticky fruit left on the bean while drying, for sweetness and body.",
 };
 
-/** One stop on the lot journey rail. The last stop is marked in cherry. */
-function JourneyStep({ title, last = false, children }: { title: React.ReactNode; last?: boolean; children?: React.ReactNode }) {
+/** "MTN MoMo", "Orange Money", "cash": method names as they read mid-sentence. */
+const METHOD_ORDER = ["MTN MoMo", "Orange Money", "Cash"] as const;
+
+/**
+ * One stop on the lot journey rail. The last stop is marked in cherry; a stop
+ * that has not happened yet (no payment recorded) is an open cherry ring.
+ */
+function JourneyStep({
+  title,
+  last = false,
+  pending = false,
+  children,
+}: {
+  title: React.ReactNode;
+  last?: boolean;
+  pending?: boolean;
+  children?: React.ReactNode;
+}) {
   return (
     <li className="relative pb-8 last:pb-0 before:absolute before:top-5 before:bottom-0 before:-left-[21px] before:w-0.5 before:bg-border last:before:hidden">
       <span
         aria-hidden="true"
-        className={`absolute top-1.5 -left-[26px] h-3 w-3 rounded-full ring-4 ring-background ${last ? "bg-cherry" : "bg-accent"}`}
+        className={`absolute top-1.5 -left-[26px] h-3 w-3 rounded-full ring-4 ring-background ${
+          pending ? "border-2 border-cherry bg-background" : last ? "bg-cherry" : "bg-accent"
+        }`}
       />
       <h3 className="type-title text-brand">{title}</h3>
       {children}
@@ -84,12 +96,17 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
   const urlBase = fullUrl.endsWith(codeSegment) ? fullUrl.slice(0, -codeSegment.length) : fullUrl;
   const urlCode = fullUrl.endsWith(codeSegment) ? codeSegment : "";
 
-  const record = [
-    { icon: LeafIcon, label: "Variety", value: lot.variety },
-    { icon: MountainIcon, label: "Altitude", value: altitudeRange(farmers) },
-    { icon: ScaleIcon, label: "Lot weight", value: `${lot.weightKg.toLocaleString("en-GB")} kg` },
-    { icon: PinIcon, label: "Origin", value: `${villages.length ? `${villages.join(", ")}, ` : ""}Kumbo` },
-  ];
+  // The lot record as one sentence under the h1, not a strip of icon tiles.
+  const grownAt = farmers.length ? ` at ${altitudeRange(farmers)}` : "";
+  const grownIn = villages.length ? ` in ${joinList(villages)}, near Kumbo` : " near Kumbo";
+  const facts = `${lot.variety} variety, grown${grownAt}${grownIn}. ${lot.weightKg.toLocaleString("en-GB")} kg in this lot.`;
+
+  // Payment records for this lot: dates and methods only, never amounts.
+  const payments = farmerPayments.filter((p) => p.lotCode === lot.code);
+  const paidDates = [...new Set(payments.map((p) => p.paidOn))].sort();
+  const methods = METHOD_ORDER.filter((m) => payments.some((p) => p.method === m)).map((m) => (m === "Cash" ? "cash" : m));
+  const paidFarmers = new Set(payments.map((p) => p.farmerId)).size;
+  const screen = /^(\d+)/.exec(q.screenSize)?.[1];
 
   const quality = [
     {
@@ -103,14 +120,17 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
       label: "Screen size",
       value: q.screenSize,
       ok: true,
-      hint: "Bean size in 64ths of an inch",
+      hint: screen ? `Beans at least ${screen}/64 inch across` : "Bean size in 64ths of an inch",
       warning: "",
     },
     {
       label: "Defects",
       value: `${q.defectsPer300g} per 300 g`,
       ok: q.defectsPer300g <= 8,
-      hint: q.defectsPer300g <= 5 ? "Specialty grade 1 (≤ 5)" : "Specialty grade (≤ 8)",
+      hint:
+        q.defectsPer300g <= 5
+          ? "Faulty beans in a 300 g sample. 5 or fewer is the top grade."
+          : "Faulty beans in a 300 g sample. 8 or fewer is specialty grade.",
       warning: "Above the specialty limit of 8 per 300 g",
     },
   ];
@@ -119,7 +139,8 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
     <article>
       {/* Hero: Volcanic Soil band. The stencilled code is the sack mark. */}
       <header className="on-dark relative overflow-hidden bg-brand text-white">
-        <HillsBackdrop className="pointer-events-none absolute inset-x-0 bottom-0 h-16 w-full text-background sm:h-24" />
+        {/* The band ends on the cooperative's ridge; this lot's farms are marked on it. */}
+        <RidgeEdge highlight={lot.farmerIds} className="h-16 sm:h-24" />
         <div className="relative mx-auto max-w-6xl px-4 pt-2 pb-20 sm:pb-28">
           <nav aria-label="Breadcrumb" className="text-sm text-mist-on-soil">
             <ol className="flex flex-wrap items-center gap-x-2">
@@ -132,31 +153,30 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
                 </Link>
               </li>
               <li aria-hidden="true">/</li>
-              <li aria-current="page" className="type-stencil text-lg text-sand">
+              <li aria-current="page" className="type-stencil text-lg whitespace-nowrap text-sand">
                 {lot.code}
               </li>
             </ol>
           </nav>
           <div className="mt-4 grid gap-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-14">
             <div className="min-w-0">
-              <p aria-hidden="true" className="type-stencil text-[3rem] text-sand sm:text-[3.5rem]">
+              {/* Fixed box: the stencil's stand-in face is wider, so the swap must not move the h1. */}
+              <p aria-hidden="true" className="type-stencil h-12 leading-none whitespace-nowrap text-[3rem] text-sand sm:h-14 sm:text-[3.5rem]">
                 {lot.code}
               </p>
               <h1 className="type-h1 mt-3 text-balance [overflow-wrap:anywhere]">
                 <span className="sr-only">Lot {lot.code}: </span>
-                {lot.processingMethod} Arabica from {villages.join(villages.length > 2 ? ", " : " and ")}
+                {lot.processingMethod} Arabica from {joinList(villages) || "Kumbo"}
               </h1>
+              <p className="mt-3 max-w-[60ch] text-pretty font-medium text-mist-on-soil">{facts}</p>
               <LotNotes
                 code={lot.code}
                 fallback={lot.notes}
                 className="type-lead mt-4 max-w-[60ch] text-pretty font-[450] tracking-[0.01em] text-white"
               />
-              <p className="mt-4 max-w-[60ch] text-sm font-medium tracking-[0.01em] text-mist-on-soil">
-                Grown by {farmers.length === 1 ? "one farmer" : `${farmers.length} member farmers`} of {cooperative.name},
-                Bui Division, North West Cameroon.
-              </p>
             </div>
-            <div className="justify-self-start md:justify-self-end">
+            {/* Fixed width so the font swap only moves text inside this column. */}
+            <div className="w-full max-w-80 justify-self-start md:w-80 md:justify-self-end">
               <LotGauge code={lot.code} fallback={q.cuppingScore} />
             </div>
           </div>
@@ -164,24 +184,6 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
       </header>
 
       <div className="mx-auto max-w-6xl px-4">
-        {/* Lot record */}
-        <section aria-labelledby="record-heading" className="mt-10">
-          <h2 id="record-heading" className="sr-only">
-            Lot record
-          </h2>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-y border-border py-5 sm:grid-cols-4">
-            {record.map((f) => (
-              <div key={f.label} className="min-w-0">
-                <dt className="type-label flex items-center gap-1.5 text-muted">
-                  <f.icon className="h-4 w-4 shrink-0 text-accent" />
-                  {f.label}
-                </dt>
-                <dd className="type-data mt-1 text-lg text-foreground tabular-nums [overflow-wrap:anywhere]">{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
         <div className="grid gap-14 py-14 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-16">
           {/* Lot journey: a real sequence, so it sits on a rail. */}
           <section aria-labelledby="journey-heading" className="min-w-0">
@@ -228,16 +230,42 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
                   </>
                 }
               >
-                <p className="mt-1 text-sm text-muted">On the Specialty Coffee Association scale, out of 100.</p>
+                <p className="mt-1 max-w-[60ch] text-sm text-muted">
+                  A taste test by trained tasters, out of 100. 80 or more is specialty grade.
+                </p>
               </JourneyStep>
-              <JourneyStep last title="Farmers paid by mobile money once the lot is sold." />
+              {payments.length > 0 ? (
+                <JourneyStep last title={farmers.length === 1 ? "Farmer paid" : "Farmers paid"}>
+                  <p className="type-data mt-1 text-foreground">
+                    {paidDates.map((d, i) => (
+                      <span key={d}>
+                        {i > 0 && (i === paidDates.length - 1 ? " and " : ", ")}
+                        <time dateTime={d}>{formatHarvestDate(d)}</time>
+                      </span>
+                    ))}
+                  </p>
+                  <p className="mt-1 max-w-[60ch] text-pretty text-foreground">
+                    By {joinList(methods)}.
+                    {farmers.length > 1 &&
+                      (paidFarmers >= farmers.length
+                        ? ` Recorded for ${farmers.length === 2 ? "both" : `all ${farmers.length}`} farmers in this lot.`
+                        : ` Recorded for ${paidFarmers} of ${farmers.length} farmers so far.`)}
+                  </p>
+                </JourneyStep>
+              ) : (
+                <JourneyStep last pending title={farmers.length === 1 ? "Farmer paid" : "Farmers paid"}>
+                  <p className="mt-1 max-w-[60ch] text-pretty text-muted">
+                    No payment recorded yet. Farmers are paid once the lot is sold.
+                  </p>
+                </JourneyStep>
+              )}
             </ol>
           </section>
 
           {/* Farmers */}
           <section aria-labelledby="farmers-heading" className="min-w-0">
             <h2 id="farmers-heading" className="type-h2 text-brand">
-              {farmers.length === 1 ? "Meet your farmer" : "Meet your farmers"}
+              Who grew this lot
             </h2>
             <p className="mt-2 max-w-[60ch] text-pretty text-muted">
               {farmers.length === 1
@@ -247,6 +275,7 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
             <ul className="mt-5 divide-y divide-border border-y border-border">
               {farmers.map((f) => (
                 <li key={f.id} className="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-4 py-5">
+                  {/* PHOTO SLOT: a square portrait (96 x 96, the farmer's consent on file) replaces this initials disc. */}
                   <span
                     aria-hidden="true"
                     className="type-data flex h-12 w-12 items-center justify-center rounded-full bg-sand text-brand"
@@ -292,11 +321,11 @@ export default async function LotProvenancePage({ params }: { params: Promise<{ 
           <LotQrCode code={lot.code} className="h-44 w-44 rounded-lg bg-white p-2 ring-1 ring-border sm:h-48 sm:w-48" />
           <div className="min-w-0">
             <h2 id="qr-heading" className="type-h2 text-brand">
-              Share this coffee&apos;s story
+              This bag&apos;s QR code
             </h2>
             <p className="mt-2 max-w-[60ch] text-pretty text-foreground">
               This is the QR code printed on every bag from lot{" "}
-              <span className="type-stencil text-xl text-brand">{lot.code}</span>. Scan it with your phone camera to open
+              <span className="font-semibold whitespace-nowrap">{lot.code}</span>. Scan it with your phone camera to open
               this page.
             </p>
             <p className="mt-2 font-mono text-xs text-muted [overflow-wrap:anywhere]">

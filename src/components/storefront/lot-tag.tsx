@@ -42,7 +42,7 @@ export function LotTag({
   const Heading = headingLevel;
   const headingId = `lot-tag-${lot.code}`;
   const harvested = new Date(lot.harvestDate).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
-  const rows: { label: string; value: React.ReactNode }[] = [
+  const rows: { label: string; value: React.ReactNode; hint?: string }[] = [
     { label: "Processing", value: lot.processingMethod },
     { label: "Variety", value: lot.variety },
     { label: "Altitude", value: altitudeRange(growers) },
@@ -55,6 +55,7 @@ export function LotTag({
           <span className="text-sm font-normal text-muted"> / 100</span>
         </>
       ),
+      hint: "A taste test by trained tasters. 80 or more is specialty grade.",
     },
   ];
 
@@ -70,9 +71,10 @@ export function LotTag({
 
       <dl className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-x-4 gap-y-3">
         {rows.map((r) => (
-          <div key={r.label} className="min-w-0">
+          <div key={r.label} className={`min-w-0 ${r.hint ? "col-span-full" : ""}`}>
             <dt className="type-label text-muted [overflow-wrap:anywhere]">{r.label}</dt>
             <dd className="type-data mt-0.5 [overflow-wrap:anywhere]">{r.value}</dd>
+            {r.hint && <dd className="mt-0.5 text-sm text-muted">{r.hint}</dd>}
           </div>
         ))}
       </dl>
@@ -102,7 +104,9 @@ export function LotTag({
           href={`/trace/${lot.code}`}
           className="mt-3 inline-flex min-h-11 items-center font-semibold text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
         >
-          See the full record for {lot.code}
+          <span>
+            See the full record for <span className="whitespace-nowrap">{lot.code}</span>
+          </span>
         </Link>
       )}
     </section>

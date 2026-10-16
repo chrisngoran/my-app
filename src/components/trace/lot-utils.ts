@@ -82,3 +82,14 @@ export function cuppingGrade(score: number) {
   if (score >= 80) return "Very good";
   return "Below specialty";
 }
+
+/** "Meluf", "Mbve and Shisong", "Mbve, Shisong and Mbiame". */
+export function joinList(items: string[]) {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/** "Strawberry, jasmine, cocoa nib": sentence case, only the first note capitalised (as on product cards). */
+export function notesSentence(notes: string[]) {
+  return notes.map((n, i) => (i === 0 ? n : n.charAt(0).toLowerCase() + n.slice(1))).join(", ");
+}

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { cooperative } from "@/lib/data";
 
-/* The soil ground the page stands on: parchment links on Volcanic Soil (11.19:1). */
+/*
+ * The soil ground the page stands on: parchment links on Volcanic Soil (11.19:1).
+ * Footer links never prefetch: they are on every page, and prefetching them
+ * would spend a visitor's metered data on pages they rarely open.
+ */
 const footerLink = "inline-flex min-h-11 items-center text-sand underline-offset-4 hover:underline";
 
 export function SiteFooter() {
@@ -12,14 +16,20 @@ export function SiteFooter() {
           <p className="type-title text-sand">{cooperative.name}</p>
           <p className="mt-2 text-mist-on-soil">{cooperative.location}</p>
         </div>
-        <div className="flex flex-col items-start">
-          <p className="type-label text-sand">Shop</p>
-          <Link href="/shop" className={footerLink}>
-            All coffee
-          </Link>
-          <Link href="/trace" className={footerLink}>
-            Trace a lot
-          </Link>
+        <div>
+          <p className="type-label text-sand">Browse</p>
+          {/* One row: two stacked 44px targets read as a gap where something is missing. */}
+          <div className="flex flex-wrap gap-x-6">
+            <Link href="/shop" prefetch={false} className={footerLink}>
+              All coffee
+            </Link>
+            <Link href="/trace" prefetch={false} className={footerLink}>
+              Trace a bag
+            </Link>
+            <Link href="/our-story" prefetch={false} className={footerLink}>
+              Our story
+            </Link>
+          </div>
         </div>
         <div className="flex min-w-0 flex-col items-start">
           <p className="type-label text-sand">Order &amp; pay</p>
@@ -36,10 +46,10 @@ export function SiteFooter() {
       <div className="border-t border-white/15">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 px-4 py-1 text-xs text-mist-on-soil">
           <span>Demo website</span>
-          <Link href="/portal" className={footerLink}>
-            Full platform preview
+          <Link href="/portal" prefetch={false} className={footerLink}>
+            Staff platform preview
           </Link>
-          <Link href="/admin" className={footerLink}>
+          <Link href="/admin" prefetch={false} className={footerLink}>
             Staff login
           </Link>
         </div>

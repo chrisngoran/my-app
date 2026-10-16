@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HillsBackdrop } from "@/components/trace/icons";
 import { LotScore } from "@/components/trace/live-lot";
 import { LotSearch } from "@/components/trace/lot-search";
 import { formatHarvestDate, lotFarmers } from "@/components/trace/lot-utils";
+import { RidgeEdge } from "@/components/trace/ridge-edge";
 import { lots } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "Trace your coffee",
+  title: "Trace a bag",
   description:
     "Enter the lot code from your bag to see the farmers, harvest date, processing and quality record behind your Green Venture coffee.",
 };
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     title: "Picked on the farm",
-    text: "Members hand-pick only ripe red cherries on smallholder plots across the Bui highlands.",
+    text: "Members hand-pick only ripe red cherries on their family plots across the Bui highlands.",
   },
   {
     title: "Weighed and recorded",
@@ -43,11 +43,11 @@ export default function TracePage() {
     <div>
       {/* Soil band: the finder sits directly on it, no floating card. */}
       <section aria-labelledby="trace-heading" className="on-dark relative overflow-hidden bg-brand text-white">
-        <HillsBackdrop className="pointer-events-none absolute inset-x-0 bottom-0 h-16 w-full text-background sm:h-24" />
+        <RidgeEdge className="h-16 sm:h-24" />
         <div className="relative mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-20 sm:pt-14 sm:pb-28 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-14">
           <div>
             <h1 id="trace-heading" className="type-h1 text-balance">
-              Meet the farmers behind your cup
+              Trace your bag to the farm
             </h1>
             <p className="type-lead mt-4 max-w-[60ch] text-pretty font-[450] tracking-[0.01em]">
               Every bag of Green Venture coffee carries a lot code. Scan the QR code or type the code below to see who
@@ -64,8 +64,7 @@ export default function TracePage() {
             How traceability works
           </h2>
           <p className="mt-3 max-w-[60ch] text-pretty text-foreground">
-            From a hillside in Kumbo to your kitchen, each step is recorded by the cooperative so the story of your
-            coffee is never lost.
+            Each step is recorded by the cooperative against the lot code.
           </p>
         </div>
         <ol className="space-y-0">
@@ -94,7 +93,7 @@ export default function TracePage() {
               2026 harvest lots
             </h2>
             <p className="text-sm text-muted">
-              <span className="tabular">{lots.length}</span> lots recorded this season
+              <span className="tabular">{lots.length}</span> lots recorded this season, newest harvest first
             </p>
           </div>
           <ul className="mt-6 border-t border-border">
@@ -121,9 +120,9 @@ export default function TracePage() {
                     </div>
                     <p className="text-right">
                       <span className="type-data block text-2xl text-brand tabular-nums">
-                        <LotScore code={lot.code} fallback={lot.quality.cuppingScore} />
+                        <LotScore code={lot.code} fallback={lot.quality.cuppingScore} fixed />
                       </span>
-                      <span className="block text-xs text-muted">cupping score</span>
+                      <span className="block text-xs text-muted">taste score</span>
                     </p>
                   </Link>
                 </li>

@@ -12,7 +12,7 @@ export default function LotNotFound() {
       </h1>
       <p className="type-lead mt-4 max-w-[60ch] text-pretty text-foreground">
         Check the code printed under the QR code on the back of your bag. It looks like{" "}
-        <span className="font-mono font-semibold">GV-2026-014</span>. If the code is right, the lot may not be published
+        <span className="type-stencil text-xl leading-none whitespace-nowrap text-brand">GV-2026-014</span>. If the code is right, the lot may not be published
         yet.
       </p>
 

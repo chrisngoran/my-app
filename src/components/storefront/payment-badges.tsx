@@ -6,7 +6,7 @@
 const METHODS = [
   { label: "MTN Mobile Money", mark: "rounded-full bg-[#ffcc00] ring-1 ring-black/15" },
   { label: "Orange Money", mark: "rounded-[3px] bg-[#ff7900]" },
-  { label: "WhatsApp orders", mark: "rounded-full bg-whatsapp" },
+  { label: "Order on WhatsApp", mark: "rounded-full bg-whatsapp" },
 ];
 
 export function PaymentBadges({ className = "" }: { className?: string }) {

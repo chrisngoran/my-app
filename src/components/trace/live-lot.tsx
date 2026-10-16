@@ -27,9 +27,10 @@ function useLotScore(code: string, fallback: number) {
   return validScore(useLotView(code)?.quality.cuppingScore, fallback);
 }
 
-/** The score as text, e.g. "86.75". */
-export function LotScore({ code, fallback }: { code: string; fallback: number }) {
-  return <>{formatScore(useLotScore(code, fallback))}</>;
+/** The score as text, e.g. "86.75". `fixed` always prints two decimals ("82.00") for aligned columns. */
+export function LotScore({ code, fallback, fixed = false }: { code: string; fallback: number; fixed?: boolean }) {
+  const score = useLotScore(code, fallback);
+  return <>{fixed ? score.toFixed(2) : formatScore(score)}</>;
 }
 
 /** "86.75 points, Excellent" for the lot journey. */
