@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
 import { CURRENCIES } from "@/lib/currency";
 import { products as catalogProducts } from "@/lib/data";
 import type { Currency } from "@/lib/types";
@@ -19,6 +19,8 @@ interface StoreState {
   removeFromCart: (slug: string) => void;
   clearCart: () => void;
   itemCount: number;
+  /** How many times addToCart has run in this visit. The header badge pops when it changes. */
+  adds: number;
   /** True once the saved cart and currency have been read from localStorage. */
   loaded: boolean;
   /**
@@ -150,12 +152,14 @@ function updateCart(fn: (prev: CartItem[]) => CartItem[]) {
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { cart, currency, loaded, persisted } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [adds, setAdds] = useState(0);
 
   const setCurrency = useCallback((c: Currency) => update({ currency: sanitizeCurrency(c) }), []);
 
   const addToCart = useCallback((slug: string, quantity = 1) => {
     const add = clampQuantity(Number.isFinite(quantity) ? quantity : 1);
     if (add < 1) return;
+    setAdds((n) => n + 1);
     updateCart((prev) => {
       const existing = prev.find((i) => i.slug === slug);
       if (existing) {
@@ -188,10 +192,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       removeFromCart,
       clearCart,
       itemCount: cart.reduce((n, i) => n + i.quantity, 0),
+      adds,
       loaded,
       persisted,
     }),
-    [currency, setCurrency, cart, addToCart, setQuantity, removeFromCart, clearCart, loaded, persisted],
+    [currency, setCurrency, cart, addToCart, setQuantity, removeFromCart, clearCart, adds, loaded, persisted],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

@@ -169,7 +169,7 @@ export default async function LotLabelPage({ params }: { params: Promise<{ code:
         {/* Footer strip */}
         <div className="l-xs flex items-center justify-between gap-[2cqw] border-t border-border px-[6cqw] py-[2.5cqw]">
           <span>
-            Cupping score{" "}
+            Taste score{" "}
             <strong>
               <LotScore code={lot.code} fallback={lot.quality.cuppingScore} />
             </strong>

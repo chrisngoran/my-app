@@ -6,14 +6,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// The admin has its own header, so hide the public site header and footer.
-const HIDE_SITE_CHROME = `body > header, body > footer { display: none !important; }`;
-
+// The admin sits outside the (site) group, so it never loads the public header and footer.
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <style>{HIDE_SITE_CHROME}</style>
+    <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
       {children}
-    </>
+    </main>
   );
 }

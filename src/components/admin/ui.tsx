@@ -161,7 +161,7 @@ const TOAST_EXIT_MS = 160;
  * `raised` lifts it on phones so it clears a sticky action bar.
  */
 export function useToast({ raised = false }: { raised?: boolean } = {}) {
-  const [message, setMessage] = useState<(ToastMessage & { id: number; leaving?: boolean }) | null>(null);
+  const [message, setMessage] = useState<(ToastMessage & { id: number; leaving?: boolean; swapped?: boolean }) | null>(null);
 
   useEffect(() => {
     if (!message) return;
@@ -177,7 +177,8 @@ export function useToast({ raised = false }: { raised?: boolean } = {}) {
   }, [message]);
 
   const show = useCallback((text: string, tone: ToastMessage["tone"] = "success") => {
-    setMessage({ text, tone, id: Date.now() });
+    // A message that replaces one still showing swaps its text in place; the bar does not re-enter.
+    setMessage((m) => ({ text, tone, id: Date.now(), swapped: m !== null && !m.leaving }));
   }, []);
 
   const toast = (
@@ -190,13 +191,14 @@ export function useToast({ raised = false }: { raised?: boolean } = {}) {
     >
       {message && (
         <p
-          key={message.id}
           className={`toast-in pointer-events-auto flex max-w-md min-w-0 items-start gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-[var(--shadow-float)] [overflow-wrap:anywhere] ${
             message.tone === "error" ? "bg-danger text-white" : "on-dark bg-brand text-sand"
           } ${message.leaving ? "toast-out" : ""}`}
         >
-          {message.tone === "error" ? <AlertMark /> : <CheckMark className="mt-0.5 h-4 w-4" />}
-          <span>{message.text}</span>
+          <span key={message.id} className={`flex min-w-0 items-start gap-2 ${message.swapped ? "anim-swap" : ""}`}>
+            {message.tone === "error" ? <AlertMark /> : <CheckMark className="mt-0.5 h-4 w-4" />}
+            <span>{message.text}</span>
+          </span>
         </p>
       )}
     </div>

@@ -48,7 +48,7 @@ export function LotTag({
     { label: "Altitude", value: altitudeRange(growers) },
     { label: "Harvested", value: harvested },
     {
-      label: "Cupping score",
+      label: "Taste score",
       value: (
         <>
           <LiveLotScore code={lot.code} fallback={lot.quality.cuppingScore} />

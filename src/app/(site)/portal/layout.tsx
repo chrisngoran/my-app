@@ -18,10 +18,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       <div className="border-b border-accent/20 bg-accent-soft print:hidden">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-sm text-accent">
           <span className="inline-flex items-center gap-2 font-medium">
-            <span className="relative flex h-2 w-2" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60 motion-reduce:animate-none" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-            </span>
+            <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden="true" />
             Demo: signed in as Cooperative Manager
           </span>
           <span className="text-accent/80">· Kumbo office · sample data</span>
