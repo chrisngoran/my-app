@@ -1,16 +1,16 @@
 import QRCode from "qrcode";
 
-const FALLBACK_SITE_URL = "https://greenventure.example";
-
-/**
- * Public base URL of the site, without a trailing slash. An explicit
- * NEXT_PUBLIC_SITE_URL (for a custom domain) wins; on Vercel the project's
- * production address is used otherwise, so printed QR codes never point at
- * the placeholder once the site is live.
+/*
+ * The site's public address, written into every printed QR code. It is set
+ * here rather than read from Vercel's settings: an environment value once
+ * pointed the codes at another site's address, and a bag already printed
+ * cannot be fixed. Change it here when the site moves to its own domain.
  */
+const SITE_URL = "https://my-app-gray-three-39.vercel.app";
+
+/** Public base URL of the site, without a trailing slash. */
 export function siteUrl() {
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  return (process.env.NEXT_PUBLIC_SITE_URL || (vercel ? `https://${vercel}` : FALLBACK_SITE_URL)).replace(/\/+$/, "");
+  return SITE_URL.replace(/\/+$/, "");
 }
 
 /** The provenance URL encoded in the QR code printed on each bag. */
