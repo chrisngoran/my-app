@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import handSorting from "@/assets/story/hand-sorting.jpg";
+import millHuller from "@/assets/story/mill-huller.jpg";
+import millLine from "@/assets/story/mill-line.jpg";
 import { LiveFarmerStory } from "@/components/storefront/live-catalog";
 import { cooperative, farmers, lots } from "@/lib/data";
 import { ridgeHeightPct } from "@/lib/ridge";
@@ -136,6 +139,45 @@ export default function OurStoryPage() {
             drying lifts quality, and with it the price each farmer receives. Every lot is recorded and open for you to see.
           </p>
           <p className="mt-4 text-sm text-muted">{cooperative.location}</p>
+        </div>
+      </section>
+
+      {/* The cooperative's own photographs: hand-sorting and the mill in Kumbo. */}
+      <section aria-labelledby="place-heading" className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
+        <h2 id="place-heading" className="sr-only">
+          At the cooperative
+        </h2>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <figure className="col-span-2 lg:col-span-1">
+            <Image
+              src={handSorting}
+              alt="Women at long tables under a tin roof, sorting green coffee beans by hand"
+              sizes="(min-width: 1024px) 560px, 100vw"
+              placeholder="blur"
+              className="aspect-[4/3] w-full rounded-lg object-cover lg:aspect-auto lg:h-96"
+            />
+            <figcaption className="mt-2 text-sm text-muted">Sorting green coffee by hand, bean by bean, before it is bagged.</figcaption>
+          </figure>
+          <figure>
+            <Image
+              src={millHuller}
+              alt="A green-painted processing machine marked Green Ventures, with a hopper, fan housing and belt-driven motor"
+              sizes="(min-width: 1024px) 340px, 50vw"
+              placeholder="blur"
+              className="aspect-[3/4] w-full rounded-lg object-cover lg:aspect-auto lg:h-96"
+            />
+            <figcaption className="mt-2 text-sm text-muted">Our mill, where dried coffee is processed.</figcaption>
+          </figure>
+          <figure>
+            <Image
+              src={millLine}
+              alt="Tall green elevator columns marked Green Ventures linking the machines of the processing line"
+              sizes="(min-width: 1024px) 340px, 50vw"
+              placeholder="blur"
+              className="aspect-[3/4] w-full rounded-lg object-cover lg:aspect-auto lg:h-96"
+            />
+            <figcaption className="mt-2 text-sm text-muted">Elevators carry the coffee from one machine to the next.</figcaption>
+          </figure>
         </div>
       </section>
 
