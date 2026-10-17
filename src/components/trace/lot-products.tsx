@@ -44,11 +44,11 @@ export function LotProducts({ slugs }: { slugs: string[] }) {
             className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)] gap-x-4 gap-y-2 py-5 sm:grid-cols-[3.5rem_minmax(0,1fr)_auto] sm:items-center"
           >
             <Image
-              src={safeImage(p.image, base?.image ?? "/products/micro-lot.svg")}
+              src={safeImage(p.image, base?.image ?? "/products/micro-lot.jpg")}
               alt=""
               width={112}
               height={112}
-              unoptimized
+              unoptimized={safeImage(p.image, "").startsWith("data:")}
               className="h-14 w-14 rounded-lg bg-accent-soft object-cover"
             />
             <div className="min-w-0">

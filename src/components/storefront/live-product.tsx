@@ -70,7 +70,8 @@ export function LiveProductImage({
       alt={alt}
       width={width}
       height={height}
-      unoptimized
+      // bundled photos are resized per screen; a photo uploaded in admin is a data: URL and is shown as is
+      unoptimized={src.startsWith("data:")}
       preload={preload}
       loading={eager ? "eager" : undefined}
       fetchPriority={eager ? "high" : undefined}

@@ -132,7 +132,7 @@ export const products: Product[] = [
     cuppingNotes: ["Milk chocolate", "Roasted nuts", "Brown sugar"],
     description: "Our everyday coffee: balanced, smooth and roasted in small batches in Kumbo.",
     stock: 120,
-    image: "/products/medium-roast.svg",
+    image: "/products/medium-roast.jpg",
   },
   {
     slug: "meluf-natural-micro-lot",
@@ -145,7 +145,7 @@ export const products: Product[] = [
     cuppingNotes: ["Strawberry", "Jasmine", "Cocoa nib"],
     description: "A single-farm natural from Delphine Berinyuy's plot at 1,900 m. Limited quantity.",
     stock: 24,
-    image: "/products/micro-lot.svg",
+    image: "/products/micro-lot.jpg",
   },
   {
     slug: "kumbo-honey-espresso",
@@ -158,7 +158,7 @@ export const products: Product[] = [
     cuppingNotes: ["Dark cherry", "Molasses", "Cocoa"],
     description: "A rich honey-processed community lot roasted for espresso and strong morning coffee.",
     stock: 60,
-    image: "/products/espresso.svg",
+    image: "/products/espresso.jpg",
   },
   {
     slug: "washed-green-coffee-1kg",
@@ -170,7 +170,7 @@ export const products: Product[] = [
     cuppingNotes: ["Citrus", "Caramel", "Clean finish"],
     description: "Unroasted Grade 1 washed Arabica for home roasters and cafés. Larger quantities on request.",
     stock: 300,
-    image: "/products/green.svg",
+    image: "/products/green.jpg",
   },
   {
     slug: "monthly-subscription",
@@ -183,7 +183,7 @@ export const products: Product[] = [
     cuppingNotes: ["Rotating selection"],
     description: "Three 250 g bags every month, chosen from our freshest lots and delivered to your door.",
     stock: 50,
-    image: "/products/subscription.svg",
+    image: "/products/subscription.jpg",
   },
 ];
 
