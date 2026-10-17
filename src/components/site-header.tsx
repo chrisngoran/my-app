@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import { useCatalog } from "@/lib/catalog-overrides";
 import { CURRENCIES } from "@/lib/currency";
 import type { Currency } from "@/lib/types";
@@ -67,18 +67,10 @@ function useOrderableCount() {
   return { count, loaded };
 }
 
-/** "My order" pill. The count badge pops when an item is added in this visit. */
+/** "My order" pill. The count badge pops each time something is added (not when a quantity is edited). */
 function OrderPill({ className = "" }: { className?: string }) {
   const { count: itemCount, loaded } = useOrderableCount();
-  // Derived during render (no effect): count each increase after the saved cart has loaded.
-  const [seen, setSeen] = useState({ count: itemCount, loaded, bumps: 0 });
-  if (seen.count !== itemCount || seen.loaded !== loaded) {
-    setSeen({
-      count: itemCount,
-      loaded,
-      bumps: seen.loaded && loaded && itemCount > seen.count ? seen.bumps + 1 : seen.bumps,
-    });
-  }
+  const { adds } = useStore();
 
   return (
     <Link
@@ -89,10 +81,10 @@ function OrderPill({ className = "" }: { className?: string }) {
       My order
       {/* Empty until the saved list is read, so it never flashes "0" first. */}
       <span
-        key={seen.bumps}
+        key={adds}
         aria-hidden="true"
         className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-surface px-1.5 text-xs font-bold text-cherry tabular-nums ${
-          seen.bumps > 0 ? "anim-pop" : ""
+          adds > 0 ? "anim-pop" : ""
         }`}
       >
         {loaded ? (itemCount > 99 ? "99+" : itemCount) : ""}

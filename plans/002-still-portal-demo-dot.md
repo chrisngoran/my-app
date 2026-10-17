@@ -1,6 +1,6 @@
 # 002 — Make the staff dashboard's demo dot still
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: bf8be15
 - **Severity**: LOW
 - **Category**: Purpose & frequency

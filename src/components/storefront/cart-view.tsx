@@ -128,6 +128,8 @@ interface Removed {
   quantity: number;
   id: number;
   leaving?: boolean;
+  /** Replaced a removal that was still showing, so only the text swaps. */
+  swapped?: boolean;
 }
 
 /** "Removed … Undo" bar, so a mistaken tap on Remove is easy to take back. */
@@ -136,12 +138,14 @@ function UndoToast({ removed, onUndo }: { removed: Removed | null; onUndo: () =>
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4" role="status" aria-live="polite">
       {removed && (
         <div
-          key={removed.id}
           className={`on-dark toast-in pointer-events-auto flex max-w-md min-w-0 items-center gap-3 rounded-lg bg-brand py-1.5 pr-1.5 pl-4 text-sm text-brand-contrast shadow-[var(--shadow-float)] ${
             removed.leaving ? "toast-out" : ""
           }`}
         >
-          <p className="line-clamp-2 min-w-0 [overflow-wrap:anywhere]">
+          <p
+            key={removed.id}
+            className={`line-clamp-2 min-w-0 [overflow-wrap:anywhere] ${removed.swapped ? "anim-swap" : ""}`}
+          >
             Removed <span className="font-semibold">{removed.name}</span>
           </p>
           <button
@@ -187,7 +191,13 @@ export function CartView() {
   function remove(product: CatalogProduct) {
     const quantity = cart.find((i) => i.slug === product.slug)?.quantity ?? 1;
     removeFromCart(product.slug);
-    setRemoved({ slug: product.slug, name: product.name, quantity, id: ++removals.current });
+    setRemoved((r) => ({
+      slug: product.slug,
+      name: product.name,
+      quantity,
+      id: ++removals.current,
+      swapped: r !== null && !r.leaving,
+    }));
   }
 
   function undo() {

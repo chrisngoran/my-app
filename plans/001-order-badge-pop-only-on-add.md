@@ -1,6 +1,6 @@
 # 001 — Pop the order badge only when something is added, and drop its flicker
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: bf8be15
 - **Severity**: MEDIUM
 - **Category**: Interruptibility (also Purpose & frequency)

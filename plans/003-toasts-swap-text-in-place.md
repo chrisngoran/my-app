@@ -1,6 +1,6 @@
 # 003 — Keep the toast on screen and swap its text when a new message replaces it
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: bf8be15
 - **Severity**: LOW
 - **Category**: Interruptibility

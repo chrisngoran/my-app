@@ -6,9 +6,9 @@ on each other, so any order works.
 
 | # | Plan | Severity | Status |
 | --- | --- | --- | --- |
-| 001 | [Pop the order badge only when something is added](001-order-badge-pop-only-on-add.md) | MEDIUM | TODO |
-| 002 | [Make the staff dashboard's demo dot still](002-still-portal-demo-dot.md) | LOW | TODO |
-| 003 | [Swap toast text in place](003-toasts-swap-text-in-place.md) | LOW | TODO |
+| 001 | [Pop the order badge only when something is added](001-order-badge-pop-only-on-add.md) | MEDIUM | DONE |
+| 002 | [Make the staff dashboard's demo dot still](002-still-portal-demo-dot.md) | LOW | DONE |
+| 003 | [Swap toast text in place](003-toasts-swap-text-in-place.md) | LOW | DONE |
 
 ## Recommended order
 
