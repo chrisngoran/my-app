@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
   const names = lotFarmers(lot).map((f) => f.name).join(", ");
   return {
     title: `Lot ${lot.code}`,
-    description: `${lot.processingMethod} ${lot.variety} grown by ${names} in the Bui highlands of Cameroon. Cupping score ${lot.quality.cuppingScore}.`,
+    description: `${lot.processingMethod} ${lot.variety} grown by ${names} in the Bui highlands of Cameroon. Taste score ${lot.quality.cuppingScore}.`,
   };
 }
 

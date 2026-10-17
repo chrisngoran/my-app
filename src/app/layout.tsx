@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { StoreProvider } from "@/components/store-provider";
 import { archivo, stencil } from "./fonts";
 import "./globals.css";
@@ -10,7 +8,7 @@ export const metadata: Metadata = {
     default: "Green Venture Cooperative Coffee",
     template: "%s · Green Venture Coffee",
   },
-  description: "Traceable Arabica coffee from smallholder farmers in Kumbo, Bui Division, Cameroon.",
+  description: "Traceable Arabica coffee from family farms in Kumbo, Bui Division, Cameroon.",
 };
 
 export const viewport: Viewport = {
@@ -27,13 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <StoreProvider>
-          <SiteHeader />
-          <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
-            {children}
-          </main>
-          <SiteFooter />
-        </StoreProvider>
+        <StoreProvider>{children}</StoreProvider>
       </body>
     </html>
   );

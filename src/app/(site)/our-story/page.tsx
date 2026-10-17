@@ -9,7 +9,7 @@ import type { Farmer } from "@/lib/types";
 export const metadata: Metadata = {
   title: "Our story",
   description:
-    "How Green Venture Cooperative brings together smallholder Arabica farmers in Kumbo, Bui Division, and how each lot goes from picking to payment.",
+    "How Green Venture Cooperative brings together family Arabica farmers in Kumbo, Bui Division, and how each lot goes from picking to payment.",
 };
 
 const STEPS = [
