@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useMemo } from "react";
 import { useCatalog } from "@/lib/catalog-overrides";
 import { CURRENCIES } from "@/lib/currency";
 import type { Currency } from "@/lib/types";
+import logo from "@/assets/logo.png";
 import { useStore } from "./store-provider";
 
 /* One name per destination, the same in the header, footer and buttons ("Trace a bag"). */
@@ -93,24 +95,6 @@ function OrderPill({ className = "" }: { className?: string }) {
   );
 }
 
-/** Two ripe cherries on a short leaf stroke: the cooperative's mark. */
-function CherryMark() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[22px] w-[22px] shrink-0">
-      <path d="M12.6 2.4c3.7.1 6.6 2.2 7.6 5.5-3.9.5-6.8-1.5-7.6-5.5Z" fill="var(--accent)" />
-      <path
-        d="M12.6 3.4c-.5 4.1-2.5 7.2-4.7 9.8M12.6 3.4c.8 4.3 2.3 7.5 3.8 10.4"
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <circle cx="7.4" cy="16.8" r="4.6" fill="var(--cherry)" />
-      <circle cx="16.6" cy="17.6" r="4.6" fill="var(--cherry)" />
-    </svg>
-  );
-}
-
 export function SiteHeader() {
   const { currency, setCurrency } = useStore();
 
@@ -126,7 +110,8 @@ export function SiteHeader() {
       */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 md:flex-nowrap md:gap-x-5 md:py-2 lg:gap-x-8 lg:py-2.5">
         <Link href="/" className="order-1 mr-auto inline-flex min-h-11 items-center gap-2 text-brand md:mr-0">
-          <CherryMark />
+          {/* The cooperative's seal: coffee cherries from a member's tree. Decorative here, the name follows. */}
+          <Image src={logo} alt="" width={44} height={44} priority className="h-11 w-11 shrink-0" />
           <span className="type-title font-extrabold [font-stretch:80%] sm:text-xl">
             Green Venture<span className="sr-only"> Coffee, home</span>
           </span>
