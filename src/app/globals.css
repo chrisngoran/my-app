@@ -548,3 +548,10 @@ body {
     transform: none;
   }
 }
+
+/* No long-press "Save image" sheet on iPhone, no dragging photos off the page (see ImageGuard). */
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
