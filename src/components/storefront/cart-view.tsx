@@ -238,7 +238,7 @@ export function CartView() {
                       alt=""
                       width={144}
                       height={144}
-                      unoptimized
+                      unoptimized={product.image.startsWith("data:")}
                       className="h-18 w-18 rounded-lg bg-accent-soft object-cover"
                     />
                   </Link>

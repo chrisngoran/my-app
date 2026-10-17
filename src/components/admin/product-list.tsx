@@ -43,7 +43,7 @@ export function AdminProductList() {
                   alt=""
                   width={112}
                   height={112}
-                  unoptimized
+                  unoptimized={p.image.startsWith("data:")}
                   className="h-14 w-14 shrink-0 rounded-lg bg-accent-soft object-cover"
                 />
                 <div className="min-w-0 flex-1">
