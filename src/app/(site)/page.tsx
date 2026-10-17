@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import cherries from "@/assets/story/cherries.jpg";
 import { SHIPPING_XAF } from "@/components/storefront/catalog";
 import { HeroRidge } from "@/components/storefront/hero-art";
 import { LiveProductList } from "@/components/storefront/live-product";
@@ -29,10 +31,10 @@ export default function Home() {
 
   return (
     <>
-      {/* Hero: six farms on one ridge, standing on volcanic soil. */}
+      {/* Hero: the coffee itself, then six farms on one ridge, standing on volcanic soil. */}
       <section aria-labelledby="hero-heading" className="bg-background">
         <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-x-10 gap-y-8 px-4 pt-8 sm:pt-12 lg:grid-cols-[repeat(12,minmax(0,1fr))] lg:items-end lg:pt-16">
-          <div className="lg:col-span-6 lg:pb-14">
+          <div className="lg:col-span-6 lg:self-center">
             <h1 id="hero-heading" className="type-display text-brand">
               Highland Arabica from the family farms around Kumbo.
             </h1>
@@ -49,8 +51,20 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          {/* On a phone the ridge is below the fold: its one moment waits until it is in view. */}
-          <RipenOnView className="h-72 sm:h-80 lg:col-span-6 lg:h-[26rem]">
+          {/* A real photograph first, so the first thing anyone sees is the coffee itself, not a drawing. */}
+          <figure className="lg:col-span-6">
+            <Image
+              src={cherries}
+              alt="A cluster of Arabica coffee cherries on the branch, most ripe red, some still orange and green"
+              priority
+              sizes="(min-width: 1152px) 540px, (min-width: 1024px) 47vw, 100vw"
+              placeholder="blur"
+              className="aspect-[4/3] w-full rounded-lg object-cover lg:aspect-[5/4]"
+            />
+            <figcaption className="mt-2 text-sm text-muted">Arabica cherries ripening on the branch.</figcaption>
+          </figure>
+          {/* The ridge runs the full width under both. On a phone it is below the fold, so its one moment waits until it is in view. */}
+          <RipenOnView className="h-64 sm:h-72 lg:col-span-12 lg:h-72">
             <HeroRidge farmers={farmers} labelledBy="ridge-caption" className="h-full" />
           </RipenOnView>
         </div>
