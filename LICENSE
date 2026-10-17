@@ -1,10 +1,45 @@
 Copyright (c) 2026 Ngoran Christian Dinyuydzee. All rights reserved.
 
-This software and its source code, design, text and images are proprietary.
-No permission is granted to copy, modify, publish, distribute, sublicense or
-sell any part of it, in whole or in part, without the prior written consent
-of the copyright holder.
+1. What the Developer owns
 
-The Green Venture Cooperative Coffee name, seal, photographs and product
-information belong to Green Venture Cooperative Coffee, Kumbo, Cameroon, and
-are used with its permission.
+Ngoran Christian Dinyuydzee (the "Developer") owns, and keeps owning, all
+rights in this website and its software, including:
+
+  - the source code, compiled code, configuration and build scripts;
+  - the design: layout, visual system, typography, colour and motion choices,
+    page structure and user flows;
+  - the product images and labels the Developer produced, except the
+    Cooperative's own elements inside them (see section 2);
+  - the documentation, plans and any later versions of all of the above.
+
+2. What Green Venture Cooperative Coffee owns
+
+Green Venture Cooperative Coffee, Kumbo, Cameroon (the "Cooperative") owns its
+name, seal and logo, the photographs it supplied, and its product, farmer, lot,
+order and payment information. The Developer uses them only to build and run
+this website for the Cooperative.
+
+3. What the Cooperative may do
+
+Once the agreed development price has been paid in full, the Cooperative may
+use and run this website for its own business, for as long as it wishes. This
+right is non-exclusive and cannot be sold, transferred or sublicensed.
+
+The Cooperative may not, without the Developer's written consent:
+
+  - copy, modify or reuse the code or design for any other website, app or
+    business;
+  - sell, give or show the source code to any other person or developer;
+  - remove this notice or claim authorship of the software or design.
+
+4. Everyone else
+
+No one else is granted any right to copy, modify, publish, distribute,
+sublicense or sell any part of this website, in whole or in part, without the
+Developer's prior written consent.
+
+5. Other terms
+
+Open-source components (such as Next.js and React) remain under their own
+licences. Where a written agreement signed by the Developer and the
+Cooperative says something different, that agreement applies.
