@@ -8,6 +8,9 @@ import { cooperative } from "@/lib/data";
  * Footer links never prefetch: they are on every page, and prefetching them
  * would spend a visitor's metered data on pages they rarely open.
  */
+/** Fixed, not new Date(): the footer is prerendered, and the year changes only when the site is updated. */
+const COPYRIGHT_YEAR = 2026;
+
 const footerLink = "inline-flex min-h-11 items-center text-sand underline-offset-4 hover:underline";
 
 export function SiteFooter() {
@@ -48,6 +51,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-white/15">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 px-4 py-1 text-xs text-mist-on-soil">
+          <span>© {COPYRIGHT_YEAR} {cooperative.name}. All rights reserved.</span>
           <span>Demo website</span>
           <Link href="/portal" prefetch={false} className={footerLink}>
             Staff platform preview
