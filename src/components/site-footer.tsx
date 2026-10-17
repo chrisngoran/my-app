@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import logo from "@/assets/logo.png";
 import { cooperative } from "@/lib/data";
 
 /*
@@ -13,6 +15,7 @@ export function SiteFooter() {
     <footer className="on-dark mt-12 bg-brand text-sand print:hidden">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-3 sm:py-12">
         <div>
+          <Image src={logo} alt="" width={88} height={88} className="mb-3 h-22 w-22" />
           <p className="type-title text-sand">{cooperative.name}</p>
           <p className="mt-2 text-mist-on-soil">{cooperative.location}</p>
         </div>
