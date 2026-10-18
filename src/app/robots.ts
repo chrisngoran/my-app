@@ -11,7 +11,7 @@ const AI_CRAWLERS = ["GPTBot", "ChatGPT-User", "CCBot", "Google-Extended", "Clau
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: ["/admin", "/portal", "/staff", "/account"] },
+      { userAgent: "*", allow: "/", disallow: ["/admin", "/portal", "/staff", "/account", "/farmer"] },
       { userAgent: AI_CRAWLERS, disallow: "/" },
     ],
     host: siteUrl(),
