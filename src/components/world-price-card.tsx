@@ -57,6 +57,7 @@ export async function WorldPriceCard() {
       <div className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4">
         <Quote name="Arabica coffee (New York)" q={price.arabica} />
         {price.robusta && <Quote name={price.robusta.period ? "Robusta coffee (world)" : "Robusta coffee (London)"} q={price.robusta} />}
+        {price.otherMilds && <Quote name="Mild Arabica (world, incl. Cameroon)" q={price.otherMilds} />}
         {price.cocoa && <Quote name="Cocoa (New York)" q={price.cocoa} />}
       </div>
       <p className="mt-3 text-xs text-muted">

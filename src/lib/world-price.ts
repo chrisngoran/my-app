@@ -14,6 +14,10 @@ import { cacheLife } from "next/cache";
  * FRED's official API is used when FRED_API_KEY is set (a free key from
  * fredaccount.stlouisfed.org); otherwise its public CSV and text downloads.
  *
+ * Other Mild Arabicas: the IMF's monthly average for washed Arabicas from
+ * outside Colombia and Brazil, the group Cameroon's Arabica is sold in
+ * (series PCOFFOTMUSDM, same unit and source as the monthly Robusta).
+ *
  * FCFA is pegged to the euro (1 EUR = 655.957 FCFA), so only the euro-dollar
  * rate is looked up (European Central Bank, via frankfurter.app).
  */
@@ -45,6 +49,8 @@ async function get(url: string, source: string) {
 export interface WorldPrice {
   arabica: MarketQuote;
   robusta: MarketQuote | null;
+  /** "Other Mild Arabicas", the world price group Cameroon's washed Arabica belongs to (monthly). */
+  otherMilds: MarketQuote | null;
   cocoa: MarketQuote | null;
   /** When the exchange last traded, as an ISO date. */
   asOf: string;
@@ -133,7 +139,7 @@ async function fredMonthly(series: string, notes: string[]): Promise<Monthly | n
     try {
       return await route();
     } catch (e) {
-      notes.push(e instanceof Error ? e.message : String(e));
+      notes.push(`${series} ${e instanceof Error ? e.message : String(e)}`);
     }
   }
   return null;
@@ -151,10 +157,11 @@ export async function worldCoffeePrice(): Promise<WorldPrice> {
   // London Robusta goes by more than one ticker; the first that answers is used, else the monthly average.
   const robustaDaily = futures("RC=F").catch((e) => (note(e), futures("RM=F"))).catch(note);
   const robustaMonthly = fredMonthly("PCOFFROBUSDM", notes);
-  const [arabica, robusta, robustaAvg, cocoa, rate] = await Promise.all([
+  const [arabica, robusta, robustaAvg, otherMildsAvg, cocoa, rate] = await Promise.all([
     futures("KC=F"),
     robustaDaily,
     robustaMonthly,
+    fredMonthly("PCOFFOTMUSDM", notes),
     futures("CC=F").catch(note),
     fcfaPerUsd(),
   ]);
@@ -164,6 +171,13 @@ export async function worldCoffeePrice(): Promise<WorldPrice> {
     quoted: `${Math.round(m.regularMarketPrice!).toLocaleString("en-GB")} USD/tonne`,
     changePct: change(m),
   });
+  /** A monthly average in US cents per pound, as FCFA per kilo. */
+  const monthly = (m: Monthly): MarketQuote => ({
+    fcfaPerKg: (m.value / 100 / KG_PER_LB) * rate,
+    quoted: `${(m.value / 100).toFixed(2)} USD/lb`,
+    changePct: m.previous ? ((m.value - m.previous) / m.previous) * 100 : null,
+    period: `monthly average, ${m.month}`,
+  });
   const centsPerLb = arabica.regularMarketPrice!;
   return {
     arabica: {
@@ -171,16 +185,8 @@ export async function worldCoffeePrice(): Promise<WorldPrice> {
       quoted: `${(centsPerLb / 100).toFixed(2)} USD/lb`,
       changePct: change(arabica),
     },
-    robusta: robusta
-      ? perTonne(robusta)
-      : robustaAvg
-        ? {
-            fcfaPerKg: (robustaAvg.value / 100 / KG_PER_LB) * rate,
-            quoted: `${(robustaAvg.value / 100).toFixed(2)} USD/lb`,
-            changePct: robustaAvg.previous ? ((robustaAvg.value - robustaAvg.previous) / robustaAvg.previous) * 100 : null,
-            period: `monthly average, ${robustaAvg.month}`,
-          }
-        : null,
+    robusta: robusta ? perTonne(robusta) : robustaAvg ? monthly(robustaAvg) : null,
+    otherMilds: otherMildsAvg ? monthly(otherMildsAvg) : null,
     cocoa: cocoa ? perTonne(cocoa) : null,
     asOf: new Date((arabica.regularMarketTime ?? 0) * 1000).toISOString(),
     fcfaPerUsd: rate,
