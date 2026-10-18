@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/portal/ui";
 import { catalogProducts } from "@/lib/catalog-store";
 import { hasDatabase, type OrderRow, recentOrders } from "@/lib/db";
 import { SAMPLE_END, sampleOrders, type SampleOrder } from "@/lib/sample-sales";
+import { googleSignInConfigured } from "@/lib/google-auth";
 import { signOutStaff } from "@/lib/staff-actions";
 import { isStaff, staffPasswordSet } from "@/lib/staff-session";
 
@@ -59,7 +60,7 @@ async function Insights() {
     return (
       <>
         <PageHeader title={TITLE} description={DESCRIPTION} />
-        <StaffLogin passwordSet={staffPasswordSet()} next="/portal/insights" note="The sales figures are real orders, so only cooperative staff can see them." />
+        <StaffLogin passwordSet={staffPasswordSet()} google={googleSignInConfigured()} next="/portal/insights" note="The sales figures are real orders, so only cooperative staff can see them." />
       </>
     );
   }

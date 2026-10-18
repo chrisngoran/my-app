@@ -6,7 +6,8 @@ import { useActionState, useState, useSyncExternalStore } from "react";
 import { signIn, signOut, useAdminSession } from "@/lib/admin-session";
 import { cooperative } from "@/lib/data";
 import { signInStaff, signOutStaff } from "@/lib/staff-actions";
-import { useStaffStatus } from "@/lib/staff-status";
+import { type StaffStatus, useStaffStatus } from "@/lib/staff-status";
+import { GOOGLE_SIGNIN_ERRORS, StaffGoogleButton } from "@/components/staff-google-button";
 import { AlertMark, ChevronLeftMark, errorText, InfoMark, inputClass, labelClass, primaryButton, secondaryButton } from "./ui";
 
 /** True when this browser lets the page keep the sign-in for the tab (private modes and strict settings can block it). */
@@ -27,12 +28,20 @@ function probeSessionStorage() {
 const noSubscribe = () => () => {};
 
 /** The real sign-in, used once a database is connected: one staff password, checked on the server. */
-function StaffPasswordForm({ staff, passwordSet }: { staff: boolean; passwordSet: boolean }) {
+/** The ?signin= reason a Google sign-in came back with, read after hydration. */
+const readSignInReason = () => new URLSearchParams(window.location.search).get("signin") ?? "";
+
+function StaffPasswordForm({ status }: { status: StaffStatus }) {
+  const { staff, passwordSet, google, email } = status;
   const [state, action, pending] = useActionState(signInStaff, null);
+  const reason = useSyncExternalStore(noSubscribe, readSignInReason, () => "");
+  const googleError = GOOGLE_SIGNIN_ERRORS[reason];
   if (staff) {
     return (
       <div className="mt-6 rounded-2xl border border-border bg-surface p-5">
-        <p>You are signed in as cooperative staff.</p>
+        <p className="[overflow-wrap:anywhere]">
+          You are signed in as <span className="font-semibold">{email || "cooperative staff"}</span>.
+        </p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <Link href="/admin/products" className={primaryButton}>
             Go to products
@@ -46,39 +55,53 @@ function StaffPasswordForm({ staff, passwordSet }: { staff: boolean; passwordSet
       </div>
     );
   }
-  if (!passwordSet) {
+  if (!passwordSet && !google) {
     return (
       <p className="mt-6 flex items-start gap-2 rounded-lg bg-danger-soft p-3 text-sm font-medium text-danger">
         <AlertMark />
-        <span>No staff password is set up yet. Add STAFF_PASSWORD (at least 8 characters) in the site&apos;s Vercel settings, then redeploy.</span>
+        <span>
+          No staff sign-in is set up yet. Add STAFF_PASSWORD (at least 8 characters), or Google sign-in, in the site&apos;s Vercel settings, then redeploy.
+        </span>
       </p>
     );
   }
   return (
-    <form action={action} className="mt-6 space-y-4 rounded-2xl border border-border bg-surface p-5">
-      <input type="hidden" name="next" value="/admin/products" />
-      <label className={labelClass}>
-        Staff password
-        <input
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          className={inputClass}
-          aria-invalid={!!state?.error}
-          aria-describedby={state?.error ? "signin-error" : undefined}
-        />
-      </label>
-      {state?.error && (
-        <p id="signin-error" role="alert" className={errorText}>
+    <div className="mt-6 space-y-4 rounded-2xl border border-border bg-surface p-5">
+      {googleError && (
+        <p role="alert" className={errorText}>
           <AlertMark />
-          <span>{state.error}</span>
+          <span>{googleError}</span>
         </p>
       )}
-      <button type="submit" className={`${primaryButton} w-full`} disabled={pending}>
-        {pending ? "Checking…" : "Sign in"}
-      </button>
-    </form>
+      {google && <StaffGoogleButton next="/admin/products" />}
+      {google && passwordSet && <p className="text-center text-sm text-muted">or use the staff password</p>}
+      {passwordSet && (
+        <form action={action} className="space-y-4">
+          <input type="hidden" name="next" value="/admin/products" />
+          <label className={labelClass}>
+            Staff password
+            <input
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className={inputClass}
+              aria-invalid={!!state?.error}
+              aria-describedby={state?.error ? "signin-error" : undefined}
+            />
+          </label>
+          {state?.error && (
+            <p id="signin-error" role="alert" className={errorText}>
+              <AlertMark />
+              <span>{state.error}</span>
+            </p>
+          )}
+          <button type="submit" className={`${primaryButton} w-full`} disabled={pending}>
+            {pending ? "Checking…" : "Sign in"}
+          </button>
+        </form>
+      )}
+    </div>
   );
 }
 
@@ -110,7 +133,7 @@ export function AdminSignIn() {
         <p className="mt-2 text-sm text-muted">Products: price, photo, stock. Coffee lots: tasting notes and score. Farmers: their stories.</p>
 
         {staffStatus.loaded && shared ? (
-          <StaffPasswordForm staff={staffStatus.staff} passwordSet={staffStatus.passwordSet} />
+          <StaffPasswordForm status={staffStatus} />
         ) : (
           <>
             <p className="mt-5 flex items-start gap-2 rounded-lg bg-accent-soft p-3 text-sm font-semibold text-accent">
