@@ -13,7 +13,10 @@ function Quote({ name, q }: { name: string; q: MarketQuote }) {
   const up = (q.changePct ?? 0) >= 0;
   return (
     <div className="min-w-0">
-      <p className="text-sm font-semibold text-muted">{name}</p>
+      <p className="text-sm font-semibold text-muted">
+        {name}
+        {q.period && <span className="block font-normal">{q.period}</span>}
+      </p>
       <p className="mt-0.5 text-2xl font-bold text-foreground tabular-nums">
         {formatFcfaText(Math.round(q.fcfaPerKg / 5) * 5)}
         <span className="text-base font-semibold text-muted"> / kg</span>
@@ -22,7 +25,7 @@ function Quote({ name, q }: { name: string; q: MarketQuote }) {
         {q.quoted}
         {q.changePct !== null && (
           <span className={`ml-1.5 font-semibold ${up ? "text-accent" : "text-danger"}`}>
-            {up ? "▲" : "▼"} {Math.abs(q.changePct).toFixed(1)}%
+            {up ? "▲" : "▼"} {Math.abs(q.changePct).toFixed(1)}%{q.period ? " on the month before" : ""}
           </span>
         )}
       </p>
@@ -53,7 +56,7 @@ export async function WorldPriceCard() {
       </h2>
       <div className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4">
         <Quote name="Arabica coffee (New York)" q={price.arabica} />
-        {price.robusta && <Quote name="Robusta coffee (London)" q={price.robusta} />}
+        {price.robusta && <Quote name={price.robusta.period ? "Robusta coffee (world)" : "Robusta coffee (London)"} q={price.robusta} />}
         {price.cocoa && <Quote name="Cocoa (New York)" q={price.cocoa} />}
       </div>
       <p className="mt-3 text-xs text-muted">
