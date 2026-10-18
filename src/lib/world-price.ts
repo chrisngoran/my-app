@@ -2,10 +2,11 @@ import "server-only";
 import { cacheLife } from "next/cache";
 
 /*
- * Today's world market price for coffee, per kilo in FCFA, for staff to set
- * prices and pay farmers against. Arabica is the ICE New York "C" contract
- * (US cents per pound); Robusta is ICE London (US dollars per tonne). Both
- * are futures prices for exportable green coffee, not retail prices.
+ * Today's world market prices for coffee and cocoa, per kilo in FCFA, for
+ * staff to set prices and pay farmers against. Arabica is the ICE New York
+ * "C" contract (US cents per pound); Robusta is ICE London (US dollars per
+ * tonne); cocoa is ICE New York (US dollars per tonne). All are futures
+ * prices for exportable green coffee and cocoa beans, not retail prices.
  *
  * FCFA is pegged to the euro (1 EUR = 655.957 FCFA), so only the euro-dollar
  * rate is looked up (European Central Bank, via frankfurter.app).
@@ -26,6 +27,7 @@ export interface MarketQuote {
 export interface WorldPrice {
   arabica: MarketQuote;
   robusta: MarketQuote | null;
+  cocoa: MarketQuote | null;
   /** When the exchange last traded, as an ISO date. */
   asOf: string;
   fcfaPerUsd: number;
@@ -67,7 +69,13 @@ export async function worldCoffeePrice(): Promise<WorldPrice> {
   cacheLife("hours");
   // London Robusta goes by more than one ticker; the first that answers is used.
   const robustaQuote = futures("RC=F").catch(() => futures("RM=F")).catch(() => null);
-  const [arabica, robusta, rate] = await Promise.all([futures("KC=F"), robustaQuote, fcfaPerUsd()]);
+  const [arabica, robusta, cocoa, rate] = await Promise.all([futures("KC=F"), robustaQuote, futures("CC=F").catch(() => null), fcfaPerUsd()]);
+  /** A quote in US dollars per tonne, as FCFA per kilo. */
+  const perTonne = (m: YahooMeta): MarketQuote => ({
+    fcfaPerKg: (m.regularMarketPrice! / 1000) * rate,
+    quoted: `${Math.round(m.regularMarketPrice!).toLocaleString("en-GB")} USD/tonne`,
+    changePct: change(m),
+  });
   const centsPerLb = arabica.regularMarketPrice!;
   return {
     arabica: {
@@ -75,13 +83,8 @@ export async function worldCoffeePrice(): Promise<WorldPrice> {
       quoted: `${(centsPerLb / 100).toFixed(2)} USD/lb`,
       changePct: change(arabica),
     },
-    robusta: robusta
-      ? {
-          fcfaPerKg: (robusta.regularMarketPrice! / 1000) * rate,
-          quoted: `${Math.round(robusta.regularMarketPrice!).toLocaleString("en-GB")} USD/tonne`,
-          changePct: change(robusta),
-        }
-      : null,
+    robusta: robusta ? perTonne(robusta) : null,
+    cocoa: cocoa ? perTonne(cocoa) : null,
     asOf: new Date((arabica.regularMarketTime ?? 0) * 1000).toISOString(),
     fcfaPerUsd: rate,
   };
