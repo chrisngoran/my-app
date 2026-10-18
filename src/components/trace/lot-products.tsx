@@ -7,6 +7,7 @@ import { useCatalog } from "@/lib/catalog-overrides";
 import { products as baseProducts } from "@/lib/data";
 import { textLink } from "./buttons";
 import { formatWeight, notesSentence } from "./lot-utils";
+import { isUploadedImage } from "@/lib/catalog-clean";
 
 /** Only images we produced: bundled files or a photo uploaded in admin. */
 function safeImage(src: unknown, fallback: string) {
@@ -48,7 +49,7 @@ export function LotProducts({ slugs }: { slugs: string[] }) {
               alt=""
               width={112}
               height={112}
-              unoptimized={safeImage(p.image, "").startsWith("data:")}
+              unoptimized={isUploadedImage(safeImage(p.image, ""))}
               className="h-14 w-14 rounded-lg bg-accent-soft object-cover"
             />
             <div className="min-w-0">

@@ -3,10 +3,11 @@ import { Suspense } from "react";
 import { SalesDashboard } from "@/components/portal/insights/dashboard";
 import { StaffLogin } from "@/components/portal/insights/staff-login";
 import { PageHeader } from "@/components/portal/ui";
+import { catalogProducts } from "@/lib/catalog-store";
 import { hasDatabase, type OrderRow, recentOrders } from "@/lib/db";
 import { SAMPLE_END, sampleOrders, type SampleOrder } from "@/lib/sample-sales";
+import { signOutStaff } from "@/lib/staff-actions";
 import { isStaff, staffPasswordSet } from "@/lib/staff-session";
-import { signOutStaff } from "./actions";
 
 export const metadata: Metadata = { title: "Sales & demand" };
 
@@ -58,13 +59,14 @@ async function Insights() {
     return (
       <>
         <PageHeader title={TITLE} description={DESCRIPTION} />
-        <StaffLogin passwordSet={staffPasswordSet()} />
+        <StaffLogin passwordSet={staffPasswordSet()} next="/portal/insights" note="The sales figures are real orders, so only cooperative staff can see them." />
       </>
     );
   }
 
   const signOut = (
     <form action={signOutStaff}>
+      <input type="hidden" name="next" value="/portal/insights" />
       <button type="submit" className="btn btn-secondary">
         Sign out
       </button>
@@ -72,9 +74,10 @@ async function Insights() {
   );
 
   let rows;
+  let catalog;
   try {
     // Two years, so the 52-week view can compare with the year before.
-    rows = await recentOrders(728);
+    [rows, catalog] = await Promise.all([recentOrders(728), catalogProducts()]);
   } catch (e) {
     console.error("Could not read orders", e);
     return (
@@ -93,7 +96,7 @@ async function Insights() {
     <>
       <PageHeader
         title={TITLE}
-        description={`${DESCRIPTION} Real order requests sent from the website, up to today, ${longDate(new Date(endMs))}.`}
+        description={`${DESCRIPTION} Real order requests sent from the website (cancelled ones left out), up to today, ${longDate(new Date(endMs))}.`}
         actions={signOut}
       />
       {orders.length === 0 ? (
@@ -101,7 +104,12 @@ async function Insights() {
           No orders recorded yet. Each order a customer sends on WhatsApp from the website will appear here.
         </p>
       ) : (
-        <SalesDashboard orders={orders} endMs={endMs} sample={false} />
+        <SalesDashboard
+          orders={orders}
+          endMs={endMs}
+          sample={false}
+          catalog={catalog.map((p) => ({ slug: p.slug, name: p.name, stock: p.stock }))}
+        />
       )}
     </>
   );

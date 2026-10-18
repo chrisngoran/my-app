@@ -22,7 +22,12 @@ export interface OrderLine {
   unitPriceXaf: number;
 }
 
+export type OrderStatus = "requested" | "confirmed" | "cancelled";
+
 export interface OrderRow {
+  id: number;
+  ref: string | null;
+  status: OrderStatus;
   createdAt: Date;
   city: string;
   market: "cameroon" | "abroad";
@@ -31,43 +36,96 @@ export interface OrderRow {
 
 let ready: Promise<unknown> | null = null;
 
-/** Creates the table the first time it is needed. */
-function ensureTable() {
+/** Creates the tables the first time they are needed, and adds columns from later versions. */
+export function ensureTables() {
   if (!sql) throw new Error("No database configured");
-  ready ??= sql`
-    CREATE TABLE IF NOT EXISTS orders (
-      id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-      created_at  timestamptz NOT NULL DEFAULT now(),
-      city        text NOT NULL,
-      market      text NOT NULL CHECK (market IN ('cameroon', 'abroad')),
-      lines       jsonb NOT NULL,
-      subtotal_xaf integer NOT NULL
-    )`.catch((e) => {
+  const db = sql;
+  ready ??= (async () => {
+    await db`
+      CREATE TABLE IF NOT EXISTS orders (
+        id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        created_at  timestamptz NOT NULL DEFAULT now(),
+        city        text NOT NULL,
+        market      text NOT NULL CHECK (market IN ('cameroon', 'abroad')),
+        lines       jsonb NOT NULL,
+        subtotal_xaf integer NOT NULL
+      )`;
+    await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS ref text`;
+    await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'requested'`;
+    // One row (id 1) holding the staff's product, lot and farmer edits.
+    await db`
+      CREATE TABLE IF NOT EXISTS catalog (
+        id         smallint PRIMARY KEY,
+        data       jsonb NOT NULL,
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )`;
+  })().catch((e) => {
     ready = null;
     throw e;
   });
   return ready;
 }
 
-export async function insertOrder(o: Omit<OrderRow, "createdAt">) {
-  if (!sql) return;
-  await ensureTable();
-  const subtotal = o.lines.reduce((n, l) => n + l.quantity * l.unitPriceXaf, 0);
-  await sql`INSERT INTO orders (city, market, lines, subtotal_xaf)
-            VALUES (${o.city}, ${o.market}, ${JSON.stringify(o.lines)}::jsonb, ${subtotal})`;
+/** The database client, after the tables exist. Only call when hasDatabase() is true. */
+export async function db() {
+  await ensureTables();
+  return sql!;
 }
 
-/** Orders from the last `days` days, oldest first. */
-export async function recentOrders(days: number): Promise<OrderRow[]> {
-  if (!sql) return [];
-  await ensureTable();
-  const rows = await sql`SELECT created_at, city, market, lines FROM orders
-                         WHERE created_at > now() - make_interval(days => ${days})
-                         ORDER BY created_at`;
-  return rows.map((r) => ({
+export async function insertOrder(o: { ref: string | null; city: string; market: OrderRow["market"]; lines: OrderLine[] }) {
+  if (!sql) return;
+  const q = await db();
+  const subtotal = o.lines.reduce((n, l) => n + l.quantity * l.unitPriceXaf, 0);
+  await q`INSERT INTO orders (ref, city, market, lines, subtotal_xaf)
+          VALUES (${o.ref}, ${o.city}, ${o.market}, ${JSON.stringify(o.lines)}::jsonb, ${subtotal})`;
+}
+
+function toRow(r: Record<string, unknown>): OrderRow {
+  return {
+    id: Number(r.id),
+    ref: (r.ref as string | null) ?? null,
+    status: r.status as OrderStatus,
     createdAt: new Date(r.created_at as string),
     city: r.city as string,
     market: r.market as OrderRow["market"],
     lines: r.lines as OrderLine[],
-  }));
+  };
+}
+
+/** Orders from the last `days` days that were not cancelled, oldest first. */
+export async function recentOrders(days: number): Promise<OrderRow[]> {
+  if (!sql) return [];
+  const q = await db();
+  const rows = await q`SELECT id, ref, status, created_at, city, market, lines FROM orders
+                       WHERE created_at > now() - make_interval(days => ${days}) AND status <> 'cancelled'
+                       ORDER BY created_at`;
+  return rows.map(toRow);
+}
+
+/** The latest orders of every status, newest first. */
+export async function latestOrders(limit: number): Promise<OrderRow[]> {
+  if (!sql) return [];
+  const q = await db();
+  const rows = await q`SELECT id, ref, status, created_at, city, market, lines FROM orders
+                       ORDER BY created_at DESC LIMIT ${limit}`;
+  return rows.map(toRow);
+}
+
+/**
+ * Moves an order from one status to another. Returns its lines when it moved,
+ * or null when it was not in the `from` status (e.g. a second tap).
+ */
+export async function moveOrder(id: number, from: OrderStatus[], to: OrderStatus) {
+  const q = await db();
+  const rows = await q`WITH old AS (SELECT id, status FROM orders WHERE id = ${id} AND status = ANY(${from}::text[]) FOR UPDATE)
+                       UPDATE orders o SET status = ${to} FROM old WHERE o.id = old.id
+                       RETURNING old.status AS was, o.lines`;
+  return rows.length ? { was: rows[0].was as OrderStatus, lines: rows[0].lines as OrderLine[] } : null;
+}
+
+/** Deletes an order. Returns its status and lines, or null if it was already gone. */
+export async function deleteOrder(id: number) {
+  const q = await db();
+  const rows = await q`DELETE FROM orders WHERE id = ${id} RETURNING status, lines`;
+  return rows.length ? { was: rows[0].status as OrderStatus, lines: rows[0].lines as OrderLine[] } : null;
 }

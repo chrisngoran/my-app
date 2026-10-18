@@ -1,16 +1,16 @@
 "use client";
 
 import { useActionState } from "react";
-import { signInStaff } from "@/app/(site)/portal/insights/actions";
+import { signInStaff } from "@/lib/staff-actions";
 
-export function StaffLogin({ passwordSet }: { passwordSet: boolean }) {
+export function StaffLogin({ passwordSet, next, note }: { passwordSet: boolean; next: string; note: string }) {
   const [state, action, pending] = useActionState(signInStaff, null);
   if (!passwordSet) {
     return (
       <div className="max-w-md rounded-xl border border-border bg-surface p-5 text-sm shadow-sm">
         <p className="font-semibold text-foreground">Staff password not set up yet</p>
         <p className="mt-1 text-muted">
-          Real orders are recorded, but no one can see them until a staff password of at least 8 characters is added as
+          Real orders are recorded, but no one can see or manage them until a staff password of at least 8 characters is added as
           STAFF_PASSWORD in the site&apos;s Vercel settings.
         </p>
       </div>
@@ -19,7 +19,8 @@ export function StaffLogin({ passwordSet }: { passwordSet: boolean }) {
   return (
     <form action={action} className="max-w-md rounded-xl border border-border bg-surface p-5 shadow-sm">
       <p className="font-semibold text-foreground">Staff sign-in</p>
-      <p className="mt-1 text-sm text-muted">The sales figures are real orders, so only cooperative staff can see them.</p>
+      <p className="mt-1 text-sm text-muted">{note}</p>
+      <input type="hidden" name="next" value={next} />
       <label className="mt-4 block text-sm font-semibold text-foreground">
         Staff password
         <input

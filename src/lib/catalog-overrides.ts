@@ -1,133 +1,92 @@
 "use client";
 
 /*
- * Demo admin edits, stored in this browser only.
+ * Staff edits to products, lots and farmer stories, as the browser sees them.
  *
- * Cooperative staff can change products, lots and farmer stories in /admin.
- * There is no database in the demo, so the edits are kept in localStorage
- * under one key and merged over the sample data from data.ts. The public site
- * reads the merged values through the hooks below, so a change in the admin
- * shows up in the shop straight away in the same browser.
+ * Two modes:
+ * - Shared (a database is connected): the edits come from /api/catalog, so
+ *   every visitor sees the same shop, and the admin saves them back there.
+ * - Demo (no database): the edits live in this browser's localStorage only,
+ *   under one key, merged over the sample data from data.ts.
  *
- * Same pattern as the cart store: a tiny module-level store read with
- * useSyncExternalStore. The server (and the hydration pass) sees the
- * "not loaded" snapshot with no overrides, so server HTML and the first client
- * render both use the original data.ts values; the browser then switches to
- * the saved edits.
+ * A tiny module-level store read with useSyncExternalStore, like the cart.
+ * The server and the hydration pass see the "not loaded" snapshot with no
+ * edits, so both render the original data.ts values; the browser then
+ * switches to the edits once it knows which mode it is in.
  */
 
 import { useMemo, useSyncExternalStore } from "react";
+import {
+  applyFarmerOverride,
+  applyLotOverride,
+  applyProductOverride,
+  type CatalogOverrides,
+  cleanOverrides,
+  EMPTY_OVERRIDES,
+  type FarmerOverride,
+  isEmptyOverrides,
+  type LotOverride,
+  type ProductOverride,
+} from "./catalog-clean";
 import { farmers as baseFarmers, lots as baseLots, products as baseProducts } from "./data";
-import type { CoffeeLot, Farmer, Product } from "./types";
+
+export type { CatalogOverrides, CatalogProduct, FarmerOverride, LotOverride, ProductOverride } from "./catalog-clean";
+export { applyFarmerOverride, applyLotOverride, applyProductOverride } from "./catalog-clean";
 
 export const ADMIN_STORAGE_KEY = "gv-admin-v1";
 
-export interface ProductOverride {
-  name?: string;
-  priceXaf?: number;
-  stock?: number;
-  description?: string;
-  hidden?: boolean;
-  /** Uploaded photo as a JPEG data URL. */
-  image?: string;
-}
+const IDS = { products: baseProducts.map((p) => p.slug), lots: baseLots.map((l) => l.code), farmers: baseFarmers.map((f) => f.id) };
 
-export interface LotOverride {
-  notes?: string;
-  cuppingScore?: number;
-}
-
-export interface FarmerOverride {
-  story?: string;
-}
-
-export interface CatalogOverrides {
-  products: Record<string, ProductOverride>;
-  lots: Record<string, LotOverride>;
-  farmers: Record<string, FarmerOverride>;
-}
-
-export type CatalogProduct = Product & { hidden: boolean };
+export type CatalogMode = "loading" | "demo" | "shared";
 
 interface Snapshot {
   overrides: CatalogOverrides;
+  /** True once the edits for this mode have been read. */
   loaded: boolean;
-  /** Goes up on every "Reset demo data", so open admin forms can start again from the original values. */
+  mode: CatalogMode;
+  /** Goes up on every reset or outside change, so open admin forms can start again from the current values. */
   resets: number;
+  /** Set when a shared save failed and the change was undone. */
+  saveError: string | null;
 }
 
-const EMPTY: CatalogOverrides = { products: {}, lots: {}, farmers: {} };
-const SERVER_SNAPSHOT: Snapshot = { overrides: EMPTY, loaded: false, resets: 0 };
-let resets = 0;
-let snapshot: Snapshot | null = null;
+const SERVER_SNAPSHOT: Snapshot = { overrides: EMPTY_OVERRIDES, loaded: false, mode: "loading", resets: 0, saveError: null };
+let snapshot: Snapshot = SERVER_SNAPSHOT;
+let started = false;
 const listeners = new Set<() => void>();
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function set(next: Partial<Snapshot>) {
+  snapshot = { ...snapshot, ...next };
+  listeners.forEach((l) => l());
 }
 
-/*
- * The saved edits are whatever this browser holds under the key, so each
- * field is checked on the way in. A field of the wrong type or out of range is
- * dropped (the original data.ts value shows instead) rather than crashing a
- * page or printing "NaN FCFA".
- */
-const isText = (v: unknown): v is string => typeof v === "string";
-const isWhole = (v: unknown, min: number): v is number => typeof v === "number" && Number.isInteger(v) && v >= min;
-
-function cleanProduct(o: Record<string, unknown>): ProductOverride {
-  const out: ProductOverride = {};
-  if (isText(o.name) && o.name.trim()) out.name = o.name;
-  if (isText(o.description)) out.description = o.description;
-  if (isWhole(o.priceXaf, 1) && Number.isSafeInteger(o.priceXaf)) out.priceXaf = o.priceXaf;
-  if (isWhole(o.stock, 0) && Number.isSafeInteger(o.stock)) out.stock = o.stock;
-  if (typeof o.hidden === "boolean") out.hidden = o.hidden;
-  if (isText(o.image) && o.image.startsWith("data:image/")) out.image = o.image;
-  return out;
-}
-
-function cleanLot(o: Record<string, unknown>): LotOverride {
-  const out: LotOverride = {};
-  if (isText(o.notes)) out.notes = o.notes;
-  if (typeof o.cuppingScore === "number" && Number.isFinite(o.cuppingScore) && o.cuppingScore >= 0 && o.cuppingScore <= 100) {
-    out.cuppingScore = o.cuppingScore;
-  }
-  return out;
-}
-
-function cleanFarmer(o: Record<string, unknown>): FarmerOverride {
-  return isText(o.story) ? { story: o.story } : {};
-}
-
-function cleanMap<T extends object>(value: unknown, clean: (o: Record<string, unknown>) => T): Record<string, T> {
-  const out: Record<string, T> = {};
-  if (!isRecord(value)) return out;
-  for (const [id, entry] of Object.entries(value)) {
-    if (!isRecord(entry)) continue;
-    const cleaned = clean(entry);
-    if (Object.keys(cleaned).length) out[id] = cleaned;
-  }
-  return out;
-}
-
-function readOverrides(): CatalogOverrides {
+function readLocal(): CatalogOverrides {
   try {
     const raw = window.localStorage.getItem(ADMIN_STORAGE_KEY);
-    if (!raw) return EMPTY;
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) return EMPTY;
-    return {
-      products: cleanMap(parsed.products, cleanProduct),
-      lots: cleanMap(parsed.lots, cleanLot),
-      farmers: cleanMap(parsed.farmers, cleanFarmer),
-    };
+    return raw ? cleanOverrides(JSON.parse(raw), IDS) : EMPTY_OVERRIDES;
   } catch {
-    return EMPTY;
+    return EMPTY_OVERRIDES;
   }
+}
+
+/** Asks the site which mode it is in, and loads the shared edits when there are some. */
+async function start() {
+  try {
+    const res = await fetch("/api/catalog", { cache: "no-store" });
+    const data = (await res.json()) as { shared?: boolean; overrides?: unknown };
+    if (data.shared) {
+      // On a database hiccup this shows the original values, never this browser's old demo edits.
+      const overrides = data.overrides ? cleanOverrides(data.overrides, IDS) : EMPTY_OVERRIDES;
+      set({ overrides, loaded: true, mode: "shared", resets: snapshot.resets + 1 });
+      return;
+    }
+  } catch {
+    // Offline or blocked: fall back to this browser's demo edits.
+  }
+  set({ overrides: readLocal(), loaded: true, mode: "demo", resets: snapshot.resets + 1 });
 }
 
 function getSnapshot(): Snapshot {
-  if (!snapshot) snapshot = { overrides: readOverrides(), loaded: true, resets };
   return snapshot;
 }
 
@@ -137,12 +96,14 @@ function getServerSnapshot(): Snapshot {
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  // Keeps other open tabs (e.g. the shop next to the admin) in sync.
+  if (!started) {
+    started = true;
+    void start();
+  }
+  // Demo mode: keeps other open tabs (e.g. the shop next to the admin) in sync.
   const onStorage = (e: StorageEvent) => {
-    if (e.key === ADMIN_STORAGE_KEY || e.key === null) {
-      snapshot = null;
-      resets += 1;
-      listener();
+    if (snapshot.mode === "demo" && (e.key === ADMIN_STORAGE_KEY || e.key === null)) {
+      set({ overrides: readLocal(), resets: snapshot.resets + 1 });
     }
   };
   window.addEventListener("storage", onStorage);
@@ -152,19 +113,59 @@ function subscribe(listener: () => void) {
   };
 }
 
-/** Saves the new overrides. Returns false (and changes nothing) if the browser refuses to store them. */
-function commit(next: CatalogOverrides): boolean {
+const NOT_REACHED = "Not saved: the website could not be reached. Check the connection and try again.";
+
+async function saveShared(next: CatalogOverrides, previous: CatalogOverrides) {
   try {
-    const empty = !Object.keys(next.products).length && !Object.keys(next.lots).length && !Object.keys(next.farmers).length;
-    if (empty) window.localStorage.removeItem(ADMIN_STORAGE_KEY);
+    const res = await fetch("/api/catalog", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ overrides: next }),
+    });
+    if (!res.ok) {
+      const message =
+        res.status === 401
+          ? "Not saved: you are signed out. Sign in again and repeat the change."
+          : res.status === 413
+            ? "Not saved: the photo is too large. Try a smaller photo."
+            : NOT_REACHED;
+      set({ overrides: previous, resets: snapshot.resets + 1, saveError: message });
+      return;
+    }
+    // The server answers with photos as addresses instead of data URLs; keep any newer change.
+    const data = (await res.json()) as { overrides?: unknown };
+    if (snapshot.overrides === next && data.overrides) set({ overrides: cleanOverrides(data.overrides, IDS) });
+  } catch {
+    set({ overrides: previous, resets: snapshot.resets + 1, saveError: NOT_REACHED });
+  }
+}
+
+/**
+ * Saves the new overrides. In demo mode returns false (and changes nothing) if
+ * the browser refuses to store them. In shared mode the change shows at once
+ * and is sent to the site; if that fails it is undone and saveError is set.
+ */
+function commit(next: CatalogOverrides): boolean {
+  if (snapshot.mode === "shared") {
+    const previous = snapshot.overrides;
+    set({ overrides: next, saveError: null });
+    void saveShared(next, previous);
+    return true;
+  }
+  try {
+    if (isEmptyOverrides(next)) window.localStorage.removeItem(ADMIN_STORAGE_KEY);
     else window.localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(next));
   } catch {
     // Usually the storage quota (large photos) or private browsing.
     return false;
   }
-  snapshot = { overrides: next, loaded: true, resets };
-  listeners.forEach((l) => l());
+  set({ overrides: next });
   return true;
+}
+
+/** Clears the message of a failed shared save once staff have seen it. */
+export function clearSaveError() {
+  if (snapshot.saveError) set({ saveError: null });
 }
 
 /** Merges a patch into one entry. Keys set to undefined are removed; an empty entry is dropped. */
@@ -175,37 +176,6 @@ function patchEntry<T extends object>(map: Record<string, T>, id: string, patch:
   const merged: Record<string, unknown> = { ...(map[id] ?? {}), ...patch };
   for (const key of Object.keys(merged)) if (merged[key] === undefined) delete merged[key];
   return Object.keys(merged).length ? { ...rest, [id]: merged as T } : rest;
-}
-
-// ---------------------------------------------------------------------------
-// Merging
-// ---------------------------------------------------------------------------
-
-export function applyProductOverride(product: Product, o: ProductOverride | undefined): CatalogProduct {
-  if (!o) return { ...product, hidden: false };
-  return {
-    ...product,
-    name: o.name ?? product.name,
-    priceXaf: o.priceXaf ?? product.priceXaf,
-    stock: o.stock ?? product.stock,
-    description: o.description ?? product.description,
-    image: o.image ?? product.image,
-    hidden: o.hidden ?? false,
-  };
-}
-
-export function applyLotOverride(lot: CoffeeLot, o: LotOverride | undefined): CoffeeLot {
-  if (!o) return lot;
-  return {
-    ...lot,
-    notes: o.notes ?? lot.notes,
-    quality: { ...lot.quality, cuppingScore: o.cuppingScore ?? lot.quality.cuppingScore },
-  };
-}
-
-export function applyFarmerOverride(farmer: Farmer, o: FarmerOverride | undefined): Farmer {
-  if (!o) return farmer;
-  return { ...farmer, story: o.story ?? farmer.story };
 }
 
 // ---------------------------------------------------------------------------
@@ -228,7 +198,7 @@ export function useCatalog() {
   return { products, visibleProducts, loaded };
 }
 
-export function useProductView(slug: string): CatalogProduct | undefined {
+export function useProductView(slug: string) {
   const { overrides } = useCatalogOverrides();
   return useMemo(() => {
     const base = baseProducts.find((p) => p.slug === slug);
@@ -236,7 +206,7 @@ export function useProductView(slug: string): CatalogProduct | undefined {
   }, [overrides, slug]);
 }
 
-export function useLotView(code: string): CoffeeLot | undefined {
+export function useLotView(code: string) {
   const { overrides } = useCatalogOverrides();
   return useMemo(() => {
     const base = baseLots.find((l) => l.code === code);
@@ -244,7 +214,7 @@ export function useLotView(code: string): CoffeeLot | undefined {
   }, [overrides, code]);
 }
 
-export function useFarmerView(id: string): Farmer | undefined {
+export function useFarmerView(id: string) {
   const { overrides } = useCatalogOverrides();
   return useMemo(() => {
     const base = baseFarmers.find((f) => f.id === id);
@@ -257,36 +227,37 @@ export function useFarmerView(id: string): Farmer | undefined {
 // ---------------------------------------------------------------------------
 
 export function updateProduct(slug: string, patch: ProductOverride) {
-  const o = getSnapshot().overrides;
+  const o = snapshot.overrides;
   return commit({ ...o, products: patchEntry(o.products, slug, patch) });
 }
 
 export function resetProduct(slug: string) {
-  const o = getSnapshot().overrides;
+  const o = snapshot.overrides;
   return commit({ ...o, products: patchEntry(o.products, slug, null) });
 }
 
 export function updateLot(code: string, patch: LotOverride) {
-  const o = getSnapshot().overrides;
+  const o = snapshot.overrides;
   return commit({ ...o, lots: patchEntry(o.lots, code, patch) });
 }
 
 export function resetLot(code: string) {
-  const o = getSnapshot().overrides;
+  const o = snapshot.overrides;
   return commit({ ...o, lots: patchEntry(o.lots, code, null) });
 }
 
 export function updateFarmer(id: string, patch: FarmerOverride) {
-  const o = getSnapshot().overrides;
+  const o = snapshot.overrides;
   return commit({ ...o, farmers: patchEntry(o.farmers, id, patch) });
 }
 
 export function resetFarmer(id: string) {
-  const o = getSnapshot().overrides;
+  const o = snapshot.overrides;
   return commit({ ...o, farmers: patchEntry(o.farmers, id, null) });
 }
 
 export function resetAllOverrides() {
-  resets += 1;
-  return commit(EMPTY);
+  const ok = commit(EMPTY_OVERRIDES);
+  if (ok) set({ resets: snapshot.resets + 1 });
+  return ok;
 }

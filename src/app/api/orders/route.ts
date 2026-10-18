@@ -1,11 +1,13 @@
+import { catalogProducts } from "@/lib/catalog-store";
 import { hasDatabase, insertOrder, type OrderLine } from "@/lib/db";
-import { products } from "@/lib/data";
+import { fromThisSite } from "@/lib/same-origin";
 
 /*
  * Records an order request at the moment a buyer taps "Send order on
  * WhatsApp". The browser sends only the coffees, quantities, town and
- * delivery choice; prices are taken from the catalogue here, never from the
- * browser, and anything that does not match the catalogue is refused.
+ * delivery choice and the order reference; prices are taken from the
+ * catalogue (with staff edits) here, never from the browser, and anything
+ * that does not match the catalogue is refused.
  */
 
 const MAX_LINES = 10;
@@ -33,10 +35,7 @@ function cleanCity(raw: unknown) {
 
 export async function POST(request: Request) {
   // Only this site's own pages may record orders.
-  const origin = request.headers.get("origin");
-  if (!origin || new URL(origin).host !== request.headers.get("host")) {
-    return new Response(null, { status: 403 });
-  }
+  if (!fromThisSite(request)) return new Response(null, { status: 403 });
   if (!hasDatabase()) return new Response(null, { status: 204 });
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -48,17 +47,26 @@ export async function POST(request: Request) {
   } catch {
     return new Response(null, { status: 400 });
   }
-  const { city: rawCity, delivery, lines: rawLines } = (body ?? {}) as Record<string, unknown>;
+  const { city: rawCity, delivery, lines: rawLines, ref: rawRef } = (body ?? {}) as Record<string, unknown>;
+  // The reference shown in the WhatsApp message, so staff can match the two.
+  const ref = typeof rawRef === "string" && /^GV-[A-HJ-NP-Z2-9]{5}$/.test(rawRef) ? rawRef : null;
 
   const city = cleanCity(rawCity);
   if (!city || (delivery !== "cameroon" && delivery !== "international")) return new Response(null, { status: 400 });
   if (!Array.isArray(rawLines) || rawLines.length === 0 || rawLines.length > MAX_LINES) return new Response(null, { status: 400 });
 
+  let products;
+  try {
+    products = await catalogProducts();
+  } catch (e) {
+    console.error("Could not read catalog", e);
+    return new Response(null, { status: 500 });
+  }
   const lines: OrderLine[] = [];
   for (const raw of rawLines) {
     const { slug, quantity } = (raw ?? {}) as Record<string, unknown>;
     const product = products.find((p) => p.slug === slug);
-    if (!product || !Number.isInteger(quantity) || (quantity as number) < 1 || (quantity as number) > MAX_QUANTITY) {
+    if (!product || product.hidden || !Number.isInteger(quantity) || (quantity as number) < 1 || (quantity as number) > MAX_QUANTITY) {
       return new Response(null, { status: 400 });
     }
     if (lines.some((l) => l.slug === product.slug)) return new Response(null, { status: 400 });
@@ -66,7 +74,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await insertOrder({ city, market: delivery === "international" ? "abroad" : "cameroon", lines });
+    await insertOrder({ ref, city, market: delivery === "international" ? "abroad" : "cameroon", lines });
   } catch (e) {
     console.error("Could not record order", e);
     return new Response(null, { status: 500 });

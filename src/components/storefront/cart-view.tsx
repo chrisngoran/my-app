@@ -8,6 +8,7 @@ import { useStore } from "@/components/store-provider";
 import { type CatalogProduct, useCatalog } from "@/lib/catalog-overrides";
 import { formatWeight, SHIPPING_XAF } from "./catalog";
 import { QuantityStepper } from "./quantity-stepper";
+import { isUploadedImage } from "@/lib/catalog-clean";
 
 /** "250 g, light roast" / "1 kg, unroasted": the weight and roast as one comma phrase. */
 export function productMeta(product: Pick<CatalogProduct, "weightGrams" | "roast" | "category">) {
@@ -238,7 +239,7 @@ export function CartView() {
                       alt=""
                       width={144}
                       height={144}
-                      unoptimized={product.image.startsWith("data:")}
+                      unoptimized={isUploadedImage(product.image)}
                       className="h-18 w-18 rounded-lg bg-accent-soft object-cover"
                     />
                   </Link>
