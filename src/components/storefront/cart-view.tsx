@@ -9,6 +9,7 @@ import { type CatalogProduct, useCatalog } from "@/lib/catalog-overrides";
 import { formatWeight, SHIPPING_XAF } from "./catalog";
 import { QuantityStepper } from "./quantity-stepper";
 import { isUploadedImage } from "@/lib/catalog-clean";
+import { productHref } from "@/lib/catalog-clean";
 
 /** "250 g, light roast" / "1 kg, unroasted": the weight and roast as one comma phrase. */
 export function productMeta(product: Pick<CatalogProduct, "weightGrams" | "roast" | "category">) {
@@ -53,7 +54,7 @@ export interface CartLine {
  */
 export function useCartLines() {
   const { cart } = useStore();
-  const { products } = useCatalog();
+  const { orderable: products } = useCatalog();
   const lines: CartLine[] = [];
   const unavailable: CatalogProduct[] = [];
   for (const item of cart) {
@@ -233,7 +234,7 @@ export function CartView() {
             <ul className="divide-y divide-border border-y border-border">
               {lines.map(({ product, quantity, lineXaf, capped }) => (
                 <li key={product.slug} className={`flex gap-4 py-5 ${product.slug === restored ? "anim-enter" : ""}`}>
-                  <Link href={`/shop/${product.slug}`} className="shrink-0" tabIndex={-1} aria-hidden="true">
+                  <Link href={productHref(product)} className="shrink-0" tabIndex={-1} aria-hidden="true">
                     <Image
                       src={product.image}
                       alt=""
@@ -245,7 +246,7 @@ export function CartView() {
                   </Link>
                   <div className="min-w-0 flex-1">
                     <h3 className="type-title text-brand [overflow-wrap:anywhere]">
-                      <Link href={`/shop/${product.slug}`} className="relative rounded-sm hover:underline after:absolute after:inset-x-0 after:-inset-y-[11px]">
+                      <Link href={productHref(product)} className="relative rounded-sm hover:underline after:absolute after:inset-x-0 after:-inset-y-[11px]">
                         {product.name}
                       </Link>
                     </h3>

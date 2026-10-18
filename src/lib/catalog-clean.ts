@@ -40,7 +40,7 @@ export const EMPTY_OVERRIDES: CatalogOverrides = { products: {}, lots: {}, farme
 export const IMAGE_PATH = "/api/catalog/image/";
 
 /** True for photos staff uploaded (shown as they are, not resized by the image service). */
-export const isUploadedImage = (src: string) => src.startsWith("data:") || src.startsWith(IMAGE_PATH);
+export const isUploadedImage = (src: string) => src.startsWith("data:") || src.startsWith("/api/");
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -134,3 +134,6 @@ export interface OrderLineLike {
   slug: string;
   quantity: number;
 }
+
+/** Where a product's own page is: the cooperative's coffee under /shop, a farmer's under /market. */
+export const productHref = (p: { slug: string; seller?: unknown }) => (p.seller ? `/market/${p.slug.slice(2)}` : `/shop/${p.slug}`);

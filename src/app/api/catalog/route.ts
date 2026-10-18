@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { readOverrides, saveOverrides } from "@/lib/catalog-store";
 import { hasDatabase } from "@/lib/db";
+import { marketProducts } from "@/lib/market";
 import { fromThisSite } from "@/lib/same-origin";
 import { isStaff } from "@/lib/staff-session";
 
@@ -14,7 +15,8 @@ export async function GET() {
   await connection();
   if (!hasDatabase()) return Response.json({ shared: false });
   try {
-    return Response.json({ shared: true, overrides: await readOverrides() }, { headers: { "Cache-Control": "no-store" } });
+    const [overrides, listings] = await Promise.all([readOverrides(), marketProducts()]);
+    return Response.json({ shared: true, overrides, listings }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     console.error("Could not read catalog", e);
     return Response.json({ shared: true, error: true }, { status: 503 });

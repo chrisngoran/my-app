@@ -5,6 +5,7 @@ import { StaffLogin } from "@/components/portal/insights/staff-login";
 import { WorldPriceCard } from "@/components/world-price-card";
 import { cooperative } from "@/lib/data";
 import { countWaitingOrders, hasDatabase } from "@/lib/db";
+import { countPendingListings } from "@/lib/market";
 import { googleSignInConfigured } from "@/lib/google-auth";
 import { signOutStaff } from "@/lib/staff-actions";
 import { staffPasswordSet, staffSession } from "@/lib/staff-session";
@@ -22,6 +23,7 @@ const ICONS = {
   lots: <path d="M12 3.5c4 0 7 3.8 7 8.5s-3 8.5-7 8.5-7-3.8-7-8.5 3-8.5 7-8.5zM9 18c2-3 1-6 3-9s2.5-3 3.5-4" />,
   farmers: <path d="M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.8 3.1 2.6 3.5 5.2" />,
   shop: <path d="M4 9h16l-1 11H5zM8 9V7a4 4 0 0 1 8 0v2" />,
+  market: <path d="M3 10h18M5 10V20h14V10M3 10l2-6h14l2 6M9 20v-5h6v5" />,
   reviews: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
 };
 
@@ -98,9 +100,10 @@ async function StaffHome() {
   }
 
   let waiting = 0;
+  let pendingListings = 0;
   if (live) {
     try {
-      waiting = await countWaitingOrders();
+      [waiting, pendingListings] = await Promise.all([countWaitingOrders(), countPendingListings()]);
     } catch (e) {
       console.error("Could not count orders", e);
     }
@@ -124,6 +127,13 @@ async function StaffHome() {
         <Tile href="/admin/products" icon="products" title="Products" hint="Prices, stock, photos, sold out" />
         <Tile href="/admin/lots" icon="lots" title="Coffee lots" hint="Tasting notes and scores" />
         <Tile href="/admin/farmers" icon="farmers" title="Farmers" hint="Their stories" />
+        <Tile
+          href="/portal/marketplace"
+          icon="market"
+          title="Marketplace"
+          hint="Farmers' coffee, approvals, share"
+          badge={pendingListings ? `${pendingListings} to approve` : undefined}
+        />
         <Tile href="/portal/reviews" icon="reviews" title="Reviews" hint="Read and hide customer reviews" />
         <Tile href="/shop" icon="shop" title="View the shop" hint="See it as customers do" />
       </ul>

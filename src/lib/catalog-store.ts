@@ -11,6 +11,7 @@ import {
 } from "./catalog-clean";
 import { farmers, lots, products } from "./data";
 import { db, hasDatabase } from "./db";
+import { adjustListingStock, listingIdFromSlug, marketProducts } from "./market";
 
 /*
  * The staff's product, lot and farmer edits, kept in the database so every
@@ -76,10 +77,10 @@ export async function saveOverrides(sent: unknown) {
   await write(next);
 }
 
-/** Products with the shared edits applied. */
+/** Products with the shared edits applied, then approved marketplace coffee from farmers. */
 export async function catalogProducts(): Promise<CatalogProduct[]> {
-  const o = await readStored();
-  return products.map((p) => applyProductOverride(p, o.products[p.slug]));
+  const [o, market] = await Promise.all([readStored(), marketProducts()]);
+  return [...products.map((p) => applyProductOverride(p, o.products[p.slug])), ...market.map((p) => ({ ...p, hidden: false }))];
 }
 
 /**
@@ -88,6 +89,11 @@ export async function catalogProducts(): Promise<CatalogProduct[]> {
  * goes below 0.
  */
 export async function adjustStock(lines: OrderLineLike[], sign: 1 | -1) {
+  // Marketplace coffee keeps its own stock, on the listing.
+  for (const line of lines) {
+    const listing = listingIdFromSlug(line.slug);
+    if (listing !== null) await adjustListingStock(listing, sign * line.quantity);
+  }
   const stored = await readStored();
   const next: CatalogOverrides = { ...stored, products: { ...stored.products } };
   for (const line of lines) {

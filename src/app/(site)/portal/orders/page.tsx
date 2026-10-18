@@ -8,6 +8,8 @@ import { Card, PageHeader, StatCard } from "@/components/portal/ui";
 import { Price } from "@/components/price";
 import { orders, products } from "@/lib/data";
 import { customersById, hasDatabase, latestOrders, type OrderRow } from "@/lib/db";
+import { formatFcfaText } from "@/lib/currency";
+import { allFarmers, allListings, listingIdFromSlug } from "@/lib/market";
 import { kumboTime } from "@/lib/order-status";
 import { googleSignInConfigured } from "@/lib/google-auth";
 import { signOutStaff } from "@/lib/staff-actions";
@@ -45,12 +47,24 @@ function SampleOrders() {
   );
 }
 
-function toCard(o: OrderRow, customers: Map<number, { email: string; name: string }>): RealOrder {
-  const lines = o.lines.map((l) => ({
-    name: products.find((p) => p.slug === l.slug)?.name ?? l.slug,
-    quantity: l.quantity,
-    lineXaf: l.quantity * l.unitPriceXaf,
-  }));
+function toCard(o: OrderRow, customers: Map<number, { email: string; name: string }>, farmers: Map<number, string>, listingNames: Map<number, string>): RealOrder {
+  const lines = o.lines.map((l) => {
+    const lineXaf = l.quantity * l.unitPriceXaf;
+    const listing = listingIdFromSlug(l.slug);
+    // A farmer's coffee: what they are owed after the cooperative's share at the time of sale.
+    const farmerShare =
+      l.farmerId !== undefined
+        ? `${farmers.get(l.farmerId) ?? "Farmer"} gets ${formatFcfaText(Math.round(lineXaf * (1 - (l.commissionPct ?? 0) / 100)))}${
+            l.commissionPct ? ` (cooperative keeps ${l.commissionPct}%)` : ""
+          }`
+        : undefined;
+    return {
+      name: l.name ?? (listing !== null ? listingNames.get(listing) : products.find((p) => p.slug === l.slug)?.name) ?? l.slug,
+      quantity: l.quantity,
+      lineXaf,
+      farmerShare,
+    };
+  });
   return {
     id: o.id,
     ref: o.ref,
@@ -87,9 +101,14 @@ async function LiveOrders() {
   );
   let rows: OrderRow[];
   let customers: Map<number, { email: string; name: string }>;
+  let farmers: Map<number, string>;
+  let listingNames: Map<number, string>;
   try {
     rows = await latestOrders(200);
     customers = await customersById([...new Set(rows.flatMap((r) => (r.customerId ? [r.customerId] : [])))]);
+    const [farmerList, listingList] = await Promise.all([allFarmers(), allListings()]);
+    farmers = new Map(farmerList.map((f) => [f.id, f.name]));
+    listingNames = new Map(listingList.map((l) => [l.id, l.name]));
   } catch (e) {
     console.error("Could not read orders", e);
     return (
@@ -101,7 +120,7 @@ async function LiveOrders() {
       </>
     );
   }
-  const cards = rows.map((r) => toCard(r, customers));
+  const cards = rows.map((r) => toCard(r, customers, farmers, listingNames));
   const waiting = cards.filter((c) => c.status === "requested");
   return (
     <>
