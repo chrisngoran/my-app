@@ -8,7 +8,7 @@ import { hasDatabase } from "@/lib/db";
 import { farmerAddListing, farmerSignOut } from "@/lib/farmer-actions";
 import { farmerId } from "@/lib/farmer-session";
 import { googleClientConfigured } from "@/lib/google-auth";
-import { commissionPct, farmerById, listingsForFarmer, salesForFarmer } from "@/lib/market";
+import { commissionPct, farmerById, listingsForFarmer, payouts, salesForFarmer } from "@/lib/market";
 import { kumboTime, STATUS_LABEL } from "@/lib/order-status";
 import type { OrderStatus } from "@/lib/db";
 
@@ -51,10 +51,12 @@ async function Farmer() {
     );
   }
 
-  const [listings, sales, pct] = await Promise.all([listingsForFarmer(farmer.id), salesForFarmer(farmer.id), commissionPct()]);
+  const [listings, sales, pct, paidOut] = await Promise.all([listingsForFarmer(farmer.id), salesForFarmer(farmer.id), commissionPct(), payouts(farmer.id)]);
   const delivered = sales.filter((s) => s.status === "delivered");
   const coming = sales.filter((s) => s.status !== "delivered");
   const sum = (xs: typeof sales) => xs.reduce((n, s) => n + s.owedXaf, 0);
+  const paid = paidOut.reduce((n, p) => n + p.amountXaf, 0);
+  const stillOwed = sum(delivered) - paid;
 
   return (
     <>
@@ -66,21 +68,48 @@ async function Farmer() {
         </Link>
       </p>
 
-      <section aria-labelledby="money-heading" className="mt-6 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
+      <section aria-labelledby="money-heading" className="mt-6">
         <h2 id="money-heading" className="sr-only">
           Money
         </h2>
         <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-          <p className="text-sm font-semibold text-muted">Earned (delivered)</p>
-          <p className="mt-1 text-2xl font-bold text-foreground tabular-nums">{formatFcfaText(sum(delivered))}</p>
+          <p className="text-sm font-semibold text-muted">{stillOwed < 0 ? "Paid to you ahead" : "Still owed to you"}</p>
+          <p className={`mt-1 text-3xl font-bold tabular-nums ${stillOwed > 0 ? "text-warm" : "text-accent"}`}>{formatFcfaText(Math.abs(stillOwed))}</p>
+          <dl className="mt-3 grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2 text-sm">
+            <div>
+              <dt className="text-muted">Earned</dt>
+              <dd className="font-semibold tabular-nums">{formatFcfaText(sum(delivered))}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Paid</dt>
+              <dd className="font-semibold tabular-nums">{formatFcfaText(paid)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Coming</dt>
+              <dd className="font-semibold tabular-nums">{formatFcfaText(sum(coming))}</dd>
+            </div>
+          </dl>
         </div>
-        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-          <p className="text-sm font-semibold text-muted">Coming (on the way)</p>
-          <p className="mt-1 text-2xl font-bold text-foreground tabular-nums">{formatFcfaText(sum(coming))}</p>
-        </div>
-        <p className="col-span-2 text-sm text-muted">
-          The cooperative pays you for each sale after its share{pct ? ` (${pct}% now)` : ""}. Ask the office about payment dates.
+        <p className="mt-2 text-sm text-muted">
+          Earned counts delivered orders, after the cooperative&apos;s share{pct ? ` (${pct}% now)` : ""}. Coming is confirmed orders not delivered yet.
         </p>
+        {paidOut.length > 0 && (
+          <>
+            <h3 className="mt-5 font-semibold text-foreground">Payments to you</h3>
+            <ul className="mt-2 divide-y divide-border border-y border-border text-sm">
+              {paidOut.map((p) => (
+                <li key={p.id} className="flex flex-wrap justify-between gap-x-3 py-2.5">
+                  <span className="min-w-0 [overflow-wrap:anywhere]">
+                    {kumboTime(p.paidAt).split(",")[0]} · {p.method}
+                    {p.reference ? ` · ${p.reference}` : ""}
+                    {p.note && <span className="block text-muted">{p.note}</span>}
+                  </span>
+                  <span className="shrink-0 font-semibold tabular-nums">{formatFcfaText(p.amountXaf)}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </section>
 
       <section aria-labelledby="my-coffee-heading" className="mt-10">

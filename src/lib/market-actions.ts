@@ -5,9 +5,13 @@ import { hasDatabase } from "./db";
 import {
   addFarmer,
   addListing,
+  addPayout,
+  deletePayout,
+  farmerById,
   type ListingStatus,
   listingById,
   normalisePhone,
+  PAYOUT_METHODS,
   setCommissionPct,
   setFarmerActive,
   setFarmerPin,
@@ -16,7 +20,7 @@ import {
   validPin,
 } from "./market";
 import { parseListing } from "./market-input";
-import { isStaff } from "./staff-session";
+import { isStaff, staffSession } from "./staff-session";
 
 export type FormState = { ok?: string; error?: string } | null;
 
@@ -124,5 +128,40 @@ export async function decideListing(id: number, status: ListingStatus, note = ""
   } catch {
     return NOT_SAVED;
   }
+  return {};
+}
+
+/** Staff record money paid to a farmer: amount, how, and the transaction reference. */
+export async function recordPayout(_prev: FormState, f: FormData): Promise<FormState> {
+  if (!(await staffOnly())) return SIGNED_OUT;
+  const farmerId = Number(f.get("farmerId"));
+  const amountXaf = Number(String(f.get("amount") ?? "").replace(/\s/g, ""));
+  const method = String(f.get("method") ?? "");
+  const reference = String(f.get("reference") ?? "").trim().slice(0, 80);
+  const note = String(f.get("note") ?? "").trim().slice(0, 300);
+  if (!Number.isInteger(amountXaf) || amountXaf < 1 || amountXaf > 50_000_000) return { error: "Enter the amount paid, in whole FCFA." };
+  if (!(PAYOUT_METHODS as readonly string[]).includes(method)) return { error: "Choose how it was paid." };
+  try {
+    const farmer = await farmerById(farmerId);
+    if (!farmer) return { error: "That farmer was not found." };
+    const by = (await staffSession())?.email || "staff password";
+    await addPayout({ farmerId, amountXaf, method, reference, note, recordedBy: by });
+    refresh();
+    return { ok: `Recorded: ${amountXaf.toLocaleString("fr-FR")} FCFA paid to ${farmer.name} by ${method}.` };
+  } catch {
+    return NOT_SAVED;
+  }
+}
+
+/** Removes a payment recorded by mistake. */
+export async function undoPayout(id: number): Promise<{ error?: string }> {
+  if (!(await staffOnly())) return SIGNED_OUT;
+  if (!Number.isSafeInteger(id) || id < 1) return { error: "That payment was not found." };
+  try {
+    await deletePayout(id);
+  } catch {
+    return NOT_SAVED;
+  }
+  refresh();
   return {};
 }

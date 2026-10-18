@@ -330,3 +330,77 @@ export function toProduct(l: Listing, seller: { id: number; name: string; villag
     seller,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Payments to farmers
+// ---------------------------------------------------------------------------
+
+export const PAYOUT_METHODS = ["MTN MoMo", "Orange Money", "Cash", "Bank transfer"] as const;
+export type PayoutMethod = (typeof PAYOUT_METHODS)[number];
+
+export interface Payout {
+  id: number;
+  farmerId: number;
+  amountXaf: number;
+  method: string;
+  reference: string;
+  note: string;
+  recordedBy: string;
+  paidAt: Date;
+}
+
+const toPayout = (r: Record<string, unknown>): Payout => ({
+  id: Number(r.id),
+  farmerId: Number(r.farmer_id),
+  amountXaf: Number(r.amount_xaf),
+  method: r.method as string,
+  reference: r.reference as string,
+  note: r.note as string,
+  recordedBy: r.recorded_by as string,
+  paidAt: new Date(r.paid_at as string),
+});
+
+/**
+ * What each farmer has earned from delivered orders, after the cooperative's
+ * share recorded on each line. Only delivered orders count: a confirmed order
+ * can still be cancelled.
+ */
+export async function earnedByFarmer(): Promise<Map<number, number>> {
+  if (!hasDatabase()) return new Map();
+  const q = await db();
+  const rows = await q`
+    SELECT (l->>'farmerId')::bigint AS farmer_id,
+           sum(round((l->>'quantity')::numeric * (l->>'unitPriceXaf')::numeric * (1 - coalesce((l->>'commissionPct')::numeric, 0) / 100)))::bigint AS earned
+    FROM orders, jsonb_array_elements(lines) AS l
+    WHERE status = 'delivered' AND l ? 'farmerId'
+    GROUP BY 1`;
+  return new Map(rows.map((r) => [Number(r.farmer_id), Number(r.earned)]));
+}
+
+export async function paidByFarmer(): Promise<Map<number, number>> {
+  if (!hasDatabase()) return new Map();
+  const q = await db();
+  const rows = await q`SELECT farmer_id, sum(amount_xaf)::bigint AS paid FROM farmer_payouts GROUP BY farmer_id`;
+  return new Map(rows.map((r) => [Number(r.farmer_id), Number(r.paid)]));
+}
+
+/** Payments, newest first: all farmers, or one. */
+export async function payouts(farmerId?: number): Promise<Payout[]> {
+  if (!hasDatabase()) return [];
+  const q = await db();
+  const rows = farmerId
+    ? await q`SELECT * FROM farmer_payouts WHERE farmer_id = ${farmerId} ORDER BY paid_at DESC LIMIT 100`
+    : await q`SELECT * FROM farmer_payouts ORDER BY paid_at DESC LIMIT 300`;
+  return rows.map(toPayout);
+}
+
+export async function addPayout(p: { farmerId: number; amountXaf: number; method: string; reference: string; note: string; recordedBy: string }) {
+  const q = await db();
+  await q`INSERT INTO farmer_payouts (farmer_id, amount_xaf, method, reference, note, recorded_by)
+          VALUES (${p.farmerId}, ${p.amountXaf}, ${p.method}, ${p.reference}, ${p.note}, ${p.recordedBy})`;
+}
+
+export async function deletePayout(id: number) {
+  const q = await db();
+  await q`DELETE FROM farmer_payouts WHERE id = ${id}`;
+}
