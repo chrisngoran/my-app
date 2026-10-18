@@ -7,11 +7,15 @@ export interface StaffStatus {
   /** A database is connected, so the admin edits the live shop and needs the staff password. */
   shared: boolean;
   passwordSet: boolean;
+  /** "Continue with Google" is set up. */
+  google: boolean;
+  /** The Google account signed in here, or empty for the staff password. */
+  email: string;
   /** This browser is signed in with the staff password. */
   staff: boolean;
 }
 
-const LOADING: StaffStatus = { loaded: false, shared: false, passwordSet: false, staff: false };
+const LOADING: StaffStatus = { loaded: false, shared: false, passwordSet: false, google: false, staff: false, email: "" };
 
 /** Asks the site whether staff sign-in is the real one and whether this browser is signed in. */
 export function useStaffStatus() {

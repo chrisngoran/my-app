@@ -63,7 +63,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   // With a database the staff password is the real sign-in; without one the demo sign-in stands in.
   const shared = staffStatus.shared;
   const loaded = staffStatus.loaded && (shared || demoSession.loaded);
-  const email = shared ? (staffStatus.staff ? "cooperative staff" : null) : demoSession.email;
+  const email = shared ? (staffStatus.staff ? staffStatus.email || "cooperative staff" : null) : demoSession.email;
   const signedOut = loaded && !email;
 
   // A save the website refused has already been undone on screen; say why.

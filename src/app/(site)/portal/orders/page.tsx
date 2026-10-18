@@ -8,6 +8,7 @@ import { Card, PageHeader, StatCard } from "@/components/portal/ui";
 import { Price } from "@/components/price";
 import { orders, products } from "@/lib/data";
 import { hasDatabase, latestOrders, type OrderRow } from "@/lib/db";
+import { googleSignInConfigured } from "@/lib/google-auth";
 import { signOutStaff } from "@/lib/staff-actions";
 import { isStaff, staffPasswordSet } from "@/lib/staff-session";
 
@@ -78,7 +79,7 @@ async function LiveOrders() {
     return (
       <>
         <PageHeader title={TITLE} description={description} />
-        <StaffLogin passwordSet={staffPasswordSet()} next="/portal/orders" note="These are real customer orders, so only cooperative staff can see them." />
+        <StaffLogin passwordSet={staffPasswordSet()} google={googleSignInConfigured()} next="/portal/orders" note="These are real customer orders, so only cooperative staff can see them." />
       </>
     );
   }
