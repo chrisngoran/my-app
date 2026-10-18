@@ -6,6 +6,7 @@ import { updateProduct, useCatalog, useCatalogOverrides } from "@/lib/catalog-ov
 import { formatPrice } from "@/lib/currency";
 import { getProduct } from "@/lib/data";
 import { EditedChip, InfoMark, PageTitle, STORAGE_BLOCKED, Toggle, useToast } from "./ui";
+import { isUploadedImage } from "@/lib/catalog-clean";
 
 export function LiveVersionNote() {
   return (
@@ -43,7 +44,7 @@ export function AdminProductList() {
                   alt=""
                   width={112}
                   height={112}
-                  unoptimized={p.image.startsWith("data:")}
+                  unoptimized={isUploadedImage(p.image)}
                   className="h-14 w-14 shrink-0 rounded-lg bg-accent-soft object-cover"
                 />
                 <div className="min-w-0 flex-1">

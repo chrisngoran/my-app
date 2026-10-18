@@ -13,6 +13,7 @@ import { Price } from "@/components/price";
 import { useCatalog, useProductView } from "@/lib/catalog-overrides";
 import { AddToCartButton } from "./add-to-cart-button";
 import { StockIndicator } from "./stock-indicator";
+import { isUploadedImage } from "@/lib/catalog-clean";
 
 export function LiveProductName({ slug, fallback }: { slug: string; fallback: string }) {
   return <>{useProductView(slug)?.name ?? fallback}</>;
@@ -70,8 +71,8 @@ export function LiveProductImage({
       alt={alt}
       width={width}
       height={height}
-      // bundled photos are resized per screen; a photo uploaded in admin is a data: URL and is shown as is
-      unoptimized={src.startsWith("data:")}
+      // bundled photos are resized per screen; a photo uploaded in the admin is shown as is
+      unoptimized={isUploadedImage(src)}
       preload={preload}
       loading={eager ? "eager" : undefined}
       fetchPriority={eager ? "high" : undefined}

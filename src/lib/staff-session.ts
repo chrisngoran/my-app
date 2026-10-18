@@ -6,7 +6,8 @@ import { cookies } from "next/headers";
  * Staff sign-in for the pages that show real orders. There is one shared
  * staff password, set as STAFF_PASSWORD in Vercel. Signing in stores a signed
  * cookie the browser cannot read or change; it lasts 7 days. Changing the
- * password signs everyone out.
+ * password signs everyone out. The same sign-in opens the admin and the
+ * portal pages that show real orders.
  */
 
 export const STAFF_COOKIE = "gv_staff";
@@ -37,13 +38,17 @@ export async function startStaffSession() {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/portal",
+    // The whole site, so both the portal and the admin see it.
+    path: "/",
     maxAge: MAX_AGE_S,
   });
 }
 
 export async function endStaffSession() {
-  (await cookies()).delete({ name: STAFF_COOKIE, path: "/portal" });
+  const jar = await cookies();
+  jar.delete({ name: STAFF_COOKIE, path: "/" });
+  // Sign-ins from before the admin used it were limited to the portal.
+  jar.delete({ name: STAFF_COOKIE, path: "/portal" });
 }
 
 export async function isStaff() {

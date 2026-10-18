@@ -70,6 +70,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
   const [saved, setSaved] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const { toast, show } = useToast({ raised: true });
+  const { mode } = useCatalogOverrides();
   const ids = useId();
 
   const touch = () => setSaved(false);
@@ -119,7 +120,7 @@ function ProductForm({ product, original }: { product: CatalogProduct; original:
     });
     if (ok) {
       setSaved(true);
-      show("Saved. The website shows your change in this browser.");
+      show(mode === "shared" ? "Saved. The website shows your change to everyone." : "Saved. The website shows your change in this browser.");
     } else {
       show("Not saved. The photo may be too large for this browser. Try a smaller photo.", "error");
     }

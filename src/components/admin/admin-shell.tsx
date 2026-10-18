@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { signOut, useAdminSession } from "@/lib/admin-session";
-import { resetAllOverrides } from "@/lib/catalog-overrides";
+import { clearSaveError, resetAllOverrides, useCatalogOverrides } from "@/lib/catalog-overrides";
 import { cooperative } from "@/lib/data";
+import { signOutStaff } from "@/lib/staff-actions";
+import { useStaffStatus } from "@/lib/staff-status";
 import { AdminLoading, ConfirmButton, STORAGE_BLOCKED, useToast } from "./ui";
 
 const NAV = [
@@ -53,10 +55,23 @@ function AdminNav() {
 
 /** Layout for signed-in staff pages. Signed-out visitors are sent to the sign-in screen. */
 export function AdminShell({ children }: { children: React.ReactNode }) {
-  const { email, loaded } = useAdminSession();
+  const demoSession = useAdminSession();
+  const staffStatus = useStaffStatus();
+  const { saveError } = useCatalogOverrides();
   const router = useRouter();
   const { toast, show } = useToast();
+  // With a database the staff password is the real sign-in; without one the demo sign-in stands in.
+  const shared = staffStatus.shared;
+  const loaded = staffStatus.loaded && (shared || demoSession.loaded);
+  const email = shared ? (staffStatus.staff ? "cooperative staff" : null) : demoSession.email;
   const signedOut = loaded && !email;
+
+  // A save the website refused has already been undone on screen; say why.
+  useEffect(() => {
+    if (!saveError) return;
+    show(saveError, "error");
+    clearSaveError();
+  }, [saveError, show]);
 
   useEffect(() => {
     if (signedOut) router.replace("/admin");
@@ -70,7 +85,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <p className="bg-sand px-4 py-2 text-center text-sm font-semibold text-brand">
-        Demo admin — changes are saved only in this browser
+        {!staffStatus.loaded ? "\u00a0" : shared ? "Changes you save here go live on the website for every visitor" : "Demo admin — changes are saved only in this browser"}
       </p>
       <header className="on-dark bg-brand text-white">
         <div className="mx-auto max-w-3xl px-4 pt-3 pb-3">
@@ -89,9 +104,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <Link href="/" className={headerAction}>
                   View website
                 </Link>
-                <button type="button" onClick={handleSignOut} className={headerAction}>
-                  Sign out
-                </button>
+                {shared ? (
+                  <form action={signOutStaff}>
+                    <button type="submit" className={headerAction}>
+                      Sign out
+                    </button>
+                  </form>
+                ) : (
+                  <button type="button" onClick={handleSignOut} className={headerAction}>
+                    Sign out
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -109,7 +132,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {/* Always rendered (hidden until signed in) so server errors such as notFound() still set the right status. */}
         <div hidden={!loaded || !email}>
           {children}
-          {loaded && email && (
+          {loaded && email && !shared && (
             <section aria-labelledby="demo-tools-heading" className="mt-12 rounded-2xl border border-dashed border-field-border bg-surface p-4">
               <h2 id="demo-tools-heading" className="type-label text-brand">
                 Demo tools

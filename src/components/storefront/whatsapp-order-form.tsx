@@ -166,17 +166,27 @@ function SummarySkeleton() {
  * only). It runs alongside opening WhatsApp and never holds it up; if it
  * fails, the WhatsApp order still goes through.
  */
-function recordOrder(city: string, delivery: DeliveryOption, lines: { product: { slug: string }; quantity: number }[]) {
+function recordOrder(ref: string, city: string, delivery: DeliveryOption, lines: { product: { slug: string }; quantity: number }[]) {
   try {
     void fetch("/api/orders", {
       method: "POST",
       keepalive: true,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ city, delivery, lines: lines.map((l) => ({ slug: l.product.slug, quantity: l.quantity })) }),
+      body: JSON.stringify({ ref, city, delivery, lines: lines.map((l) => ({ slug: l.product.slug, quantity: l.quantity })) }),
     }).catch(() => {});
   } catch {
     // Old browsers without fetch: the order still goes by WhatsApp.
   }
+}
+
+/** Letters and digits that cannot be misread (no I, O, 0 or 1). */
+const REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+/** A short reference such as GV-7K3PQ, shown in the WhatsApp message and on the staff orders page. */
+function newOrderRef() {
+  const bytes = new Uint8Array(5);
+  crypto.getRandomValues(bytes);
+  return `GV-${Array.from(bytes, (b) => REF_ALPHABET[b % REF_ALPHABET.length]).join("")}`;
 }
 
 function WhatsAppGlyph() {
@@ -201,6 +211,8 @@ export function WhatsAppOrderForm() {
   const [delivery, setDelivery] = useState<DeliveryOption>("cameroon");
   const [notes, setNotes] = useState("");
   const [sent, setSent] = useState(false);
+  /** Made when Send is first tapped (a random value cannot be part of the prebuilt page), kept until a new order starts. */
+  const orderRef = useRef<string | null>(null);
   /** Set when the visitor tried to send with fields missing; errors show from then on. */
   const [attempted, setAttempted] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
@@ -224,8 +236,8 @@ export function WhatsAppOrderForm() {
     return false;
   }
 
-  const message = [
-    `Hello ${cooperative.shortName}, I would like to order:`,
+  const messageFor = (ref: string | null) => [
+    `Hello ${cooperative.shortName}, I would like to order${ref ? ` (ref ${ref})` : ""}:`,
     ...lines.map(
       (l) => {
         const weight = formatWeight(l.product.weightGrams);
@@ -261,6 +273,7 @@ export function WhatsAppOrderForm() {
         town={town}
         onNewOrder={() => {
           clearCart();
+          orderRef.current = null;
           setSent(false);
         }}
       />
@@ -448,7 +461,7 @@ export function WhatsAppOrderForm() {
             </dl>
             {/* Always shown. With fields missing, a tap points to them instead of opening WhatsApp. */}
             <a
-              href={whatsappLink(message)}
+              href={whatsappLink(messageFor(orderRef.current))}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => {
@@ -456,7 +469,10 @@ export function WhatsAppOrderForm() {
                   e.preventDefault();
                   return;
                 }
-                recordOrder(town, delivery, lines);
+                orderRef.current ??= newOrderRef();
+                // The link opens after this handler, so it carries the reference just made.
+                e.currentTarget.href = whatsappLink(messageFor(orderRef.current));
+                recordOrder(orderRef.current, town, delivery, lines);
                 setSent(true);
               }}
               id={`${ids}-send`}

@@ -98,7 +98,18 @@ const STATUS = {
  * `orders` are counted back from `endMs` (noon UTC on the last day shown):
  * daysAgo 0 is that day. `sample` says whether they are the demo figures.
  */
-export function SalesDashboard({ orders, endMs, sample }: { orders: SampleOrder[]; endMs: number; sample: boolean }) {
+export function SalesDashboard({
+  orders,
+  endMs,
+  sample,
+  catalog = products,
+}: {
+  orders: SampleOrder[];
+  endMs: number;
+  sample: boolean;
+  /** Names and stock as staff last saved them; the sample uses data.ts. */
+  catalog?: { slug: string; name: string; stock: number }[];
+}) {
   const [days, setDays] = useState<Days>(28);
 
   const view = useMemo(() => {
@@ -143,7 +154,7 @@ export function SalesDashboard({ orders, endMs, sample }: { orders: SampleOrder[
     };
     const unitsNow = unitsBy(now);
     const unitsBefore = before ? unitsBy(before) : null;
-    const demand: BarDatum[] = products
+    const demand: BarDatum[] = catalog
       .map((pr) => {
         const r = unitsNow.get(pr.slug) ?? { units: 0, orders: 0 };
         const pct = change(r.units, unitsBefore ? (unitsBefore.get(pr.slug)?.units ?? 0) : null);
@@ -173,7 +184,7 @@ export function SalesDashboard({ orders, endMs, sample }: { orders: SampleOrder[
     const weekdays: BarDatum[] = WEEKDAYS.map((d, i) => ({ key: d, label: d, value: wd[i] }));
 
     // Stock cover: weeks of stock left at this period's weekly demand.
-    const cover = products.map((pr) => {
+    const cover = catalog.map((pr) => {
       const weekly = ((unitsNow.get(pr.slug)?.units ?? 0) / days) * 7;
       const weeks = weekly > 0 ? pr.stock / weekly : Infinity;
       const status: keyof typeof STATUS = weeks < 2 ? "critical" : weeks < 4 ? "warning" : "good";
@@ -181,7 +192,7 @@ export function SalesDashboard({ orders, endMs, sample }: { orders: SampleOrder[
     });
 
     return { t, p, trendSlices, series, demand, cityBars, weekdays, cover, abroadShare: t.revenue ? series.reduce((n, s) => n + s.b, 0) / t.revenue : 0 };
-  }, [days, orders, endMs, sample]);
+  }, [days, orders, endMs, sample, catalog]);
 
   const { t, p } = view;
   const periodLabel = PERIODS.find((x) => x.days === days)?.label ?? "";
