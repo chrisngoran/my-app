@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 /*
  * Staff sign-in for the admin and the portal pages that show real orders.
@@ -58,6 +59,8 @@ export async function endStaffSession() {
 /** The signed-in staff member: `{ email }` (empty for the staff password), or null when signed out. */
 export async function staffSession(): Promise<{ email: string } | null> {
   if (!staffSignInConfigured()) return null;
+  // Signed-in pages are made per visit, never prepared ahead: the expiry check reads the clock.
+  await connection();
   const value = (await cookies()).get(STAFF_COOKIE)?.value;
   if (!value) return null;
   const [exp, email, mac] = value.split(".");

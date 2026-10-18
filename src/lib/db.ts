@@ -102,6 +102,14 @@ export async function recentOrders(days: number): Promise<OrderRow[]> {
   return rows.map(toRow);
 }
 
+/** How many orders are waiting for staff to confirm or cancel. */
+export async function countWaitingOrders(): Promise<number> {
+  if (!sql) return 0;
+  const q = await db();
+  const rows = await q`SELECT count(*)::int AS n FROM orders WHERE status = 'requested'`;
+  return Number(rows[0]?.n ?? 0);
+}
+
 /** The latest orders of every status, newest first. */
 export async function latestOrders(limit: number): Promise<OrderRow[]> {
   if (!sql) return [];

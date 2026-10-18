@@ -101,6 +101,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </p>
             {loaded && email && (
               <div className="-mr-2.5 flex flex-wrap items-center">
+                {shared && (
+                  <Link href="/staff" className={headerAction}>
+                    Staff home
+                  </Link>
+                )}
                 <Link href="/" className={headerAction}>
                   View website
                 </Link>
