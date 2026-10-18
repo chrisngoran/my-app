@@ -28,5 +28,5 @@ export async function GET(request: Request) {
   if (!staffEmails().includes(email)) return back("not-staff");
 
   await startStaffSession(email);
-  return Response.redirect(new URL(next || "/admin/products", url), 303);
+  return Response.redirect(new URL(next || "/staff", url), 303);
 }

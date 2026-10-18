@@ -43,8 +43,8 @@ function StaffPasswordForm({ status }: { status: StaffStatus }) {
           You are signed in as <span className="font-semibold">{email || "cooperative staff"}</span>.
         </p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <Link href="/admin/products" className={primaryButton}>
-            Go to products
+          <Link href="/staff" className={primaryButton}>
+            Go to staff home
           </Link>
           <form action={signOutStaff}>
             <button type="submit" className={`${secondaryButton} w-full`}>
@@ -73,11 +73,11 @@ function StaffPasswordForm({ status }: { status: StaffStatus }) {
           <span>{googleError}</span>
         </p>
       )}
-      {google && <StaffGoogleButton next="/admin/products" />}
+      {google && <StaffGoogleButton next="/staff" />}
       {google && passwordSet && <p className="text-center text-sm text-muted">or use the staff password</p>}
       {passwordSet && (
         <form action={action} className="space-y-4">
-          <input type="hidden" name="next" value="/admin/products" />
+          <input type="hidden" name="next" value="/staff" />
           <label className={labelClass}>
             Staff password
             <input

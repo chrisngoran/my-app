@@ -19,5 +19,6 @@ export async function signInStaff(_prev: { error: string } | null, formData: For
 export async function signOutStaff(formData: FormData) {
   await endStaffSession();
   const next = formData.get("next");
-  redirect(typeof next === "string" && next.startsWith("/portal/") ? returnTo(next) : "/admin");
+  // Back to the page's own sign-in: the staff home, a portal page, or the admin.
+  redirect(typeof next === "string" && (next === "/staff" || next.startsWith("/portal/")) ? returnTo(next) : "/admin");
 }
