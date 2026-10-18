@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { StaffLogin } from "@/components/portal/insights/staff-login";
+import { WorldPriceCard } from "@/components/world-price-card";
 import { cooperative } from "@/lib/data";
 import { countWaitingOrders, hasDatabase } from "@/lib/db";
 import { googleSignInConfigured } from "@/lib/google-auth";
@@ -124,6 +125,11 @@ async function StaffHome() {
         <Tile href="/admin/farmers" icon="farmers" title="Farmers" hint="Their stories" />
         <Tile href="/shop" icon="shop" title="View the shop" hint="See it as customers do" />
       </ul>
+      <div className="mt-6">
+        <Suspense fallback={<div className="h-36 animate-pulse rounded-2xl bg-border/40 motion-reduce:animate-none" />}>
+          <WorldPriceCard />
+        </Suspense>
+      </div>
       {live && (
         <form action={signOutStaff} className="mt-8">
           <input type="hidden" name="next" value="/staff" />
