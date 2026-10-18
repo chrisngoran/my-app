@@ -65,7 +65,9 @@ const change = (m: YahooMeta) => {
 export async function worldCoffeePrice(): Promise<WorldPrice> {
   "use cache";
   cacheLife("hours");
-  const [arabica, robusta, rate] = await Promise.all([futures("KC=F"), futures("RC=F").catch(() => null), fcfaPerUsd()]);
+  // London Robusta goes by more than one ticker; the first that answers is used.
+  const robustaQuote = futures("RC=F").catch(() => futures("RM=F")).catch(() => null);
+  const [arabica, robusta, rate] = await Promise.all([futures("KC=F"), robustaQuote, fcfaPerUsd()]);
   const centsPerLb = arabica.regularMarketPrice!;
   return {
     arabica: {

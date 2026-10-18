@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { formatFcfaText } from "@/lib/currency";
 import { type MarketQuote, worldCoffeePrice } from "@/lib/world-price";
 
@@ -31,6 +32,9 @@ function Quote({ name, q }: { name: string; q: MarketQuote }) {
 
 /** Today's world price for green coffee, for setting prices and paying farmers. Staff pages only. */
 export async function WorldPriceCard() {
+  // Fetched when a page is visited (then cached for the hour), never while the site is built,
+  // so a price source being down can never stop an update going live.
+  await connection();
   let price;
   try {
     price = await worldCoffeePrice();
