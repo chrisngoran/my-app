@@ -9,14 +9,15 @@ const isDev = process.env.NODE_ENV === "development";
  * frame. 'unsafe-inline' scripts are needed for the prerendered pages
  * (nonces would turn every page dynamic); every other source stays closed.
  * data: and blob: images are the photos staff pick in the admin.
+ * Vercel Analytics is allowed to load scripts and send data to track page views.
  */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://cdn.vercel-insights.com https://*.vercel-insights.com",
   "media-src 'none'",
   "object-src 'none'",
   "worker-src 'none'",
