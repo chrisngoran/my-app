@@ -7,7 +7,8 @@ import { type RealOrder, RealOrders } from "@/components/portal/real-orders";
 import { Card, PageHeader, StatCard } from "@/components/portal/ui";
 import { Price } from "@/components/price";
 import { orders, products } from "@/lib/data";
-import { hasDatabase, latestOrders, type OrderRow } from "@/lib/db";
+import { customersById, hasDatabase, latestOrders, type OrderRow } from "@/lib/db";
+import { kumboTime } from "@/lib/order-status";
 import { googleSignInConfigured } from "@/lib/google-auth";
 import { signOutStaff } from "@/lib/staff-actions";
 import { isStaff, staffPasswordSet } from "@/lib/staff-session";
@@ -44,17 +45,7 @@ function SampleOrders() {
   );
 }
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** "18 Oct, 14:05" in Kumbo time (UTC+1 all year). */
-function kumboTime(d: Date) {
-  const t = new Date(d.getTime() + 3_600_000);
-  const hh = String(t.getUTCHours()).padStart(2, "0");
-  const mm = String(t.getUTCMinutes()).padStart(2, "0");
-  return `${t.getUTCDate()} ${MONTHS[t.getUTCMonth()]} ${t.getUTCFullYear()}, ${hh}:${mm}`;
-}
-
-function toCard(o: OrderRow): RealOrder {
+function toCard(o: OrderRow, customers: Map<number, { email: string; name: string }>): RealOrder {
   const lines = o.lines.map((l) => ({
     name: products.find((p) => p.slug === l.slug)?.name ?? l.slug,
     quantity: l.quantity,
@@ -65,12 +56,15 @@ function toCard(o: OrderRow): RealOrder {
     ref: o.ref,
     status: o.status,
     when: kumboTime(o.createdAt),
+    customer: o.customerId && customers.get(o.customerId) ? describe(customers.get(o.customerId)!) : null,
     city: o.city,
     abroad: o.market === "abroad",
     lines,
     totalXaf: lines.reduce((n, l) => n + l.lineXaf, 0),
   };
 }
+
+const describe = (c: { email: string; name: string }) => (c.name ? `${c.name} (${c.email})` : c.email);
 
 async function LiveOrders() {
   const description =
@@ -92,8 +86,10 @@ async function LiveOrders() {
     </form>
   );
   let rows: OrderRow[];
+  let customers: Map<number, { email: string; name: string }>;
   try {
     rows = await latestOrders(200);
+    customers = await customersById([...new Set(rows.flatMap((r) => (r.customerId ? [r.customerId] : [])))]);
   } catch (e) {
     console.error("Could not read orders", e);
     return (
@@ -105,15 +101,15 @@ async function LiveOrders() {
       </>
     );
   }
-  const cards = rows.map(toCard);
+  const cards = rows.map((r) => toCard(r, customers));
   const waiting = cards.filter((c) => c.status === "requested");
   return (
     <>
       <PageHeader title={TITLE} description={description} actions={signOut} />
       <div className="mb-6 grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:gap-4">
         <StatCard label="Waiting" value={String(waiting.length)} hint={<Price xaf={waiting.reduce((n, c) => n + c.totalXaf, 0)} />} tone="warm" />
-        <StatCard label="Confirmed" value={String(cards.filter((c) => c.status === "confirmed").length)} tone="accent" />
-        <StatCard label="Cancelled" value={String(cards.filter((c) => c.status === "cancelled").length)} />
+        <StatCard label="In progress" value={String(cards.filter((c) => ["confirmed", "packed", "shipped"].includes(c.status)).length)} hint="Confirmed, packed or on the way" tone="accent" />
+        <StatCard label="Delivered" value={String(cards.filter((c) => c.status === "delivered").length)} />
       </div>
       <RealOrders orders={cards} />
     </>

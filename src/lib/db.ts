@@ -22,12 +22,20 @@ export interface OrderLine {
   unitPriceXaf: number;
 }
 
-export type OrderStatus = "requested" | "confirmed" | "cancelled";
+/** An order's journey: requested (sent on WhatsApp) → confirmed (paid, bags taken from stock) → packed → shipped → delivered; or cancelled. */
+export type OrderStatus = "requested" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled";
+
+/** Statuses in which the bags have left stock. */
+export const OUT_OF_STOCK: OrderStatus[] = ["confirmed", "packed", "shipped", "delivered"];
 
 export interface OrderRow {
   id: number;
   ref: string | null;
   status: OrderStatus;
+  /** When each status was reached, oldest first. */
+  history: { status: OrderStatus; at: string }[];
+  /** The signed-in customer who placed it, if any. */
+  customerId: number | null;
   createdAt: Date;
   city: string;
   market: "cameroon" | "abroad";
@@ -52,6 +60,18 @@ export function ensureTables() {
       )`;
     await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS ref text`;
     await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'requested'`;
+    await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS history jsonb NOT NULL DEFAULT '[]'::jsonb`;
+    await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id bigint`;
+    await db`CREATE INDEX IF NOT EXISTS orders_ref ON orders (ref)`;
+    await db`CREATE INDEX IF NOT EXISTS orders_customer ON orders (customer_id)`;
+    // Customers who signed in with Google, so they can follow their orders.
+    await db`
+      CREATE TABLE IF NOT EXISTS customers (
+        id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        email      text NOT NULL UNIQUE,
+        name       text NOT NULL DEFAULT '',
+        created_at timestamptz NOT NULL DEFAULT now()
+      )`;
     // One row (id 1) holding the staff's product, lot and farmer edits.
     await db`
       CREATE TABLE IF NOT EXISTS catalog (
@@ -72,19 +92,30 @@ export async function db() {
   return sql!;
 }
 
-export async function insertOrder(o: { ref: string | null; city: string; market: OrderRow["market"]; lines: OrderLine[] }) {
+export async function insertOrder(o: {
+  ref: string | null;
+  city: string;
+  market: OrderRow["market"];
+  lines: OrderLine[];
+  customerId: number | null;
+}) {
   if (!sql) return;
   const q = await db();
   const subtotal = o.lines.reduce((n, l) => n + l.quantity * l.unitPriceXaf, 0);
-  await q`INSERT INTO orders (ref, city, market, lines, subtotal_xaf)
-          VALUES (${o.ref}, ${o.city}, ${o.market}, ${JSON.stringify(o.lines)}::jsonb, ${subtotal})`;
+  const history = JSON.stringify([{ status: "requested", at: new Date().toISOString() }]);
+  await q`INSERT INTO orders (ref, city, market, lines, subtotal_xaf, history, customer_id)
+          VALUES (${o.ref}, ${o.city}, ${o.market}, ${JSON.stringify(o.lines)}::jsonb, ${subtotal}, ${history}::jsonb, ${o.customerId})`;
 }
+
+const COLUMNS = "id, ref, status, history, customer_id, created_at, city, market, lines";
 
 function toRow(r: Record<string, unknown>): OrderRow {
   return {
     id: Number(r.id),
     ref: (r.ref as string | null) ?? null,
     status: r.status as OrderStatus,
+    history: Array.isArray(r.history) ? (r.history as OrderRow["history"]) : [],
+    customerId: r.customer_id == null ? null : Number(r.customer_id),
     createdAt: new Date(r.created_at as string),
     city: r.city as string,
     market: r.market as OrderRow["market"],
@@ -96,9 +127,10 @@ function toRow(r: Record<string, unknown>): OrderRow {
 export async function recentOrders(days: number): Promise<OrderRow[]> {
   if (!sql) return [];
   const q = await db();
-  const rows = await q`SELECT id, ref, status, created_at, city, market, lines FROM orders
-                       WHERE created_at > now() - make_interval(days => ${days}) AND status <> 'cancelled'
-                       ORDER BY created_at`;
+  const rows = await q.query(
+    `SELECT ${COLUMNS} FROM orders WHERE created_at > now() - make_interval(days => $1) AND status <> 'cancelled' ORDER BY created_at`,
+    [days],
+  );
   return rows.map(toRow);
 }
 
@@ -114,9 +146,47 @@ export async function countWaitingOrders(): Promise<number> {
 export async function latestOrders(limit: number): Promise<OrderRow[]> {
   if (!sql) return [];
   const q = await db();
-  const rows = await q`SELECT id, ref, status, created_at, city, market, lines FROM orders
-                       ORDER BY created_at DESC LIMIT ${limit}`;
+  const rows = await q.query(`SELECT ${COLUMNS} FROM orders ORDER BY created_at DESC LIMIT $1`, [limit]);
   return rows.map(toRow);
+}
+
+/** One order by its reference (e.g. GV-7K3PQ), for "Track my order". */
+export async function orderByRef(ref: string): Promise<OrderRow | null> {
+  if (!sql) return null;
+  const q = await db();
+  const rows = await q.query(`SELECT ${COLUMNS} FROM orders WHERE ref = $1 ORDER BY created_at DESC LIMIT 1`, [ref]);
+  return rows.length ? toRow(rows[0]) : null;
+}
+
+/** A customer's orders, newest first. */
+export async function ordersForCustomer(customerId: number): Promise<OrderRow[]> {
+  if (!sql) return [];
+  const q = await db();
+  const rows = await q.query(`SELECT ${COLUMNS} FROM orders WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 100`, [customerId]);
+  return rows.map(toRow);
+}
+
+/** Finds or adds the customer with this Google email; returns their id. */
+export async function upsertCustomer(email: string, name: string): Promise<number> {
+  const q = await db();
+  const rows = await q`INSERT INTO customers (email, name) VALUES (${email}, ${name})
+                       ON CONFLICT (email) DO UPDATE SET name = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE customers.name END
+                       RETURNING id`;
+  return Number(rows[0].id);
+}
+
+export async function customerById(id: number): Promise<{ email: string; name: string } | null> {
+  return (await customersById([id])).get(id) ?? null;
+}
+
+/** Emails and names of the customers behind these orders, for the staff orders page. */
+export async function customersById(ids: number[]): Promise<Map<number, { email: string; name: string }>> {
+  const out = new Map<number, { email: string; name: string }>();
+  if (!sql || ids.length === 0) return out;
+  const q = await db();
+  const rows = await q`SELECT id, email, name FROM customers WHERE id = ANY(${ids}::bigint[])`;
+  for (const r of rows) out.set(Number(r.id), { email: r.email as string, name: r.name as string });
+  return out;
 }
 
 /**
@@ -126,7 +196,9 @@ export async function latestOrders(limit: number): Promise<OrderRow[]> {
 export async function moveOrder(id: number, from: OrderStatus[], to: OrderStatus) {
   const q = await db();
   const rows = await q`WITH old AS (SELECT id, status FROM orders WHERE id = ${id} AND status = ANY(${from}::text[]) FOR UPDATE)
-                       UPDATE orders o SET status = ${to} FROM old WHERE o.id = old.id
+                       UPDATE orders o SET status = ${to},
+                         history = o.history || jsonb_build_array(jsonb_build_object('status', ${to}::text, 'at', now()))
+                       FROM old WHERE o.id = old.id
                        RETURNING old.status AS was, o.lines`;
   return rows.length ? { was: rows[0].was as OrderStatus, lines: rows[0].lines as OrderLine[] } : null;
 }

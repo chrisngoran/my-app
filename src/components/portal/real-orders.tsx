@@ -3,12 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Price } from "@/components/price";
+import type { OrderStatus } from "@/lib/db";
 import { type OrderAction, updateOrder } from "@/lib/order-actions";
+import { STATUS_CLASS, STATUS_LABEL } from "@/lib/order-status";
 
 export interface RealOrder {
   id: number;
   ref: string | null;
-  status: "requested" | "confirmed" | "cancelled";
+  status: OrderStatus;
+  /** The signed-in customer who placed it, if any. */
+  customer: string | null;
   /** Already written out in Kumbo time on the server. */
   when: string;
   city: string;
@@ -17,11 +21,14 @@ export interface RealOrder {
   totalXaf: number;
 }
 
-const STATUS = {
-  requested: { label: "Waiting", className: "bg-warm/15 text-warm" },
-  confirmed: { label: "Confirmed", className: "bg-accent-soft text-accent" },
-  cancelled: { label: "Cancelled", className: "bg-border/60 text-muted" },
-} as const;
+/** The one step staff take next on an order in each status. */
+const NEXT: Partial<Record<OrderStatus, { action: OrderAction; label: string }>> = {
+  requested: { action: "confirm", label: "Confirm (takes from stock)" },
+  confirmed: { action: "pack", label: "Mark packed" },
+  packed: { action: "ship", label: "Mark on the way" },
+  shipped: { action: "deliver", label: "Mark delivered" },
+  cancelled: { action: "confirm", label: "Confirm after all" },
+};
 
 const button =
   "press inline-flex min-h-11 items-center justify-center rounded-lg border px-3 text-sm font-semibold disabled:opacity-60";
@@ -41,7 +48,8 @@ function OrderCard({ order }: { order: RealOrder }) {
       router.refresh();
     });
 
-  const status = STATUS[order.status];
+  const next = NEXT[order.status];
+  const canCancel = order.status !== "cancelled" && order.status !== "delivered";
   return (
     <li className={`rounded-xl border border-border bg-surface p-4 shadow-sm ${order.status === "cancelled" ? "opacity-75" : ""}`} aria-busy={pending}>
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -51,8 +59,9 @@ function OrderCard({ order }: { order: RealOrder }) {
             {order.abroad ? " (abroad)" : ""}
           </p>
           <p className="text-sm text-muted">{order.when}</p>
+          {order.customer && <p className="text-sm text-muted [overflow-wrap:anywhere]">Customer: {order.customer}</p>}
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.className}`}>{status.label}</span>
+        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_CLASS[order.status]}`}>{STATUS_LABEL[order.status]}</span>
       </div>
       <ul className="mt-3 space-y-1 border-t border-dashed border-border pt-3 text-sm">
         {order.lines.map((l) => (
@@ -87,14 +96,14 @@ function OrderCard({ order }: { order: RealOrder }) {
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
-          {order.status !== "confirmed" && (
-            <button type="button" disabled={pending} onClick={() => run("confirm")} className={`${button} border-accent bg-accent text-white`}>
-              {order.status === "cancelled" ? "Confirm after all" : "Confirm (takes from stock)"}
+          {next && (
+            <button type="button" disabled={pending} onClick={() => run(next.action)} className={`${button} border-accent bg-accent text-white`}>
+              {next.label}
             </button>
           )}
-          {order.status !== "cancelled" && (
+          {canCancel && (
             <button type="button" disabled={pending} onClick={() => run("cancel")} className={`${button} border-border bg-surface text-foreground`}>
-              {order.status === "confirmed" ? "Cancel (puts back in stock)" : "Cancel"}
+              {order.status === "requested" ? "Cancel" : "Cancel (puts back in stock)"}
             </button>
           )}
           <button type="button" disabled={pending} onClick={() => setAskDelete(true)} className={`${button} border-border bg-surface text-danger`}>

@@ -1,4 +1,5 @@
 import { catalogProducts } from "@/lib/catalog-store";
+import { customerId } from "@/lib/customer-session";
 import { hasDatabase, insertOrder, type OrderLine } from "@/lib/db";
 import { fromThisSite } from "@/lib/same-origin";
 
@@ -74,7 +75,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    await insertOrder({ ref, city, market: delivery === "international" ? "abroad" : "cameroon", lines });
+    // Signed-in customers see the order on their account page.
+    await insertOrder({ ref, customerId: await customerId(), city, market: delivery === "international" ? "abroad" : "cameroon", lines });
   } catch (e) {
     console.error("Could not record order", e);
     return new Response(null, { status: 500 });

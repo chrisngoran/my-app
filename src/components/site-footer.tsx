@@ -36,6 +36,12 @@ export function SiteFooter() {
             <Link href="/our-story" prefetch={false} className={footerLink}>
               Our story
             </Link>
+            <Link href="/track" prefetch={false} className={footerLink}>
+              Track my order
+            </Link>
+            <Link href="/account" prefetch={false} className={footerLink}>
+              My account
+            </Link>
           </div>
         </div>
         <div className="flex min-w-0 flex-col items-start">

@@ -104,7 +104,7 @@ function RouteLine({ town, draw }: { town: string; draw: boolean }) {
  * exactly that. Focus and scroll move to the heading, because the page has
  * just shrunk from the long form to this panel.
  */
-function SentPanel({ town, onNewOrder }: { town: string; onNewOrder: () => void }) {
+function SentPanel({ town, orderRef, onNewOrder }: { town: string; orderRef: string | null; onNewOrder: () => void }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const inFront = useInFrontOnce(ROUTE_SETTLE_MS);
   const route = town !== "" && !isKumbo(town);
@@ -127,6 +127,17 @@ function SentPanel({ town, onNewOrder }: { town: string; onNewOrder: () => void 
         WhatsApp opened with your order {route ? `from ${town} to Kumbo ` : ""}already written. Once it reaches us, we confirm what is
         available, the delivery fee and how to pay by MTN MoMo or Orange Money.
       </p>
+      {orderRef && (
+        <p className="mt-4 text-foreground">
+          Your order reference is <span className="font-bold tracking-wide">{orderRef}</span>.{" "}
+          <Link
+            href={`/track?ref=${orderRef}`}
+            className="font-semibold text-accent underline underline-offset-[3px] hover:decoration-2"
+          >
+            Track this order
+          </Link>
+        </p>
+      )}
       <div className="mt-6 flex flex-wrap gap-3">
         <button type="button" onClick={onNewOrder} className="btn btn-primary btn-lg">
           Start a new order
@@ -189,6 +200,45 @@ function newOrderRef() {
   return `GV-${Array.from(bytes, (b) => REF_ALPHABET[b % REF_ALPHABET.length]).join("")}`;
 }
 
+/**
+ * Before sending: signed-in buyers are told the order will be on their
+ * account; others may sign in first (the order list is kept while they do).
+ */
+function AccountHint() {
+  const [me, setMe] = useState<{ accounts: boolean; signedIn: boolean; name: string } | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((m) => live && setMe(m))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (!me?.accounts) return null;
+  if (me.signedIn) {
+    return (
+      <p className="mt-3 text-sm text-muted [overflow-wrap:anywhere]">
+        Signed in as {me.name}. This order will appear in{" "}
+        <Link href="/account" className="font-semibold text-accent underline underline-offset-[3px]">
+          My account
+        </Link>
+        .
+      </p>
+    );
+  }
+  return (
+    <p className="mt-3 text-sm text-muted">
+      Want to follow this order later?{" "}
+      <a href="/api/auth/google?as=customer&next=%2Forder" className="font-semibold text-accent underline underline-offset-[3px]">
+        Sign in with Google
+      </a>{" "}
+      before sending. Optional.
+    </p>
+  );
+}
+
 function WhatsAppGlyph() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
@@ -213,6 +263,8 @@ export function WhatsAppOrderForm() {
   const [sent, setSent] = useState(false);
   /** Made when Send is first tapped (a random value cannot be part of the prebuilt page), kept until a new order starts. */
   const orderRef = useRef<string | null>(null);
+  /** The reference of the order just sent, for the "Track this order" link. */
+  const [sentRef, setSentRef] = useState<string | null>(null);
   /** Set when the visitor tried to send with fields missing; errors show from then on. */
   const [attempted, setAttempted] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
@@ -271,6 +323,7 @@ export function WhatsAppOrderForm() {
     return (
       <SentPanel
         town={town}
+        orderRef={sentRef}
         onNewOrder={() => {
           clearCart();
           orderRef.current = null;
@@ -473,6 +526,7 @@ export function WhatsAppOrderForm() {
                 // The link opens after this handler, so it carries the reference just made.
                 e.currentTarget.href = whatsappLink(messageFor(orderRef.current));
                 recordOrder(orderRef.current, town, delivery, lines);
+                setSentRef(orderRef.current);
                 setSent(true);
               }}
               id={`${ids}-send`}
@@ -496,8 +550,8 @@ export function WhatsAppOrderForm() {
             </a>
             <p className="mt-3 text-sm text-muted">
               No payment now. We confirm your order, then you pay by MTN MoMo or Orange Money.
-              {/* The number is a placeholder until the cooperative supplies its own. */} The phone number is a demo number.
             </p>
+            <AccountHint />
           </>
         )}
       </aside>
