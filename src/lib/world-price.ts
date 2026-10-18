@@ -11,6 +11,8 @@ import { cacheLife } from "next/cache";
  * Robusta: the daily ICE London price when Yahoo has it; otherwise the
  * IMF's monthly average world Robusta price (series PCOFFROBUSDM, US cents
  * per pound, published free by the St. Louis Fed's FRED, about a month behind).
+ * FRED's official API is used when FRED_API_KEY is set (a free key from
+ * fredaccount.stlouisfed.org); otherwise its public CSV and text downloads.
  *
  * FCFA is pegged to the euro (1 EUR = 655.957 FCFA), so only the euro-dollar
  * rate is looked up (European Central Bank, via frankfurter.app).
@@ -30,6 +32,16 @@ export interface MarketQuote {
   period?: string;
 }
 
+/** Every outside request gives up after this long, so a slow source cannot hold up the staff page. */
+const TIMEOUT_MS = 8000;
+async function get(url: string, source: string) {
+  try {
+    return await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; GreenVentureCoffee/1.0)" }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+  } catch (e) {
+    throw new Error(`${source}: ${e instanceof Error && e.name === "TimeoutError" ? "timed out" : "could not connect"}`);
+  }
+}
+
 export interface WorldPrice {
   arabica: MarketQuote;
   robusta: MarketQuote | null;
@@ -37,6 +49,8 @@ export interface WorldPrice {
   /** When the exchange last traded, as an ISO date. */
   asOf: string;
   fcfaPerUsd: number;
+  /** Which sources failed and why, for checking the setup (e.g. "RC=F: no price"). No secrets. */
+  notes: string[];
 }
 
 interface YahooMeta {
@@ -47,9 +61,7 @@ interface YahooMeta {
 }
 
 async function futures(symbol: string): Promise<YahooMeta> {
-  const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; GreenVentureCoffee/1.0)" },
-  });
+  const res = await get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`, symbol);
   if (!res.ok) throw new Error(`${symbol}: HTTP ${res.status}`);
   const meta = ((await res.json()) as { chart?: { result?: { meta?: YahooMeta }[] } }).chart?.result?.[0]?.meta;
   if (!meta?.regularMarketPrice) throw new Error(`${symbol}: no price`);
@@ -57,7 +69,7 @@ async function futures(symbol: string): Promise<YahooMeta> {
 }
 
 async function fcfaPerUsd() {
-  const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR");
+  const res = await get("https://api.frankfurter.app/latest?from=USD&to=EUR", "USD/EUR");
   if (!res.ok) throw new Error(`USD/EUR: HTTP ${res.status}`);
   const eur = ((await res.json()) as { rates?: { EUR?: number } }).rates?.EUR;
   if (!eur) throw new Error("USD/EUR: no rate");
@@ -71,19 +83,11 @@ const change = (m: YahooMeta) => {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** The latest two monthly values of a FRED series, from its free CSV download (no key needed). */
-async function fredMonthly(series: string): Promise<{ month: string; value: number; previous: number | null }> {
-  const res = await fetch(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${series}`, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; GreenVentureCoffee/1.0)" },
-  });
-  if (!res.ok) throw new Error(`${series}: HTTP ${res.status}`);
-  // "observation_date,PCOFFROBUSDM" then "2026-09-01,212.34"; missing months are ".".
-  const rows = (await res.text())
-    .trim()
-    .split(/\r?\n/)
-    .slice(1)
-    .map((line) => line.split(","))
-    .filter(([date, v]) => /^\d{4}-\d{2}-\d{2}$/.test(date ?? "") && Number.isFinite(Number(v)) && Number(v) > 0);
+type Monthly = { month: string; value: number; previous: number | null };
+
+/** The last two months of [date, value] pairs, skipping missing values. */
+function lastTwo(series: string, pairs: [string, string][]): Monthly {
+  const rows = pairs.filter(([date, v]) => /^\d{4}-\d{2}-\d{2}$/.test(date ?? "") && Number.isFinite(Number(v)) && Number(v) > 0);
   const last = rows.at(-1);
   if (!last) throw new Error(`${series}: no values`);
   const [y, m] = last[0].split("-").map(Number);
@@ -91,18 +95,67 @@ async function fredMonthly(series: string): Promise<{ month: string; value: numb
   return { month: `${MONTHS[m - 1]} ${y}`, value: Number(last[1]), previous: before ? Number(before[1]) : null };
 }
 
+/** FRED's official API (needs a free key). */
+async function fredApi(series: string, key: string): Promise<Monthly> {
+  const res = await get(
+    `https://api.stlouisfed.org/fred/series/observations?series_id=${series}&api_key=${encodeURIComponent(key)}&file_type=json&sort_order=desc&limit=3`,
+    "FRED API",
+  );
+  if (!res.ok) throw new Error(`FRED API: HTTP ${res.status}`);
+  const obs = ((await res.json()) as { observations?: { date: string; value: string }[] }).observations ?? [];
+  return lastTwo(series, obs.map((o) => [o.date, o.value] as [string, string]).reverse());
+}
+
+/** FRED's public CSV download: "observation_date,SERIES" then "2026-09-01,212.34"; missing months are ".". */
+async function fredCsv(series: string): Promise<Monthly> {
+  const res = await get(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${series}`, "FRED CSV");
+  if (!res.ok) throw new Error(`FRED CSV: HTTP ${res.status}`);
+  const lines = (await res.text()).trim().split(/\r?\n/).slice(1);
+  return lastTwo(series, lines.map((l) => l.split(",") as [string, string]));
+}
+
+/** FRED's public text table: header lines, then "2026-09-01  212.34". */
+async function fredText(series: string): Promise<Monthly> {
+  const res = await get(`https://fred.stlouisfed.org/data/${series}.txt`, "FRED text");
+  if (!res.ok) throw new Error(`FRED text: HTTP ${res.status}`);
+  const pairs = (await res.text())
+    .split(/\r?\n/)
+    .map((l) => l.trim().split(/\s+/) as [string, string])
+    .filter(([d]) => /^\d{4}-\d{2}-\d{2}$/.test(d ?? ""));
+  return lastTwo(series, pairs);
+}
+
+/** The first FRED route that answers, noting why the others did not. */
+async function fredMonthly(series: string, notes: string[]): Promise<Monthly | null> {
+  const key = process.env.FRED_API_KEY?.trim();
+  const routes = [...(key ? [() => fredApi(series, key)] : []), () => fredCsv(series), () => fredText(series)];
+  for (const route of routes) {
+    try {
+      return await route();
+    } catch (e) {
+      notes.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  return null;
+}
+
 /** Fetched at most about once an hour; throws when a source cannot be reached. */
 export async function worldCoffeePrice(): Promise<WorldPrice> {
   "use cache";
   cacheLife("hours");
+  const notes: string[] = [];
+  const note = (e: unknown) => {
+    notes.push(e instanceof Error ? e.message : String(e));
+    return null;
+  };
   // London Robusta goes by more than one ticker; the first that answers is used, else the monthly average.
-  const robustaDaily = futures("RC=F").catch(() => futures("RM=F")).catch(() => null);
-  const robustaMonthly = fredMonthly("PCOFFROBUSDM").catch(() => null);
+  const robustaDaily = futures("RC=F").catch((e) => (note(e), futures("RM=F"))).catch(note);
+  const robustaMonthly = fredMonthly("PCOFFROBUSDM", notes);
   const [arabica, robusta, robustaAvg, cocoa, rate] = await Promise.all([
     futures("KC=F"),
     robustaDaily,
     robustaMonthly,
-    futures("CC=F").catch(() => null),
+    futures("CC=F").catch(note),
     fcfaPerUsd(),
   ]);
   /** A quote in US dollars per tonne, as FCFA per kilo. */
@@ -131,5 +184,6 @@ export async function worldCoffeePrice(): Promise<WorldPrice> {
     cocoa: cocoa ? perTonne(cocoa) : null,
     asOf: new Date((arabica.regularMarketTime ?? 0) * 1000).toISOString(),
     fcfaPerUsd: rate,
+    notes,
   };
 }
