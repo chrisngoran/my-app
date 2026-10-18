@@ -56,7 +56,7 @@ function ActiveNavLinks() {
  */
 function useOrderableCount() {
   const { cart, loaded } = useStore();
-  const { products } = useCatalog();
+  const { orderable: products } = useCatalog();
   const count = useMemo(
     () =>
       cart.reduce((n, item) => {

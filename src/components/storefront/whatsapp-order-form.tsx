@@ -295,7 +295,8 @@ export function WhatsAppOrderForm() {
         const weight = formatWeight(l.product.weightGrams);
         // Skip the weight when the name already states it, e.g. "Green Coffee (1 kg)".
         const label = l.product.name.includes(weight) ? l.product.name : `${l.product.name} (${weight})`;
-        return `- ${l.quantity} × ${label}: ${formatPrice(l.lineXaf)}`;
+        const from = l.product.seller ? `, from ${l.product.seller.name}` : "";
+        return `- ${l.quantity} × ${label}${from}: ${formatPrice(l.lineXaf)}`;
       },
     ),
     `Subtotal: ${formatPrice(subtotalXaf)}`,
@@ -481,7 +482,12 @@ export function WhatsAppOrderForm() {
                     </span>
                     <Price xaf={l.lineXaf} className="max-w-[55%] shrink-0 text-right [overflow-wrap:anywhere]" />
                   </div>
-                  {l.product.category === "subscription" ? (
+                  {l.product.seller ? (
+                    <p className="mt-1 text-sm text-muted">
+                      From {l.product.seller.name}
+                      {l.product.seller.village ? `, ${l.product.seller.village}` : ""}
+                    </p>
+                  ) : l.product.category === "subscription" ? (
                     <p className="mt-1 text-sm text-muted">Rotating lots</p>
                   ) : (
                     <p className="mt-1.5">

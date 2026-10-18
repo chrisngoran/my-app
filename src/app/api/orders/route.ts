@@ -1,6 +1,7 @@
 import { catalogProducts } from "@/lib/catalog-store";
 import { customerId } from "@/lib/customer-session";
 import { hasDatabase, insertOrder, type OrderLine } from "@/lib/db";
+import { commissionPct } from "@/lib/market";
 import { fromThisSite } from "@/lib/same-origin";
 
 /*
@@ -57,8 +58,9 @@ export async function POST(request: Request) {
   if (!Array.isArray(rawLines) || rawLines.length === 0 || rawLines.length > MAX_LINES) return new Response(null, { status: 400 });
 
   let products;
+  let commission = 0;
   try {
-    products = await catalogProducts();
+    [products, commission] = await Promise.all([catalogProducts(), commissionPct()]);
   } catch (e) {
     console.error("Could not read catalog", e);
     return new Response(null, { status: 500 });
@@ -71,7 +73,14 @@ export async function POST(request: Request) {
       return new Response(null, { status: 400 });
     }
     if (lines.some((l) => l.slug === product.slug)) return new Response(null, { status: 400 });
-    lines.push({ slug: product.slug, quantity: quantity as number, unitPriceXaf: product.priceXaf });
+    lines.push({
+      slug: product.slug,
+      name: product.name,
+      quantity: quantity as number,
+      unitPriceXaf: product.priceXaf,
+      // A farmer's coffee records who is owed and the cooperative's share as it stood at the sale.
+      ...(product.seller ? { farmerId: product.seller.id, commissionPct: commission } : {}),
+    });
   }
 
   try {

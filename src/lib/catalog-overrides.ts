@@ -21,6 +21,7 @@ import {
   applyLotOverride,
   applyProductOverride,
   type CatalogOverrides,
+  type CatalogProduct,
   cleanOverrides,
   EMPTY_OVERRIDES,
   type FarmerOverride,
@@ -29,6 +30,7 @@ import {
   type ProductOverride,
 } from "./catalog-clean";
 import { farmers as baseFarmers, lots as baseLots, products as baseProducts } from "./data";
+import type { Product } from "./types";
 
 export type { CatalogOverrides, CatalogProduct, FarmerOverride, LotOverride, ProductOverride } from "./catalog-clean";
 export { applyFarmerOverride, applyLotOverride, applyProductOverride } from "./catalog-clean";
@@ -48,9 +50,24 @@ interface Snapshot {
   resets: number;
   /** Set when a shared save failed and the change was undone. */
   saveError: string | null;
+  /** Approved coffee from the farmer marketplace (shared mode only). */
+  listings: CatalogProduct[];
 }
 
-const SERVER_SNAPSHOT: Snapshot = { overrides: EMPTY_OVERRIDES, loaded: false, mode: "loading", resets: 0, saveError: null };
+const SERVER_SNAPSHOT: Snapshot = { overrides: EMPTY_OVERRIDES, loaded: false, mode: "loading", resets: 0, saveError: null, listings: [] };
+
+/** Marketplace coffee from the server, checked on the way in like the edits. */
+function cleanListings(value: unknown): CatalogProduct[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((v) => {
+    const p = v as Partial<Product>;
+    const ok =
+      typeof p?.slug === "string" && /^l-\d+$/.test(p.slug) && typeof p.name === "string" && Number.isInteger(p.priceXaf) &&
+      Number.isInteger(p.stock) && Number.isInteger(p.weightGrams) && typeof p.image === "string" && p.image.startsWith("/") &&
+      typeof p.seller?.name === "string";
+    return ok ? [{ ...(p as Product), cuppingNotes: [], hidden: false }] : [];
+  });
+}
 let snapshot: Snapshot = SERVER_SNAPSHOT;
 let started = false;
 const listeners = new Set<() => void>();
@@ -73,11 +90,11 @@ function readLocal(): CatalogOverrides {
 async function start() {
   try {
     const res = await fetch("/api/catalog", { cache: "no-store" });
-    const data = (await res.json()) as { shared?: boolean; overrides?: unknown };
+    const data = (await res.json()) as { shared?: boolean; overrides?: unknown; listings?: unknown };
     if (data.shared) {
       // On a database hiccup this shows the original values, never this browser's old demo edits.
       const overrides = data.overrides ? cleanOverrides(data.overrides, IDS) : EMPTY_OVERRIDES;
-      set({ overrides, loaded: true, mode: "shared", resets: snapshot.resets + 1 });
+      set({ overrides, loaded: true, mode: "shared", resets: snapshot.resets + 1, listings: cleanListings(data.listings) });
       return;
     }
   } catch {
@@ -187,23 +204,28 @@ export function useCatalogOverrides() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-/** All products with admin edits applied, including hidden ones (check `hidden`). */
+/**
+ * The cooperative's products with admin edits applied, including hidden ones
+ * (check `hidden`); the farmers' approved marketplace coffee; and both together
+ * (`orderable`), which is what the order list can hold.
+ */
 export function useCatalog() {
-  const { overrides, loaded } = useCatalogOverrides();
+  const { overrides, loaded, listings } = useCatalogOverrides();
   const products = useMemo(
     () => baseProducts.map((p) => applyProductOverride(p, overrides.products[p.slug])),
     [overrides],
   );
   const visibleProducts = useMemo(() => products.filter((p) => !p.hidden), [products]);
-  return { products, visibleProducts, loaded };
+  const orderable = useMemo(() => [...products, ...listings], [products, listings]);
+  return { products, visibleProducts, listings, orderable, loaded };
 }
 
 export function useProductView(slug: string) {
-  const { overrides } = useCatalogOverrides();
+  const { overrides, listings } = useCatalogOverrides();
   return useMemo(() => {
     const base = baseProducts.find((p) => p.slug === slug);
-    return base ? applyProductOverride(base, overrides.products[slug]) : undefined;
-  }, [overrides, slug]);
+    return base ? applyProductOverride(base, overrides.products[slug]) : listings.find((l) => l.slug === slug);
+  }, [overrides, listings, slug]);
 }
 
 export function useLotView(code: string) {

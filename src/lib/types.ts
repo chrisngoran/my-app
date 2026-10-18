@@ -53,6 +53,8 @@ export interface Product {
   description: string;
   stock: number;
   image: string; // path under /public
+  /** Set for coffee a farmer sells through the marketplace (slug "l-<listing id>"). */
+  seller?: { id: number; name: string; village: string };
 }
 
 export type OrderStatus = "Pending payment" | "Paid" | "Preparing" | "Out for delivery" | "Delivered";

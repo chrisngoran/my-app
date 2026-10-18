@@ -36,6 +36,9 @@ export function SiteFooter() {
             <Link href="/our-story" prefetch={false} className={footerLink}>
               Our story
             </Link>
+            <Link href="/farmers" prefetch={false} className={footerLink}>
+              Our farmers
+            </Link>
             <Link href="/track" prefetch={false} className={footerLink}>
               Track my order
             </Link>

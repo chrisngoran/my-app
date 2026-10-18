@@ -20,6 +20,11 @@ export interface OrderLine {
   slug: string;
   quantity: number;
   unitPriceXaf: number;
+  /** The coffee's name when it was ordered (orders from before this was stored have none). */
+  name?: string;
+  /** Marketplace lines: the farmer who sells it, and the cooperative's share at the time of sale. */
+  farmerId?: number;
+  commissionPct?: number;
 }
 
 /** An order's journey: requested (sent on WhatsApp) → confirmed (paid, bags taken from stock) → packed → shipped → delivered; or cancelled. */
@@ -85,6 +90,36 @@ export function ensureTables() {
         updated_at   timestamptz NOT NULL DEFAULT now(),
         UNIQUE (product_slug, customer_id)
       )`;
+    // The farmer marketplace: farmers who sell through the cooperative, and their coffee.
+    await db`
+      CREATE TABLE IF NOT EXISTS market_farmers (
+        id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        name       text NOT NULL,
+        village    text NOT NULL DEFAULT '',
+        phone      text NOT NULL UNIQUE,
+        pin_hash   text NOT NULL DEFAULT '',
+        email      text,
+        story      text NOT NULL DEFAULT '',
+        active     boolean NOT NULL DEFAULT true,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )`;
+    await db`
+      CREATE TABLE IF NOT EXISTS listings (
+        id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        farmer_id    bigint NOT NULL,
+        name         text NOT NULL,
+        kind         text NOT NULL CHECK (kind IN ('roasted', 'green')),
+        weight_grams integer NOT NULL,
+        price_xaf    integer NOT NULL,
+        stock        integer NOT NULL DEFAULT 0,
+        description  text NOT NULL DEFAULT '',
+        image        text,
+        status       text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'paused')),
+        note         text NOT NULL DEFAULT '',
+        created_at   timestamptz NOT NULL DEFAULT now(),
+        updated_at   timestamptz NOT NULL DEFAULT now()
+      )`;
+    await db`CREATE TABLE IF NOT EXISTS settings (key text PRIMARY KEY, value jsonb NOT NULL)`;
     // One row (id 1) holding the staff's product, lot and farmer edits.
     await db`
       CREATE TABLE IF NOT EXISTS catalog (

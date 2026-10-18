@@ -60,7 +60,7 @@ export function OrderTimeline({ order }: { order: OrderRow }) {
         {order.lines.map((l) => (
           <li key={l.slug} className="flex justify-between gap-3">
             <span className="min-w-0 [overflow-wrap:anywhere]">
-              <span className="tabular-nums">{l.quantity}</span> × {products.find((p) => p.slug === l.slug)?.name ?? l.slug}
+              <span className="tabular-nums">{l.quantity}</span> × {l.name ?? products.find((p) => p.slug === l.slug)?.name ?? "Coffee"}
             </span>
             <span className="shrink-0 tabular-nums">{formatFcfaText(l.quantity * l.unitPriceXaf)}</span>
           </li>

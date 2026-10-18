@@ -17,7 +17,7 @@ export interface RealOrder {
   when: string;
   city: string;
   abroad: boolean;
-  lines: { name: string; quantity: number; lineXaf: number }[];
+  lines: { name: string; quantity: number; lineXaf: number; farmerShare?: string }[];
   totalXaf: number;
 }
 
@@ -65,11 +65,12 @@ function OrderCard({ order }: { order: RealOrder }) {
       </div>
       <ul className="mt-3 space-y-1 border-t border-dashed border-border pt-3 text-sm">
         {order.lines.map((l) => (
-          <li key={l.name} className="flex justify-between gap-3">
+          <li key={l.name} className="flex flex-wrap justify-between gap-x-3">
             <span className="min-w-0 [overflow-wrap:anywhere]">
               <span className="tabular-nums">{l.quantity}</span> × {l.name}
             </span>
             <Price xaf={l.lineXaf} className="shrink-0" />
+            {l.farmerShare && <span className="basis-full text-xs text-muted">{l.farmerShare}</span>}
           </li>
         ))}
         <li className="flex justify-between gap-3 border-t border-border pt-1 font-semibold">

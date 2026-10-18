@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { ShopMarketSection } from "@/components/market/shop-market-section";
 import { ProductCard } from "@/components/storefront/product-card";
 import { ShopCatalog, ShopCatalogFallback } from "@/components/storefront/shop-catalog";
 import { products } from "@/lib/data";
@@ -29,6 +30,7 @@ export default function ShopPage() {
           <ShopCatalog products={products} cards={cards} />
         </Suspense>
       </div>
+      <ShopMarketSection />
     </div>
   );
 }
