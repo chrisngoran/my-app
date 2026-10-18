@@ -161,6 +161,24 @@ function SummarySkeleton() {
   );
 }
 
+/**
+ * Saves the order request for the staff dashboard (coffees, town and delivery
+ * only). It runs alongside opening WhatsApp and never holds it up; if it
+ * fails, the WhatsApp order still goes through.
+ */
+function recordOrder(city: string, delivery: DeliveryOption, lines: { product: { slug: string }; quantity: number }[]) {
+  try {
+    void fetch("/api/orders", {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ city, delivery, lines: lines.map((l) => ({ slug: l.product.slug, quantity: l.quantity })) }),
+    }).catch(() => {});
+  } catch {
+    // Old browsers without fetch: the order still goes by WhatsApp.
+  }
+}
+
 function WhatsAppGlyph() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
@@ -438,6 +456,7 @@ export function WhatsAppOrderForm() {
                   e.preventDefault();
                   return;
                 }
+                recordOrder(town, delivery, lines);
                 setSent(true);
               }}
               id={`${ids}-send`}

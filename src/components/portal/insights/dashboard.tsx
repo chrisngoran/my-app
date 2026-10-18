@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { formatFcfaText } from "@/lib/currency";
 import { products } from "@/lib/data";
-import { orderItems, orderValueXaf, sampleDate, sampleOrders, type SampleOrder } from "@/lib/sample-sales";
+import { orderItems, orderValueXaf, type SampleOrder } from "@/lib/sample-sales";
 import { Bars, type BarDatum, Columns, compact, Sparkline, StackedColumns, type StackDatum, TableView } from "./charts";
 
 const PERIODS = [
@@ -23,7 +23,8 @@ const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const shortDate = (d: Date) => `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 
 /** Orders whose day falls in [from, to) days ago. */
-const slice = (from: number, to: number) => sampleOrders.filter((o) => o.daysAgo >= from && o.daysAgo < to);
+const sliceOf = (orders: SampleOrder[]) => (from: number, to: number) => orders.filter((o) => o.daysAgo >= from && o.daysAgo < to);
+const DAY_MS = 86_400_000;
 
 function totals(orders: SampleOrder[]) {
   const revenue = orders.reduce((n, o) => n + orderValueXaf(o), 0);
@@ -93,12 +94,19 @@ const STATUS = {
   good: { label: "Enough stock", color: "var(--viz-good)", icon: "✓" },
 } as const;
 
-export function SalesDashboard() {
+/**
+ * `orders` are counted back from `endMs` (noon UTC on the last day shown):
+ * daysAgo 0 is that day. `sample` says whether they are the demo figures.
+ */
+export function SalesDashboard({ orders, endMs, sample }: { orders: SampleOrder[]; endMs: number; sample: boolean }) {
   const [days, setDays] = useState<Days>(28);
 
   const view = useMemo(() => {
+    const slice = sliceOf(orders);
+    const sampleDate = (daysAgo: number) => new Date(endMs - daysAgo * DAY_MS);
     const now = slice(0, days);
-    const before = days * 2 <= 365 ? slice(days, days * 2) : null;
+    // The sample covers one year, so its 52 weeks have nothing before them.
+    const before = !sample || days * 2 <= 365 ? slice(days, days * 2) : null;
     const t = totals(now);
     const p = before ? totals(before) : null;
 
@@ -173,7 +181,7 @@ export function SalesDashboard() {
     });
 
     return { t, p, trendSlices, series, demand, cityBars, weekdays, cover, abroadShare: t.revenue ? series.reduce((n, s) => n + s.b, 0) / t.revenue : 0 };
-  }, [days]);
+  }, [days, orders, endMs, sample]);
 
   const { t, p } = view;
   const periodLabel = PERIODS.find((x) => x.days === days)?.label ?? "";
@@ -296,7 +304,7 @@ export function SalesDashboard() {
       </div>
 
       <p className="text-xs text-muted">
-        Axis values are rounded ({compact(1_250_000)} = 1,250,000 FCFA). Every figure on this page is sample data for the demo.
+        Axis values are rounded ({compact(1_250_000)} = 1,250,000 FCFA). {sample ? "Every figure on this page is sample data for the demo." : "Figures are order requests sent on WhatsApp; some may not have been confirmed or paid."}
       </p>
     </div>
   );
