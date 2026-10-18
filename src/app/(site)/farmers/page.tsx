@@ -20,6 +20,12 @@ export default function FarmersPage() {
       <Suspense fallback={<div className="mt-8 h-40 animate-pulse rounded-2xl bg-border/40 motion-reduce:animate-none" />}>
         <FarmerList />
       </Suspense>
+      <p className="mt-10 text-sm text-muted">
+        Are you a member farmer?{" "}
+        <Link href="/farmer" className="font-semibold text-accent underline underline-offset-[3px]">
+          Sign in to sell your coffee
+        </Link>
+      </p>
     </div>
   );
 }

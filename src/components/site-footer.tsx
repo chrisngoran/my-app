@@ -67,6 +67,9 @@ export function SiteFooter() {
           <Link href="/portal" prefetch={false} className={footerLink}>
             Staff platform preview
           </Link>
+          <Link href="/farmer" prefetch={false} className={footerLink}>
+            Farmer login
+          </Link>
           <Link href="/staff" prefetch={false} className={footerLink}>
             Staff login
           </Link>

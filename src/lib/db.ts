@@ -103,6 +103,8 @@ export function ensureTables() {
         active     boolean NOT NULL DEFAULT true,
         created_at timestamptz NOT NULL DEFAULT now()
       )`;
+    await db`ALTER TABLE market_farmers ADD COLUMN IF NOT EXISTS failed_pins integer NOT NULL DEFAULT 0`;
+    await db`ALTER TABLE market_farmers ADD COLUMN IF NOT EXISTS locked_until timestamptz`;
     await db`
       CREATE TABLE IF NOT EXISTS listings (
         id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

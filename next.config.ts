@@ -59,6 +59,7 @@ const nextConfig: NextConfig = {
       { source: "/portal", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       { source: "/staff", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       { source: "/account", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      { source: "/farmer", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
     ];
   },
   turbopack: {

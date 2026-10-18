@@ -136,10 +136,23 @@ export async function farmerById(id: number): Promise<MarketFarmer | null> {
   return rows.length ? toFarmer(rows[0]) : null;
 }
 
-export async function farmerByPhone(phone: string): Promise<(MarketFarmer & { pinHash: string }) | null> {
+export async function farmerByPhone(phone: string): Promise<(MarketFarmer & { pinHash: string; locked: boolean }) | null> {
   const q = await db();
-  const rows = await q`SELECT * FROM market_farmers WHERE phone = ${phone}`;
-  return rows.length ? { ...toFarmer(rows[0]), pinHash: rows[0].pin_hash as string } : null;
+  const rows = await q`SELECT *, coalesce(locked_until > now(), false) AS locked FROM market_farmers WHERE phone = ${phone}`;
+  return rows.length ? { ...toFarmer(rows[0]), pinHash: rows[0].pin_hash as string, locked: rows[0].locked as boolean } : null;
+}
+
+/** Counts a wrong PIN; the fifth in a row locks the account for 15 minutes. */
+export async function recordWrongPin(id: number) {
+  const q = await db();
+  await q`UPDATE market_farmers SET failed_pins = failed_pins + 1,
+            locked_until = CASE WHEN failed_pins + 1 >= 5 THEN now() + interval '15 minutes' ELSE locked_until END
+          WHERE id = ${id}`;
+}
+
+export async function clearWrongPins(id: number) {
+  const q = await db();
+  await q`UPDATE market_farmers SET failed_pins = 0, locked_until = NULL WHERE id = ${id}`;
 }
 
 export async function farmerByEmail(email: string): Promise<MarketFarmer | null> {
@@ -158,7 +171,8 @@ export async function addFarmer(f: { name: string; village: string; phone: strin
 
 export async function setFarmerPin(id: number, pin: string) {
   const q = await db();
-  await q`UPDATE market_farmers SET pin_hash = ${hashPin(pin)} WHERE id = ${id}`;
+  // A new PIN from staff also lifts any lock from wrong guesses.
+  await q`UPDATE market_farmers SET pin_hash = ${hashPin(pin)}, failed_pins = 0, locked_until = NULL WHERE id = ${id}`;
 }
 
 export async function setFarmerActive(id: number, active: boolean) {
@@ -229,6 +243,51 @@ export async function updateListing(id: number, l: ListingInput, status: Listing
 export async function setListingStatus(id: number, status: ListingStatus, note = "") {
   const q = await db();
   await q`UPDATE listings SET status = ${status}, note = ${note}, updated_at = now() WHERE id = ${id}`;
+}
+
+/** A farmer changes how many bags are available. It stays on sale if it was. */
+export async function setListingStock(id: number, farmerId: number, stock: number) {
+  const q = await db();
+  const rows = await q`UPDATE listings SET stock = ${stock}, updated_at = now() WHERE id = ${id} AND farmer_id = ${farmerId} RETURNING id`;
+  return rows.length > 0;
+}
+
+export interface FarmerSale {
+  orderId: number;
+  ref: string | null;
+  status: string;
+  createdAt: Date;
+  name: string;
+  quantity: number;
+  lineXaf: number;
+  /** What the farmer is owed for this line, after the cooperative's share at the time of sale. */
+  owedXaf: number;
+}
+
+/** A farmer's coffee in orders that were confirmed or went further, newest first. */
+export async function salesForFarmer(farmerId: number): Promise<FarmerSale[]> {
+  const q = await db();
+  const rows = await q`SELECT id, ref, status, created_at, lines FROM orders
+                       WHERE status IN ('confirmed', 'packed', 'shipped', 'delivered')
+                         AND lines @> ${JSON.stringify([{ farmerId }])}::jsonb
+                       ORDER BY created_at DESC LIMIT 200`;
+  return rows.flatMap((r) =>
+    (r.lines as { slug: string; name?: string; quantity: number; unitPriceXaf: number; farmerId?: number; commissionPct?: number }[])
+      .filter((l) => l.farmerId === farmerId)
+      .map((l) => {
+        const lineXaf = l.quantity * l.unitPriceXaf;
+        return {
+          orderId: Number(r.id),
+          ref: (r.ref as string | null) ?? null,
+          status: r.status as string,
+          createdAt: new Date(r.created_at as string),
+          name: l.name ?? "Coffee",
+          quantity: l.quantity,
+          lineXaf,
+          owedXaf: Math.round(lineXaf * (1 - (l.commissionPct ?? 0) / 100)),
+        };
+      }),
+  );
 }
 
 export async function adjustListingStock(id: number, delta: number) {
