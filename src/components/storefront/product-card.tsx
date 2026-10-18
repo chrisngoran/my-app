@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { askNextRoastLink } from "@/lib/whatsapp";
 import { formatWeight } from "./catalog";
+import { CardRating } from "@/components/reviews/card-rating";
 import {
   LiveAddToCart,
   LiveProductImage,
@@ -134,6 +135,7 @@ export function ProductCard({
             </Link>
           </Heading>
           <p className="mt-0.5 text-sm text-muted">{productMeta(product)}</p>
+          <CardRating slug={product.slug} />
         </div>
         {product.cuppingNotes.length > 0 && !rotating && (
           <p className={`text-sm text-foreground ${L.notes[layout]}`}>
