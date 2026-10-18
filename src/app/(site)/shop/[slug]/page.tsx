@@ -10,6 +10,7 @@ import {
 } from "@/components/storefront/live-product";
 import { LotTag } from "@/components/storefront/lot-tag";
 import { isRotating, ProductGrid } from "@/components/storefront/product-card";
+import { ProductReviews } from "@/components/reviews/product-reviews";
 import { ShareLinks } from "@/components/share-links";
 import { ProductPurchase } from "@/components/storefront/product-purchase";
 import { getFarmer, getLot, getProduct, products } from "@/lib/data";
@@ -167,6 +168,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               ))}
             </dl>
           </section>
+
+          <ProductReviews slug={product.slug} />
         </div>
       </div>
 

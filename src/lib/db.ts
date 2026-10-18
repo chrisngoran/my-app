@@ -72,6 +72,19 @@ export function ensureTables() {
         name       text NOT NULL DEFAULT '',
         created_at timestamptz NOT NULL DEFAULT now()
       )`;
+    // Star ratings from customers who bought the coffee; one per customer per coffee.
+    await db`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        product_slug text NOT NULL,
+        customer_id  bigint NOT NULL,
+        rating       smallint NOT NULL CHECK (rating BETWEEN 1 AND 5),
+        body         text NOT NULL DEFAULT '',
+        hidden       boolean NOT NULL DEFAULT false,
+        created_at   timestamptz NOT NULL DEFAULT now(),
+        updated_at   timestamptz NOT NULL DEFAULT now(),
+        UNIQUE (product_slug, customer_id)
+      )`;
     // One row (id 1) holding the staff's product, lot and farmer edits.
     await db`
       CREATE TABLE IF NOT EXISTS catalog (
@@ -208,4 +221,81 @@ export async function deleteOrder(id: number) {
   const q = await db();
   const rows = await q`DELETE FROM orders WHERE id = ${id} RETURNING status, lines`;
   return rows.length ? { was: rows[0].status as OrderStatus, lines: rows[0].lines as OrderLine[] } : null;
+}
+
+export interface ReviewRow {
+  id: number;
+  productSlug: string;
+  customerId: number;
+  rating: number;
+  body: string;
+  hidden: boolean;
+  updatedAt: Date;
+  /** The reviewer's name as Google gave it (shown shortened). */
+  name: string;
+  email: string;
+}
+
+const toReview = (r: Record<string, unknown>): ReviewRow => ({
+  id: Number(r.id),
+  productSlug: r.product_slug as string,
+  customerId: Number(r.customer_id),
+  rating: Number(r.rating),
+  body: r.body as string,
+  hidden: r.hidden as boolean,
+  updatedAt: new Date(r.updated_at as string),
+  name: (r.name as string) ?? "",
+  email: (r.email as string) ?? "",
+});
+
+/** Visible reviews of one coffee, newest first. */
+export async function reviewsFor(slug: string): Promise<ReviewRow[]> {
+  if (!sql) return [];
+  const q = await db();
+  const rows = await q`SELECT r.*, c.name, c.email FROM reviews r JOIN customers c ON c.id = r.customer_id
+                       WHERE r.product_slug = ${slug} AND NOT r.hidden ORDER BY r.updated_at DESC LIMIT 50`;
+  return rows.map(toReview);
+}
+
+/** Every review, newest first, for staff. */
+export async function allReviews(): Promise<ReviewRow[]> {
+  if (!sql) return [];
+  const q = await db();
+  const rows = await q`SELECT r.*, c.name, c.email FROM reviews r JOIN customers c ON c.id = r.customer_id
+                       ORDER BY r.updated_at DESC LIMIT 300`;
+  return rows.map(toReview);
+}
+
+/** Average stars and count of visible reviews, per coffee. */
+export async function ratingSummary(): Promise<Record<string, { average: number; count: number }>> {
+  if (!sql) return {};
+  const q = await db();
+  const rows = await q`SELECT product_slug, avg(rating)::float AS average, count(*)::int AS n
+                       FROM reviews WHERE NOT hidden GROUP BY product_slug`;
+  return Object.fromEntries(rows.map((r) => [r.product_slug as string, { average: Number(r.average), count: Number(r.n) }]));
+}
+
+/** True when this customer has a confirmed (or later) order that includes this coffee. */
+export async function hasBought(customerId: number, slug: string): Promise<boolean> {
+  const q = await db();
+  const rows = await q`SELECT 1 FROM orders WHERE customer_id = ${customerId} AND status = ANY(${OUT_OF_STOCK}::text[])
+                       AND lines @> ${JSON.stringify([{ slug }])}::jsonb LIMIT 1`;
+  return rows.length > 0;
+}
+
+export async function myReview(customerId: number, slug: string): Promise<{ rating: number; body: string } | null> {
+  const q = await db();
+  const rows = await q`SELECT rating, body FROM reviews WHERE customer_id = ${customerId} AND product_slug = ${slug}`;
+  return rows.length ? { rating: Number(rows[0].rating), body: rows[0].body as string } : null;
+}
+
+export async function saveReview(customerId: number, slug: string, rating: number, body: string) {
+  const q = await db();
+  await q`INSERT INTO reviews (product_slug, customer_id, rating, body) VALUES (${slug}, ${customerId}, ${rating}, ${body})
+          ON CONFLICT (product_slug, customer_id) DO UPDATE SET rating = EXCLUDED.rating, body = EXCLUDED.body, updated_at = now()`;
+}
+
+export async function setReviewHidden(id: number, hidden: boolean) {
+  const q = await db();
+  await q`UPDATE reviews SET hidden = ${hidden} WHERE id = ${id}`;
 }
