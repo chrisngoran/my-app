@@ -24,6 +24,7 @@ const ICONS = {
   farmers: <path d="M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.8 3.1 2.6 3.5 5.2" />,
   shop: <path d="M4 9h16l-1 11H5zM8 9V7a4 4 0 0 1 8 0v2" />,
   market: <path d="M3 10h18M5 10V20h14V10M3 10l2-6h14l2 6M9 20v-5h6v5" />,
+  customers: <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20.5c.9-3.8 3.8-6 7.5-6s6.6 2.2 7.5 6" />,
   reviews: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
 };
 
@@ -135,6 +136,7 @@ async function StaffHome() {
           badge={pendingListings ? `${pendingListings} to approve` : undefined}
         />
         <Tile href="/portal/reviews" icon="reviews" title="Reviews" hint="Read and hide customer reviews" />
+        <Tile href="/portal/customers" icon="customers" title="Customers" hint="Who signed in and what they ordered" />
         <Tile href="/shop" icon="shop" title="View the shop" hint="See it as customers do" />
       </ul>
       <div className="mt-6">

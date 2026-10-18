@@ -77,6 +77,7 @@ export function ensureTables() {
         name       text NOT NULL DEFAULT '',
         created_at timestamptz NOT NULL DEFAULT now()
       )`;
+    await db`ALTER TABLE customers ADD COLUMN IF NOT EXISTS last_seen timestamptz`;
     // Star ratings from customers who bought the coffee; one per customer per coffee.
     await db`
       CREATE TABLE IF NOT EXISTS reviews (
@@ -231,8 +232,8 @@ export async function ordersForCustomer(customerId: number): Promise<OrderRow[]>
 /** Finds or adds the customer with this Google email; returns their id. */
 export async function upsertCustomer(email: string, name: string): Promise<number> {
   const q = await db();
-  const rows = await q`INSERT INTO customers (email, name) VALUES (${email}, ${name})
-                       ON CONFLICT (email) DO UPDATE SET name = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE customers.name END
+  const rows = await q`INSERT INTO customers (email, name, last_seen) VALUES (${email}, ${name}, now())
+                       ON CONFLICT (email) DO UPDATE SET name = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE customers.name END, last_seen = now()
                        RETURNING id`;
   return Number(rows[0].id);
 }
@@ -249,6 +250,44 @@ export async function customersById(ids: number[]): Promise<Map<number, { email:
   const rows = await q`SELECT id, email, name FROM customers WHERE id = ANY(${ids}::bigint[])`;
   for (const r of rows) out.set(Number(r.id), { email: r.email as string, name: r.name as string });
   return out;
+}
+
+export interface CustomerSummary {
+  id: number;
+  email: string;
+  name: string;
+  joined: Date;
+  /** When they last signed in (null for accounts from before this was recorded). */
+  lastSeen: Date | null;
+  /** Orders placed, not counting cancelled ones. */
+  orders: number;
+  /** Value of their confirmed orders, in FCFA. */
+  spentXaf: number;
+  lastOrder: Date | null;
+}
+
+/** Everyone who has signed in, newest first, with what they ordered; for the staff customers page. */
+export async function customerList(): Promise<CustomerSummary[]> {
+  if (!sql) return [];
+  const q = await db();
+  const rows = await q`
+    SELECT c.id, c.email, c.name, c.created_at, c.last_seen,
+           count(o.id) FILTER (WHERE o.status <> 'cancelled') AS orders,
+           coalesce(sum(o.subtotal_xaf) FILTER (WHERE o.status = ANY(${OUT_OF_STOCK}::text[])), 0) AS spent,
+           max(o.created_at) AS last_order
+    FROM customers c LEFT JOIN orders o ON o.customer_id = c.id
+    GROUP BY c.id ORDER BY greatest(c.created_at, coalesce(c.last_seen, c.created_at), coalesce(max(o.created_at), c.created_at)) DESC
+    LIMIT 500`;
+  return rows.map((r) => ({
+    id: Number(r.id),
+    email: r.email as string,
+    name: r.name as string,
+    joined: new Date(r.created_at as string),
+    lastSeen: r.last_seen ? new Date(r.last_seen as string) : null,
+    orders: Number(r.orders),
+    spentXaf: Number(r.spent),
+    lastOrder: r.last_order ? new Date(r.last_order as string) : null,
+  }));
 }
 
 /**

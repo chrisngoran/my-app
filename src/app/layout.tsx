@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ImageGuard } from "@/components/image-guard";
 import { StoreProvider } from "@/components/store-provider";
+import { VisitorAnalytics } from "@/components/visitor-analytics";
 import { siteUrl } from "@/lib/qr";
 import { archivo, stencil } from "./fonts";
 import "./globals.css";
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <ImageGuard />
         <StoreProvider>{children}</StoreProvider>
+        <VisitorAnalytics />
       </body>
     </html>
   );
