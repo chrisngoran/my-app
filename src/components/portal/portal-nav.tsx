@@ -25,6 +25,9 @@ const icons = {
   payments: (p: IconProps) => (
     <svg {...base} {...p} aria-hidden="true"><rect x="2.5" y="6" width="19" height="13" rx="2" /><path d="M2.5 10h19M6.5 15h4" /></svg>
   ),
+  insights: (p: IconProps) => (
+    <svg {...base} {...p} aria-hidden="true"><path d="M3 17l5-5 4 3 8-8" /><path d="M15 7h5v5" /></svg>
+  ),
   reports: (p: IconProps) => (
     <svg {...base} {...p} aria-hidden="true"><path d="M4 20V4M4 20h16" /><path d="M8 16v-4M12 16V8M16 16v-6" /></svg>
   ),
@@ -37,6 +40,7 @@ export const PORTAL_NAV = [
   { href: "/portal/inventory", label: "Inventory", icon: icons.inventory },
   { href: "/portal/orders", label: "Orders", icon: icons.orders },
   { href: "/portal/payments", label: "Farmer payments", icon: icons.payments },
+  { href: "/portal/insights", label: "Sales & demand", icon: icons.insights },
   { href: "/portal/reports", label: "Reports", icon: icons.reports },
 ];
 
