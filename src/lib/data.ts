@@ -10,6 +10,8 @@ export const cooperative = {
   /** WhatsApp number in international format without + or spaces. Calls go to the same number. */
   whatsapp: "237681139979",
   email: "contact@greenventure.example",
+  /** The cooperative's Facebook page address. Empty hides the "Follow us" links until there is one. */
+  facebook: "",
   story:
     "Green Venture brings together family coffee farmers across the Bui highlands, where Arabica grows between 1,600 and 2,000 metres on volcanic soil. We collect, process and sell our members' coffee together, so every farmer gets a fair price and every cup can be traced back to the hillside it came from.",
 };

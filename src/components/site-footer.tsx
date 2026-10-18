@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/logo.png";
+import { FollowOnFacebook } from "@/components/share-links";
 import { cooperative } from "@/lib/data";
 
 /*
@@ -47,6 +48,7 @@ export function SiteFooter() {
           <a href={`mailto:${cooperative.email}`} className={`${footerLink} mt-1 max-w-full [overflow-wrap:anywhere]`}>
             {cooperative.email}
           </a>
+          <FollowOnFacebook className={`${footerLink} gap-2`} />
         </div>
       </div>
       <div className="border-t border-white/15">

@@ -10,6 +10,7 @@ import {
 } from "@/components/storefront/live-product";
 import { LotTag } from "@/components/storefront/lot-tag";
 import { isRotating, ProductGrid } from "@/components/storefront/product-card";
+import { ShareLinks } from "@/components/share-links";
 import { ProductPurchase } from "@/components/storefront/product-purchase";
 import { getFarmer, getLot, getProduct, products } from "@/lib/data";
 
@@ -25,7 +26,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const product = getProduct(slug);
   if (!product) return { title: "Product not found" };
-  return { title: product.name, description: product.description };
+  return {
+    title: product.name,
+    description: product.description,
+    // The card Facebook and WhatsApp show when this coffee's link is shared. No price on it: shared cards are kept for weeks.
+    openGraph: {
+      type: "website",
+      siteName: "Green Venture Cooperative Coffee",
+      locale: "en_GB",
+      title: `${product.name} · Green Venture Coffee`,
+      description: product.description,
+      url: `/shop/${product.slug}`,
+      images: [{ url: `/share/${product.slug}.jpg`, width: 1200, height: 630, alt: `${product.name}, Green Venture Cooperative Coffee` }],
+    },
+  };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -129,6 +143,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <div className="mt-6">
             <ProductPurchase slug={product.slug} name={product.name} priceXaf={product.priceXaf} stock={product.stock} />
+            <ShareLinks path={`/shop/${product.slug}`} text={`${product.name} from Green Venture Cooperative Coffee, Kumbo:`} />
           </div>
 
           {lot && <LotTag lot={lot} growers={growers} className="mt-8" />}
