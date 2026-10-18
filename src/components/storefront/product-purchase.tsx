@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Price } from "@/components/price";
 import { useStore } from "@/components/store-provider";
 import { useProductView } from "@/lib/catalog-overrides";
-import { formatPrice } from "@/lib/currency";
-import { cooperative } from "@/lib/data";
-import { askNextRoastLink, whatsappLink } from "@/lib/whatsapp";
+import { askNextRoastLink } from "@/lib/whatsapp";
 import { AddToCartButton } from "./add-to-cart-button";
 import { QuantityStepper } from "./quantity-stepper";
 
@@ -29,7 +28,8 @@ export function ProductPurchase({
   const stock = live?.stock ?? defaultStock;
   const hidden = live?.hidden ?? false;
   // Never let the order list hold more bags than are in stock.
-  const { cart, currency } = useStore();
+  const { cart, currency, addToCart } = useStore();
+  const router = useRouter();
   const inList = cart.find((i) => i.slug === slug)?.quantity ?? 0;
   const remaining = Math.max(0, stock - inList);
   const allInList = stock > 0 && remaining === 0;
@@ -105,17 +105,19 @@ export function ProductPurchase({
           </a>
         </div>
       ) : (
-        <a
-          href={whatsappLink(
-            `Hello ${cooperative.shortName}, I would like to order ${quantity} × ${name} (${formatPrice(priceXaf * quantity)}).`,
-          )}
-          target="_blank"
-          rel="noopener noreferrer"
+        // Goes through the details form, so every order carries a name and town and is counted on the dashboard.
+        <button
+          type="button"
+          onClick={() => {
+            // Already in the order list: go straight to the form rather than adding the bags twice.
+            if (inList === 0) addToCart(slug, quantity);
+            router.push("/order");
+          }}
           className="btn mt-3 w-full border-[1.5px] border-whatsapp bg-surface text-whatsapp pointer-fine:hover:bg-whatsapp/5"
         >
           <WhatsAppGlyph />
-          Send this order on WhatsApp
-        </a>
+          Order now on WhatsApp
+        </button>
       )}
       <p className="mt-3 text-sm text-muted">
         Add to order, send it on WhatsApp, then pay by MTN MoMo or Orange Money once we confirm.
