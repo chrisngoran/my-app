@@ -122,6 +122,18 @@ export function ensureTables() {
         updated_at   timestamptz NOT NULL DEFAULT now()
       )`;
     await db`CREATE TABLE IF NOT EXISTS settings (key text PRIMARY KEY, value jsonb NOT NULL)`;
+    // Money the cooperative has paid each farmer for their marketplace sales.
+    await db`
+      CREATE TABLE IF NOT EXISTS farmer_payouts (
+        id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        farmer_id   bigint NOT NULL,
+        amount_xaf  integer NOT NULL CHECK (amount_xaf > 0),
+        method      text NOT NULL,
+        reference   text NOT NULL DEFAULT '',
+        note        text NOT NULL DEFAULT '',
+        recorded_by text NOT NULL DEFAULT '',
+        paid_at     timestamptz NOT NULL DEFAULT now()
+      )`;
     // One row (id 1) holding the staff's product, lot and farmer edits.
     await db`
       CREATE TABLE IF NOT EXISTS catalog (

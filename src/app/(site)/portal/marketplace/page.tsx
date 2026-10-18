@@ -5,7 +5,10 @@ import { StaffLogin } from "@/components/portal/insights/staff-login";
 import { Card, PageHeader } from "@/components/portal/ui";
 import { hasDatabase } from "@/lib/db";
 import { googleSignInConfigured } from "@/lib/google-auth";
-import { allFarmers, allListings, commissionPct } from "@/lib/market";
+import { allFarmers, allListings, commissionPct, earnedByFarmer, paidByFarmer, payouts } from "@/lib/market";
+import { formatFcfaText } from "@/lib/currency";
+import { kumboTime } from "@/lib/order-status";
+import { PayoutForm, UndoPayout } from "@/components/market/payouts";
 import { isStaff, staffPasswordSet } from "@/lib/staff-session";
 
 export const metadata: Metadata = { title: "Marketplace" };
@@ -38,7 +41,7 @@ async function Marketplace() {
   }
   let data;
   try {
-    data = await Promise.all([allFarmers(), allListings(), commissionPct()]);
+    data = await Promise.all([allFarmers(), allListings(), commissionPct(), earnedByFarmer(), paidByFarmer(), payouts()]);
   } catch (e) {
     console.error("Could not read marketplace", e);
     return (
@@ -48,7 +51,16 @@ async function Marketplace() {
       </>
     );
   }
-  const [farmers, listings, pct] = data;
+  const [farmers, listings, pct, earned, paid, history] = data;
+  const money = farmers
+    .map((f) => {
+      const e = earned.get(f.id) ?? 0;
+      const p = paid.get(f.id) ?? 0;
+      return { farmer: f, earned: e, paid: p, owed: e - p, history: history.filter((h) => h.farmerId === f.id).slice(0, 5) };
+    })
+    .filter((m) => m.earned > 0 || m.paid > 0)
+    .sort((a, b) => b.owed - a.owed);
+  const totalOwed = money.reduce((n, m) => n + Math.max(0, m.owed), 0);
   const names = new Map(farmers.map((f) => [f.id, f.name]));
   const toStaff = (l: (typeof listings)[number]): StaffListing => ({
     id: l.id,
@@ -92,6 +104,57 @@ async function Marketplace() {
               <ul className="grid gap-3 lg:grid-cols-2">
                 {others.map((l) => (
                   <ListingCard key={l.id} listing={toStaff(l)} />
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+
+        <Card id="payments" title={totalOwed ? `Payments to farmers (${formatFcfaText(totalOwed)} owed)` : "Payments to farmers"}>
+          <div className="p-4 sm:p-5">
+            <p className="mb-4 text-sm text-muted">
+              Earned counts delivered orders only, after the cooperative&apos;s share. Record each payment here so farmers can see it too.
+            </p>
+            {money.length === 0 ? (
+              <p className="text-sm text-muted">Nothing owed yet. Farmers earn once an order of their coffee is delivered.</p>
+            ) : (
+              <ul className="grid gap-3 lg:grid-cols-2">
+                {money.map((m) => (
+                  <li key={m.farmer.id} className="rounded-xl border border-border bg-surface p-4">
+                    <p className="font-semibold text-foreground">{m.farmer.name}</p>
+                    <dl className="mt-2 grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2 text-sm">
+                      <div>
+                        <dt className="text-muted">Earned</dt>
+                        <dd className="font-semibold tabular-nums">{formatFcfaText(m.earned)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted">Paid</dt>
+                        <dd className="font-semibold tabular-nums">{formatFcfaText(m.paid)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted">{m.owed < 0 ? "Paid ahead" : "Still owed"}</dt>
+                        <dd className={`font-bold tabular-nums ${m.owed > 0 ? "text-warm" : "text-accent"}`}>{formatFcfaText(Math.abs(m.owed))}</dd>
+                      </div>
+                    </dl>
+                    <PayoutForm farmerId={m.farmer.id} owedXaf={m.owed} />
+                    {m.history.length > 0 && (
+                      <ul className="mt-3 divide-y divide-border border-t border-border text-sm">
+                        {m.history.map((h) => (
+                          <li key={h.id} className="flex flex-wrap items-center justify-between gap-x-3 py-2">
+                            <span className="min-w-0 [overflow-wrap:anywhere]">
+                              <span className="font-semibold tabular-nums">{formatFcfaText(h.amountXaf)}</span> · {h.method}
+                              {h.reference ? ` · ${h.reference}` : ""}
+                              <span className="block text-muted">
+                                {kumboTime(h.paidAt)} · by {h.recordedBy}
+                                {h.note ? ` · ${h.note}` : ""}
+                              </span>
+                            </span>
+                            <UndoPayout id={h.id} />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
                 ))}
               </ul>
             )}
