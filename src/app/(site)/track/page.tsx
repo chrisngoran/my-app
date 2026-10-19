@@ -7,7 +7,7 @@ import { hasDatabase, orderByRef } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Track my order",
-  description: "Follow your Green Venture coffee order with the reference from your WhatsApp message.",
+  description: "Follow your GREENVENTURES coffee order with the reference from your WhatsApp message.",
 };
 
 const REF = /^GV-[A-HJ-NP-Z2-9]{5}$/;

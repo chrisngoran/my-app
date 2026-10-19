@@ -7,7 +7,7 @@ import { products } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Shop",
-  description: "Roasted coffee, green Arabica, micro-lots and subscriptions from Green Venture Cooperative in Kumbo, Cameroon.",
+  description: "Roasted coffee, green Arabica, micro-lots and subscriptions from GREENVENTURES Cooperative in Kumbo, Cameroon.",
 };
 
 export default function ShopPage() {

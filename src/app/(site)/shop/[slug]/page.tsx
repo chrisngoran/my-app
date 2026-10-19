@@ -33,12 +33,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     // The card Facebook and WhatsApp show when this coffee's link is shared. No price on it: shared cards are kept for weeks.
     openGraph: {
       type: "website",
-      siteName: "Green Venture Cooperative Coffee",
+      siteName: "GREENVENTURES Cooperative Society Ltd",
       locale: "en_GB",
-      title: `${product.name} · Green Venture Coffee`,
+      title: `${product.name} · GREENVENTURES Coffee`,
       description: product.description,
       url: `/shop/${product.slug}`,
-      images: [{ url: `/share/${product.slug}.jpg`, width: 1200, height: 630, alt: `${product.name}, Green Venture Cooperative Coffee` }],
+      images: [{ url: `/share/${product.slug}.jpg`, width: 1200, height: 630, alt: `${product.name}, GREENVENTURES Cooperative Society Ltd` }],
     },
   };
 }
@@ -144,7 +144,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <div className="mt-6">
             <ProductPurchase slug={product.slug} name={product.name} priceXaf={product.priceXaf} stock={product.stock} />
-            <ShareLinks path={`/shop/${product.slug}`} text={`${product.name} from Green Venture Cooperative Coffee, Kumbo:`} />
+            <ShareLinks path={`/shop/${product.slug}`} text={`${product.name} from GREENVENTURES Cooperative Society Ltd, Kumbo:`} />
           </div>
 
           {lot && <LotTag lot={lot} growers={growers} className="mt-8" />}

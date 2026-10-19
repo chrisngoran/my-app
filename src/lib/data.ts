@@ -3,8 +3,8 @@
 import type { CoffeeLot, Farmer, FarmerPayment, Order, Product } from "./types";
 
 export const cooperative = {
-  name: "Green Venture Cooperative Coffee",
-  shortName: "Green Venture",
+  name: "GREENVENTURES Cooperative Society Ltd",
+  shortName: "GREENVENTURES",
   location: "Kumbo, Bui Division, North West Region, Cameroon",
   phone: "+237 681 13 99 79",
   /** WhatsApp number in international format without + or spaces. Calls go to the same number. */
@@ -13,7 +13,7 @@ export const cooperative = {
   /** The cooperative's Facebook page address. Empty hides the "Follow us" links until there is one. */
   facebook: "",
   story:
-    "Green Venture brings together family coffee farmers across the Bui highlands, where Arabica grows between 1,600 and 2,000 metres on volcanic soil. We collect, process and sell our members' coffee together, so every farmer gets a fair price and every cup can be traced back to the hillside it came from.",
+    "GREENVENTURES brings together family coffee farmers across the Bui highlands, where Arabica grows between 1,600 and 2,000 metres on volcanic soil. We collect, process and sell our members' coffee together, so every farmer gets a fair price and every cup can be traced back to the hillside it came from.",
 };
 
 export const farmers: Farmer[] = [

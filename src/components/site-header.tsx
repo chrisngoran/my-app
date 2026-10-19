@@ -111,7 +111,7 @@ export function SiteHeader() {
         <Link href="/" className="order-1 mr-auto inline-flex min-h-11 items-center gap-2 text-brand md:mr-0">
           <BrandMark className="h-10 w-10 shrink-0" />
           <span className="type-title font-extrabold [font-stretch:80%] sm:text-xl">
-            Green Venture<span className="sr-only"> Coffee, home</span>
+            GREENVENTURES<span className="sr-only"> Coffee, home</span>
           </span>
         </Link>
         <OrderPill className="order-2 md:order-5" />

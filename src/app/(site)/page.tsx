@@ -14,7 +14,7 @@ import { cooperative, farmers, getFarmer, getLot, lots, products } from "@/lib/d
 import { phoneLink, whatsappLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
-  title: { absolute: "Green Venture Cooperative Coffee · Traceable Arabica from Kumbo, Cameroon" },
+  title: { absolute: "GREENVENTURES Cooperative Society Ltd · Traceable Arabica from Kumbo, Cameroon" },
   description: cooperative.story,
 };
 

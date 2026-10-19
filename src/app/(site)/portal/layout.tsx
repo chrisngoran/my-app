@@ -4,7 +4,7 @@ import { PortalNav, PortalNavView } from "@/components/portal/portal-nav";
 
 export const metadata: Metadata = {
   title: { default: "Cooperative portal", template: "%s · Cooperative portal" },
-  description: "Staff dashboard for Green Venture Cooperative Coffee: farmers, lots, inventory, orders and payments.",
+  description: "Staff dashboard for GREENVENTURES Cooperative Society Ltd: farmers, lots, inventory, orders and payments.",
   robots: { index: false, follow: false },
 };
 
@@ -34,7 +34,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
             <PortalNav />
           </Suspense>
           <div className="mt-6 hidden rounded-xl border border-border bg-surface p-4 text-xs text-muted lg:block">
-            <p className="font-semibold text-foreground">Green Venture Cooperative</p>
+            <p className="font-semibold text-foreground">GREENVENTURES Cooperative</p>
             <p className="mt-1">Kumbo, Bui Division, North West Cameroon</p>
           </div>
         </aside>
