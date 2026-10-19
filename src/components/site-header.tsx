@@ -1,13 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useMemo } from "react";
+import { BrandMark } from "@/components/brand-mark";
 import { useCatalog } from "@/lib/catalog-overrides";
 import { CURRENCIES } from "@/lib/currency";
 import type { Currency } from "@/lib/types";
-import logo from "@/assets/logo.png";
 import { useStore } from "./store-provider";
 
 /* One name per destination, the same in the header, footer and buttons ("Trace a bag"). */
@@ -110,8 +109,7 @@ export function SiteHeader() {
       */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 md:flex-nowrap md:gap-x-5 md:py-2 lg:gap-x-8 lg:py-2.5">
         <Link href="/" className="order-1 mr-auto inline-flex min-h-11 items-center gap-2 text-brand md:mr-0">
-          {/* The cooperative's seal: coffee cherries from a member's tree. Decorative here, the name follows. */}
-          <Image src={logo} alt="" width={44} height={44} priority className="h-11 w-11 shrink-0" />
+          <BrandMark className="h-10 w-10 shrink-0" />
           <span className="type-title font-extrabold [font-stretch:80%] sm:text-xl">
             Green Venture<span className="sr-only"> Coffee, home</span>
           </span>
