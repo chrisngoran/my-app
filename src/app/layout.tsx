@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     locale: "en_GB",
     title: "GREENVENTURES Cooperative Society Ltd",
     description: "Traceable Arabica from family farms in Kumbo, Cameroon. Order on WhatsApp, pay by MTN MoMo or Orange Money.",
-    images: [{ url: "/share/site.jpg", width: 1200, height: 630, alt: "Ripe coffee cherries with the GREENVENTURES seal" }],
+    images: [{ url: "/share/site.jpg", width: 1200, height: 630, alt: "Ripe coffee cherries on the branch, with the greenventures logo" }],
   },
 };
 
