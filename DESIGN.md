@@ -437,7 +437,7 @@ Not added: confetti, sounds, haptics, scroll-reveal on sections, hover lift on c
 **S3. Header.**
 - Demo strip: `bg-brand text-sand text-xs py-1.5`, copy unchanged.
 - Bar: `bg-background border-b border-border` (mist, not white).
-- Logo: a 22px authored SVG mark (two cherries, `--cherry`, on a short leaf stroke, `--accent`; no other ornament) and the word mark "GREENVENTURES" in `type-title` 800 / `font-stretch:80%`, Volcanic Soil. "Coffee" is no longer green; the full name lives in the footer.
+- Logo: `BrandMark` (a Shade Leaf coffee bean with a Sprout leaf, crease cut in the ground colour) beside `BrandWordmark`, "greenventures" in Archivo 900 at 92% width: "green" in `--accent`, "ventures" in `--brand`. On soil: Parchment bean, `--sprout-on-soil` leaf and "green". The registered name, GREENVENTURES Cooperative Society Ltd, appears in full in the footer and on legal text; the lowercase is only the logo.
 - Nav links 15px weight 500. Active: `text-brand font-semibold` with a 2px cherry underline (`decoration-cherry`), `aria-current` kept.
 - Order pill: `bg-cherry`, the badge `bg-surface text-cherry`, `anim-pop` kept. Currency select: `border-field-border bg-surface`.
 - Keep the 2-row mobile layout. Keep it at or under 100px including the strip.

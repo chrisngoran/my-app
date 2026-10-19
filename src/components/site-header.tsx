@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useMemo } from "react";
-import { BrandMark } from "@/components/brand-mark";
+import { BrandMark, BrandWordmark } from "@/components/brand-mark";
 import { useCatalog } from "@/lib/catalog-overrides";
 import { CURRENCIES } from "@/lib/currency";
 import type { Currency } from "@/lib/types";
@@ -109,10 +109,9 @@ export function SiteHeader() {
       */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 md:flex-nowrap md:gap-x-5 md:py-2 lg:gap-x-8 lg:py-2.5">
         <Link href="/" className="order-1 mr-auto inline-flex min-h-11 items-center gap-2 text-brand md:mr-0">
-          <BrandMark className="h-10 w-10 shrink-0" />
-          <span className="type-title font-extrabold [font-stretch:80%] sm:text-xl">
-            GREENVENTURES<span className="sr-only"> Coffee, home</span>
-          </span>
+          <BrandMark className="h-9 w-9 shrink-0" />
+          <BrandWordmark className="text-2xl leading-none sm:text-[1.65rem]" />
+          <span className="sr-only">GREENVENTURES Coffee, home</span>
         </Link>
         <OrderPill className="order-2 md:order-5" />
         <div aria-hidden="true" className="order-3 basis-full md:hidden" />

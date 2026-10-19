@@ -1,36 +1,47 @@
 /*
- * The cooperative's mark: one coffee branch, two leaves and three ripe
- * cherries, drawn in two colours so it stays readable down to a 16px tab icon.
- * Decorative wherever it appears: the cooperative's name always follows it.
+ * The cooperative's logo: a coffee bean with a leaf sprouting from it, and
+ * the name drawn in lowercase as "greenventures". The bean reads as coffee at
+ * any size (down to a 16px tab icon); the leaf says "green". The registered
+ * name, GREENVENTURES Cooperative Society Ltd, is still used in full on the
+ * footer, receipts and legal pages; the lowercase is only the logo's drawing.
  *
- * `tone="light"` sits on the page (Shade Leaf and Ripe Cherry); `tone="dark"`
- * sits on Volcanic Soil (Sun-dried Parchment and Cherry on soil). The thin
- * outline on the cherries is the ground colour, so the three read as three.
+ * `tone="light"` sits on the page (Shade Leaf bean, Sprout leaf);
+ * `tone="dark"` sits on Volcanic Soil (Parchment bean, Sprout-on-soil leaf).
+ * The crease is cut in the ground colour so the bean reads as a bean.
  *
- * The same drawing is rasterised into src/app/icon.png and apple-icon.png.
+ * The same drawing is rasterised into src/app/icon.png, apple-icon.png and
+ * the link-preview images in public/share.
  */
-type BrandMarkProps = {
-  className?: string;
-  tone?: "light" | "dark";
-};
+type Tone = "light" | "dark";
 
-const LEAF = "M0 0 C 8 -14 30 -16 42 0 C 30 16 8 14 0 0 Z";
+const LEAF = "M0 0 C 7 -11 26 -12 36 0 C 26 12 7 11 0 0 Z";
 
-export function BrandMark({ className, tone = "light" }: BrandMarkProps) {
-  const branch = tone === "dark" ? "var(--sand)" : "var(--accent)";
-  const cherry = tone === "dark" ? "var(--cherry-lift)" : "var(--cherry)";
+export function BrandMark({ className, tone = "light" }: { className?: string; tone?: Tone }) {
+  const bean = tone === "dark" ? "var(--sand)" : "var(--accent)";
+  const leaf = tone === "dark" ? "var(--sprout-on-soil)" : "var(--sprout)";
   const ground = tone === "dark" ? "var(--brand)" : "var(--background)";
 
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false" className={className}>
-      <path d="M 22 86 C 40 66 58 46 82 16" fill="none" stroke={branch} strokeWidth="6.5" strokeLinecap="round" />
-      <path d={LEAF} fill={branch} transform="translate(60 40) rotate(-22) scale(0.9)" />
-      <path d={LEAF} fill={branch} transform="translate(46 56) rotate(200) scale(0.9)" />
-      <g fill={cherry} stroke={ground} strokeWidth="2">
-        <circle cx="45" cy="72" r="9.5" />
-        <circle cx="60" cy="66" r="9.5" />
-        <circle cx="52" cy="87" r="9.5" />
+      <g transform="translate(9 21.3) scale(0.82)">
+        <g transform="rotate(-32 50 50)">
+          <path d={LEAF} fill={leaf} transform="translate(50 9) rotate(-62)" />
+          <ellipse cx="50" cy="50" rx="31" ry="44" fill={bean} />
+          <path d="M 50 12 C 68 32 32 66 50 88" fill="none" stroke={ground} strokeWidth="7" strokeLinecap="round" />
+        </g>
       </g>
     </svg>
+  );
+}
+
+/** "greenventures": "green" in the leaf colour, "ventures" in the soil colour. Decorative text; pair with an accessible name. */
+export function BrandWordmark({ className, tone = "light" }: { className?: string; tone?: Tone }) {
+  const first = tone === "dark" ? "text-sprout-on-soil" : "text-accent";
+  const rest = tone === "dark" ? "text-sand" : "text-brand";
+  return (
+    <span aria-hidden="true" className={`font-black tracking-tight [font-stretch:92%] ${className ?? ""}`}>
+      <span className={first}>green</span>
+      <span className={rest}>ventures</span>
+    </span>
   );
 }
