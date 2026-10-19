@@ -1,6 +1,6 @@
-# Green Venture Cooperative Coffee — Platform
+# GREENVENTURES Cooperative Society Ltd — Platform
 
-E-commerce and cooperative management platform for Green Venture Cooperative Coffee (Kumbo, Bui Division, Cameroon).
+E-commerce and cooperative management platform for GREENVENTURES Cooperative Society Ltd (Kumbo, Bui Division, Cameroon).
 
 This is currently a **demo**: all products, farmers and orders are sample data in `src/lib/data.ts`.
 

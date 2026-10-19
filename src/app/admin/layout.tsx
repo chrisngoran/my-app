@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: { default: "Staff admin", template: "%s · Staff admin" },
-  description: "Demo staff admin for Green Venture Cooperative Coffee.",
+  description: "Demo staff admin for GREENVENTURES Cooperative Society Ltd.",
   robots: { index: false, follow: false },
 };
 

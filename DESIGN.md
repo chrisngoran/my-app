@@ -1,5 +1,5 @@
 ---
-name: Green Venture Cooperative Coffee
+name: GREENVENTURES Cooperative Society Ltd
 description: Traceable highland Arabica from smallholder families in Kumbo, Cameroon, ordered on WhatsApp and paid by mobile money.
 colors:
   background: "#fbf8f4"
@@ -113,7 +113,7 @@ components:
     height: "44px"
 ---
 
-# Design System: Green Venture Cooperative Coffee
+# Design System: GREENVENTURES Cooperative Society Ltd
 
 ## Overview
 
@@ -415,7 +415,7 @@ Not added: confetti, sounds, haptics, scroll-reveal on sections, hover lift on c
 - The home stats strip (hero-metric template).
 - Identical white rounded cards with `shadow-sm` / `hover:shadow-md` for products, farmers, trace lot products and the QR block. Cards remain only for the order summary (a receipt) and admin form panels.
 - The leaf-ellipse decoration and green rounded CTA band on home. The `bg-gradient-to-b from-accent-soft/60` hero washes (home, our story).
-- The one-word colour accent in the logo ("Green Venture **Coffee**" in green).
+- The one-word colour accent in the logo ("GREENVENTURES **Coffee**" in green).
 - Rotating avatar colours on Our story (`AVATAR_COLOURS`). Nested bordered toggle boxes inside admin cards.
 - Cupping-note chips on product *cards* (they stay as chips on the product page only).
 
@@ -437,7 +437,7 @@ Not added: confetti, sounds, haptics, scroll-reveal on sections, hover lift on c
 **S3. Header.**
 - Demo strip: `bg-brand text-sand text-xs py-1.5`, copy unchanged.
 - Bar: `bg-background border-b border-border` (mist, not white).
-- Logo: a 22px authored SVG mark (two cherries, `--cherry`, on a short leaf stroke, `--accent`; no other ornament) and the word mark "Green Venture" in `type-title` 800 / `font-stretch:80%`, Volcanic Soil. "Coffee" is no longer green; the full name lives in the footer.
+- Logo: `BrandMark` (a Shade Leaf coffee bean with a Sprout leaf, crease cut in the ground colour) beside `BrandWordmark`, "greenventures" in Archivo 900 at 92% width: "green" in `--accent`, "ventures" in `--brand`. On soil: Parchment bean, `--sprout-on-soil` leaf and "green". The registered name, GREENVENTURES Cooperative Society Ltd, appears in full in the footer and on legal text; the lowercase is only the logo.
 - Nav links 15px weight 500. Active: `text-brand font-semibold` with a 2px cherry underline (`decoration-cherry`), `aria-current` kept.
 - Order pill: `bg-cherry`, the badge `bg-surface text-cherry`, `anim-pop` kept. Currency select: `border-field-border bg-surface`.
 - Keep the 2-row mobile layout. Keep it at or under 100px including the strip.
@@ -581,7 +581,7 @@ MOBILE
 ▓ GV-2026-014                               type-stencil 3rem text-sand  ← the sack mark replaces "VERIFIED LOT · …"
 ▓ Natural Arabica from Meluf                type-h1 text-white
 ▓ Single-farm micro-lot from Meluf…         type-lead text-white, weight 450
-▓ Grown by one farmer of Green Venture…     text-sm text-mist-on-soil
+▓ Grown by one farmer of GREENVENTURES…     text-sm text-mist-on-soil
 ▓        ◯ 86.75  (ring in cherry-lift)
 ▓        Excellent
 ▓        SCA cupping score, out of 100. 80+ points is specialty grade.

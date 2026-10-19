@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!found) return { title: "Coffee not found" };
   return {
     title: `${found.product.name}, from ${found.farmer.name}`,
-    description: found.product.description || `Coffee grown by ${found.farmer.name} and sold through Green Venture Cooperative, Kumbo.`,
+    description: found.product.description || `Coffee grown by ${found.farmer.name} and sold through GREENVENTURES Cooperative, Kumbo.`,
   };
 }
 
@@ -66,7 +66,7 @@ async function Listing({ params }: { params: Promise<{ id: string }> }) {
             <Link href={`/farmers/${farmer.id}`} className="font-semibold text-accent underline underline-offset-[3px]">
               {farmer.name}
             </Link>
-            {farmer.village ? `, ${farmer.village}` : ""}. Sold and delivered by Green Venture Cooperative.
+            {farmer.village ? `, ${farmer.village}` : ""}. Sold and delivered by GREENVENTURES Cooperative.
           </p>
           {product.description && <p className="type-lead mt-4 max-w-[60ch] whitespace-pre-line text-foreground [overflow-wrap:anywhere]">{product.description}</p>}
           <p className="mt-3 text-sm text-muted">
@@ -74,7 +74,7 @@ async function Listing({ params }: { params: Promise<{ id: string }> }) {
           </p>
           <div className="mt-6">
             <ProductPurchase slug={product.slug} name={product.name} priceXaf={product.priceXaf} stock={product.stock} />
-            <ShareLinks path={`/market/${product.slug.slice(2)}`} text={`${product.name} from ${farmer.name}, via Green Venture Coffee:`} />
+            <ShareLinks path={`/market/${product.slug.slice(2)}`} text={`${product.name} from ${farmer.name}, via GREENVENTURES Coffee:`} />
           </div>
         </div>
       </div>

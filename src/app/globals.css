@@ -29,6 +29,10 @@
   --cherry-hover: #6e1628;
   /* Cherry on soil, for graphics (5.10:1). */
   --cherry-lift: #e9707a;
+  /* Sprout: the leaf on the logo's bean. Graphics only, not text. */
+  --sprout: #3e8a50;
+  /* Sprout on soil: the logo's leaf and "green" on dark bands (8.7:1). */
+  --sprout-on-soil: #9fd0a8;
   /* Older names now resolve to cherry (low stock, admin chips, gauge). */
   --warm: var(--cherry);
   --warm-ink: var(--cherry);
@@ -133,6 +137,8 @@
   --color-cherry: var(--cherry);
   --color-cherry-hover: var(--cherry-hover);
   --color-cherry-lift: var(--cherry-lift);
+  --color-sprout: var(--sprout);
+  --color-sprout-on-soil: var(--sprout-on-soil);
   --color-warm: var(--warm);
   --color-warm-ink: var(--warm-ink);
   --color-sand: var(--sand);

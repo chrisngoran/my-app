@@ -9,7 +9,7 @@ import { lots } from "@/lib/data";
 export const metadata: Metadata = {
   title: "Trace a bag",
   description:
-    "Enter the lot code from your bag to see the farmers, harvest date, processing and quality record behind your Green Venture coffee.",
+    "Enter the lot code from your bag to see the farmers, harvest date, processing and quality record behind your GREENVENTURES coffee.",
 };
 
 // A real sequence, so the rail numbers its steps.
@@ -50,7 +50,7 @@ export default function TracePage() {
               Trace your bag to the farm
             </h1>
             <p className="type-lead mt-4 max-w-[60ch] text-pretty font-[450] tracking-[0.01em]">
-              Every bag of Green Venture coffee carries a lot code. Scan the QR code or type the code below to see who
+              Every bag of GREENVENTURES coffee carries a lot code. Scan the QR code or type the code below to see who
               grew your coffee, where, when it was harvested and how it scored.
             </p>
           </div>

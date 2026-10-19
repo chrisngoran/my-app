@@ -7,7 +7,7 @@ import { allFarmers, marketProducts } from "@/lib/market";
 
 export const metadata: Metadata = {
   title: "Our farmers",
-  description: "Buy coffee directly from the family farmers of Green Venture Cooperative in Kumbo, Cameroon.",
+  description: "Buy coffee directly from the family farmers of GREENVENTURES Cooperative in Kumbo, Cameroon.",
 };
 
 export default function FarmersPage() {

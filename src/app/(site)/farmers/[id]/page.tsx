@@ -47,7 +47,7 @@ async function FarmerShop({ params }: { params: Promise<{ id: string }> }) {
         </div>
       )}
       <p className="mt-10 text-sm text-muted">
-        Every order is delivered by Green Venture Cooperative, and {farmer.name.split(" ")[0]} is paid their share of each sale.
+        Every order is delivered by GREENVENTURES Cooperative, and {farmer.name.split(" ")[0]} is paid their share of each sale.
       </p>
     </>
   );

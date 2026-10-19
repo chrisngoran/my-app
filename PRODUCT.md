@@ -17,7 +17,7 @@ web
 
 ## Product Purpose
 
-Green Venture Cooperative Coffee is a smallholder Arabica cooperative in Kumbo, Bui Division, North West Cameroon. The website sells its coffee directly and makes every bag traceable to the farmers who grew it.
+GREENVENTURES Cooperative Society Ltd is a smallholder Arabica cooperative in Kumbo, Bui Division, North West Cameroon. The website sells its coffee directly and makes every bag traceable to the farmers who grew it.
 
 Success means that:
 - a buyer moves from interest to a WhatsApp message or phone call with the order already written;
@@ -47,7 +47,7 @@ The cooperative sells coffee from named member families on the Bui highlands (1,
 
 ## Brand Commitments
 
-- The name is **Green Venture Cooperative Coffee**, shortened in the header to "Green Venture Coffee".
+- The name is **GREENVENTURES Cooperative Society Ltd**, shortened in the header to "GREENVENTURES Coffee".
 - The palette is roasted-coffee brown with a coffee-leaf green accent and a warm sun-orange.
 - The voice is warm, plain and factual, and the sentences are short. It speaks as "we" (the cooperative) to "you" (the buyer) and names real places and people.
 - A demo banner states that products, farmers and orders are sample data. It must stay.

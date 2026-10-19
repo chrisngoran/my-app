@@ -103,7 +103,7 @@ export function LotSearch({
         </button>
       </div>
       <p id={hintId} className={`mt-2 text-sm ${dark ? "text-mist-on-soil" : "text-muted"}`}>
-        It&apos;s printed under the QR code on the back of every Green Venture bag.
+        It&apos;s printed under the QR code on the back of every GREENVENTURES bag.
       </p>
       {error && (
         <p
