@@ -64,8 +64,25 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         : []),
   ];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    image: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}${product.image}`,
+    brand: { "@type": "Brand", name: "Green Venture Cooperative Coffee" },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "XAF",
+      price: product.priceXaf,
+      availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      seller: { "@type": "Organization", name: "Green Venture Cooperative Coffee" },
+    },
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 pb-10 pt-3 sm:pb-12 sm:pt-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <nav aria-label="Breadcrumb" className="text-sm text-muted">
         <ol className="flex flex-wrap items-center gap-x-2">
           <li>
