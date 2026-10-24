@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { StaffLogin } from "@/components/portal/insights/staff-login";
 import { WorldPriceCard } from "@/components/world-price-card";
-import { cooperative } from "@/lib/data";
+import { cooperative, products } from "@/lib/data";
 import { countWaitingOrders, hasDatabase } from "@/lib/db";
 import { countPendingListings } from "@/lib/market";
 import { googleSignInConfigured } from "@/lib/google-auth";
@@ -110,6 +110,8 @@ async function StaffHome() {
     }
   }
 
+  const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 30).length;
+
   return (
     <>
       <p className="mt-2 text-muted [overflow-wrap:anywhere]">
@@ -125,7 +127,13 @@ async function StaffHome() {
           primary
         />
         <Tile href="/portal/insights" icon="sales" title="Sales & demand" hint="What sold, where and when" />
-        <Tile href="/admin/products" icon="products" title="Products" hint="Prices, stock, photos, sold out" />
+        <Tile
+          href="/admin/products"
+          icon="products"
+          title="Products"
+          hint="Prices, stock, photos, sold out"
+          badge={lowStock ? `${lowStock} low stock` : undefined}
+        />
         <Tile href="/admin/lots" icon="lots" title="Coffee lots" hint="Tasting notes and scores" />
         <Tile href="/admin/farmers" icon="farmers" title="Farmers" hint="Their stories" />
         <Tile

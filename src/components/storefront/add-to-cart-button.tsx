@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useStore } from "@/components/store-provider";
+import { getT } from "@/lib/i18n";
 
 export function AddToCartButton({
   slug,
@@ -22,7 +23,8 @@ export function AddToCartButton({
   /** Called after the item is added, e.g. to show a link to the order list. */
   onAdded?: () => void;
 }) {
-  const { addToCart } = useStore();
+  const { addToCart, lang } = useStore();
+  const t = getT(lang);
   const [added, setAdded] = useState(false);
   // Whether the label has swapped at least once: the first render never animates.
   const [swapped, setSwapped] = useState(false);
@@ -57,7 +59,7 @@ export function AddToCartButton({
             aria-hidden={added || undefined}
             className={`inline-flex items-center gap-2 ${added ? "invisible" : swapped ? "anim-swap" : ""}`}
           >
-            {disabled ? disabledLabel : "Add to order"}
+            {disabled ? disabledLabel : t.addToOrder}
           </span>
           <span
             key={added ? "added" : "added-hidden"}
@@ -67,7 +69,7 @@ export function AddToCartButton({
             <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
               <path d="M7.7 14.3 3.4 10l1.4-1.4 2.9 2.9 7.5-7.5 1.4 1.4z" />
             </svg>
-            Added
+            {t.added}
           </span>
         </span>
       </button>

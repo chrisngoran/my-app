@@ -6,17 +6,16 @@ import { Suspense, useMemo } from "react";
 import { BrandMark, BrandWordmark } from "@/components/brand-mark";
 import { useCatalog } from "@/lib/catalog-overrides";
 import { CURRENCIES } from "@/lib/currency";
+import { getT } from "@/lib/i18n";
 import type { Currency } from "@/lib/types";
 import { useStore } from "./store-provider";
 
-/* One name per destination, the same in the header, footer and buttons ("Trace a bag"). */
-const NAV = [
-  { href: "/shop", label: "Shop" },
-  { href: "/our-story", label: "Our story" },
-  { href: "/trace", label: "Trace a bag" },
-];
-
-function NavLinks({ pathname }: { pathname: string | null }) {
+function NavLinks({ pathname, labels }: { pathname: string | null; labels: string[] }) {
+  const NAV = [
+    { href: "/shop", label: labels[0] },
+    { href: "/our-story", label: labels[1] },
+    { href: "/trace", label: labels[2] },
+  ];
   return (
     <>
       {NAV.map((item) => {
@@ -44,8 +43,8 @@ function NavLinks({ pathname }: { pathname: string | null }) {
  * Suspense boundary and the fallback renders the same links without an active
  * state.
  */
-function ActiveNavLinks() {
-  return <NavLinks pathname={usePathname()} />;
+function ActiveNavLinks({ labels }: { labels: string[] }) {
+  return <NavLinks pathname={usePathname()} labels={labels} />;
 }
 
 /**
@@ -71,15 +70,16 @@ function useOrderableCount() {
 /** "My order" pill. The count badge pops each time something is added (not when a quantity is edited). */
 function OrderPill({ className = "" }: { className?: string }) {
   const { count: itemCount, loaded } = useOrderableCount();
-  const { adds } = useStore();
+  const { adds, lang } = useStore();
+  const t = getT(lang);
 
   return (
     <Link
       href="/cart"
-      aria-label={loaded ? `My order, ${itemCount.toLocaleString("en-GB")} ${itemCount === 1 ? "item" : "items"}` : "My order"}
+      aria-label={loaded ? `${t.myOrder}, ${itemCount.toLocaleString("en-GB")} ${itemCount === 1 ? "item" : "items"}` : t.myOrder}
       className={`press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-cherry py-2 pl-3.5 pr-1.5 text-sm font-semibold text-brand-contrast pointer-fine:hover:bg-cherry-hover ${className}`}
     >
-      My order
+      {t.myOrder}
       {/* Empty until the saved list is read, so it never flashes "0" first. */}
       <span
         key={adds}
@@ -95,7 +95,9 @@ function OrderPill({ className = "" }: { className?: string }) {
 }
 
 export function SiteHeader() {
-  const { currency, setCurrency } = useStore();
+  const { currency, setCurrency, lang, setLang } = useStore();
+  const t = getT(lang);
+  const navLabels = [t.shop, t.ourStory, t.traceABag];
 
   return (
     <header className="border-b border-border bg-background print:hidden">
@@ -120,11 +122,11 @@ export function SiteHeader() {
           aria-label="Main"
           className="relative order-4 flex min-w-0 flex-1 gap-x-4 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1rem),transparent)] [scrollbar-width:none] sm:gap-x-6 md:order-2 md:flex-none md:gap-x-5 md:overflow-visible md:[mask-image:none] lg:gap-x-6"
         >
-          <Suspense fallback={<NavLinks pathname={null} />}>
-            <ActiveNavLinks />
+          <Suspense fallback={<NavLinks pathname={null} labels={navLabels} />}>
+            <ActiveNavLinks labels={navLabels} />
           </Suspense>
         </nav>
-        <div className="order-5 shrink-0 md:order-3 md:ml-auto">
+        <div className="order-5 flex shrink-0 items-center gap-2 md:order-3 md:ml-auto">
           <label className="sr-only" htmlFor="currency">
             Display currency
           </label>
@@ -140,6 +142,14 @@ export function SiteHeader() {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            aria-label={lang === "en" ? "Switch to French" : "Passer en anglais"}
+            onClick={() => setLang(lang === "en" ? "fr" : "en")}
+            className="min-h-11 rounded-lg border border-field-border bg-surface px-2.5 text-sm font-semibold tabular-nums"
+          >
+            {lang === "en" ? "FR" : "EN"}
+          </button>
         </div>
       </div>
     </header>

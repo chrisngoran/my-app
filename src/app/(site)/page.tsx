@@ -163,8 +163,7 @@ export default function Home() {
             <div>
               <dt className="type-label text-muted">WhatsApp or phone</dt>
               <dd className="type-data mt-1 text-lg text-foreground">
-                <span className="whitespace-nowrap">{cooperative.phone}</span>{" "}
-                <span className="text-sm font-normal text-muted">(demo number)</span>
+                <span className="whitespace-nowrap">{cooperative.phone}</span>
               </dd>
               <dd className="flex flex-wrap gap-x-6">
                 <a
