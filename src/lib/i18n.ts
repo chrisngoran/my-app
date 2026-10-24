@@ -8,6 +8,20 @@ const T = {
     ourStory: "Our story",
     traceABag: "Trace a bag",
     myOrder: "My order",
+    shopHeading: "Coffee from the Bui highlands",
+    shopLead: "Roasted coffee, a single-farm micro-lot, green coffee by the kilo for roasters and a monthly subscription. Every bag carries a lot code you can trace to the farms.",
+    allCoffee: "All coffee",
+    categoryRoasted: "Roasted coffee",
+    categoryGreen: "Green coffee",
+    categoryMicroLot: "Micro-lots",
+    categorySubscription: "Subscriptions",
+    tastesLike: "Tastes like",
+    aboutTheBag: "About the bag",
+    weight: "Weight",
+    roast: "Roast",
+    otherCoffee: "Other coffee from this harvest",
+    shopBreadcrumb: "Shop",
+    rotateLots: "Rotating lots",
     addToOrder: "Add to order",
     soldOut: "Sold out",
     added: "Added",
@@ -26,6 +40,20 @@ const T = {
     ourStory: "Notre histoire",
     traceABag: "Tracer un sac",
     myOrder: "Ma commande",
+    shopHeading: "Café des hauts plateaux du Bui",
+    shopLead: "Café torréfié, micro-lot d'une seule ferme, café vert au kilo et abonnement mensuel. Chaque sac porte un code de lot traçable jusqu'aux fermes.",
+    allCoffee: "Tout le café",
+    categoryRoasted: "Café torréfié",
+    categoryGreen: "Café vert",
+    categoryMicroLot: "Micro-lots",
+    categorySubscription: "Abonnements",
+    tastesLike: "Notes de dégustation",
+    aboutTheBag: "Détails du sac",
+    weight: "Poids",
+    roast: "Torréfaction",
+    otherCoffee: "Autre café de cette récolte",
+    shopBreadcrumb: "Boutique",
+    rotateLots: "Lots tournants",
     addToOrder: "Ajouter",
     soldOut: "Épuisé",
     added: "Ajouté",
@@ -42,10 +70,29 @@ const T = {
 } as const;
 
 export interface Translations {
+  // Nav / header
   shop: string;
   ourStory: string;
   traceABag: string;
   myOrder: string;
+  // Shop page
+  shopHeading: string;
+  shopLead: string;
+  allCoffee: string;
+  // Category labels
+  categoryRoasted: string;
+  categoryGreen: string;
+  categoryMicroLot: string;
+  categorySubscription: string;
+  // Product page labels
+  tastesLike: string;
+  aboutTheBag: string;
+  weight: string;
+  roast: string;
+  otherCoffee: string;
+  shopBreadcrumb: string;
+  rotateLots: string;
+  // Actions
   addToOrder: string;
   soldOut: string;
   added: string;

@@ -2,10 +2,12 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { useStore } from "@/components/store-provider";
 import { useCatalog } from "@/lib/catalog-overrides";
+import { getT } from "@/lib/i18n";
 import type { Product, ProductCategory } from "@/lib/types";
 import { askNextRoastLink } from "@/lib/whatsapp";
-import { CATEGORIES, CATEGORY_LABELS, isCategory } from "./catalog";
+import { CATEGORIES, isCategory } from "./catalog";
 
 /** Server-rendered product cards, by slug. The catalogue only filters and orders them. */
 export type CardsBySlug = Record<string, React.ReactNode>;
@@ -21,11 +23,20 @@ function useShownProducts(products: Product[]) {
   return products.filter((p) => !merged.find((m) => m.slug === p.slug)?.hidden);
 }
 
+const CATEGORY_KEY_MAP = {
+  roasted: "categoryRoasted",
+  green: "categoryGreen",
+  "micro-lot": "categoryMicroLot",
+  subscription: "categorySubscription",
+} as const;
+
 export function ShopCatalog({ products: all, cards }: { products: Product[]; cards: CardsBySlug }) {
   const products = useShownProducts(all);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { lang } = useStore();
+  const t = getT(lang);
   const raw = searchParams.get("category");
   const active: ProductCategory | null = isCategory(raw) ? raw : null;
   const visible = active ? products.filter((p) => p.category === active) : products;
@@ -38,8 +49,8 @@ export function ShopCatalog({ products: all, cards }: { products: Product[]; car
   }
 
   const options: { id: ProductCategory | null; label: string; count: number }[] = [
-    { id: null, label: "All coffee", count: products.length },
-    ...CATEGORIES.map((c) => ({ id: c, label: CATEGORY_LABELS[c], count: products.filter((p) => p.category === c).length })),
+    { id: null, label: t.allCoffee, count: products.length },
+    ...CATEGORIES.map((c) => ({ id: c, label: t[CATEGORY_KEY_MAP[c]], count: products.filter((p) => p.category === c).length })),
     // An empty category is a dead end, so its chip only shows while it is the active filter.
   ].filter((o) => o.id === null || o.count > 0 || o.id === active);
 

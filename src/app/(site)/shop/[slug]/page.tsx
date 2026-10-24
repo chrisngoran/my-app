@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { T } from "@/components/t";
 import { CATEGORY_LABELS, formatWeight } from "@/components/storefront/catalog";
 import {
   LiveProductDescription,
@@ -55,12 +56,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 3);
 
   // The lot tag carries processing, variety, altitude, harvest and score; these are the bag's own facts.
-  const details: { label: string; value: string }[] = [
-    { label: "Weight", value: formatWeight(product.weightGrams) },
+  const details: { labelKey: "weight" | "roast"; value: string }[] = [
+    { labelKey: "weight", value: formatWeight(product.weightGrams) },
     ...(product.roast
-      ? [{ label: "Roast", value: product.roast }]
+      ? [{ labelKey: "roast" as const, value: product.roast }]
       : product.category === "green"
-        ? [{ label: "Roast", value: "Unroasted (green)" }]
+        ? [{ labelKey: "roast" as const, value: "Unroasted (green)" }]
         : []),
   ];
 
@@ -87,7 +88,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <ol className="flex flex-wrap items-center gap-x-2">
           <li>
             <Link href="/shop" className="inline-flex min-h-11 items-center hover:text-brand hover:underline">
-              Shop
+              <T k="shopBreadcrumb" />
             </Link>
           </li>
           <li aria-hidden="true">/</li>
@@ -122,7 +123,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {/* The bag's lot code, tagged on the image at every width, as on the shop cards. */}
           {rotating ? (
             <span aria-hidden="true" className="type-label absolute bottom-4 left-4 rounded-md bg-sand px-2.5 py-1.5 text-brand">
-              Rotating lots
+              <T k="rotateLots" />
             </span>
           ) : (
             <span aria-hidden="true" className="type-stencil absolute bottom-4 left-4 rounded-md bg-sand px-2.5 py-1 text-2xl text-brand">
@@ -147,7 +148,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {product.cuppingNotes.length > 0 && (
             <section aria-labelledby="notes-heading" className="mt-6">
               <h2 id="notes-heading" className="type-label text-muted">
-                Tastes like
+                <T k="tastesLike" />
               </h2>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {product.cuppingNotes.map((n) => (
@@ -174,12 +175,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <section aria-labelledby="details-heading" className="mt-8">
             <h2 id="details-heading" className="type-label text-muted">
-              About the bag
+              <T k="aboutTheBag" />
             </h2>
             <dl className="mt-2 divide-y divide-border border-y border-border">
               {details.map((d) => (
-                <div key={d.label} className="flex items-baseline justify-between gap-4 py-2.5">
-                  <dt className="text-sm text-muted">{d.label}</dt>
+                <div key={d.labelKey} className="flex items-baseline justify-between gap-4 py-2.5">
+                  <dt className="text-sm text-muted"><T k={d.labelKey} /></dt>
                   <dd className="type-data text-right">{d.value}</dd>
                 </div>
               ))}
@@ -192,7 +193,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <section aria-labelledby="related-heading" className="mt-14 sm:mt-16">
         <h2 id="related-heading" className="type-h2 text-brand">
-          Other coffee from this harvest
+          <T k="otherCoffee" />
         </h2>
         <ProductGrid
           products={related}
