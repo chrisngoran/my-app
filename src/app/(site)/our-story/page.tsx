@@ -4,6 +4,7 @@ import Link from "next/link";
 import handSorting from "@/assets/story/hand-sorting.jpg";
 import millHuller from "@/assets/story/mill-huller.jpg";
 import millLine from "@/assets/story/mill-line.jpg";
+import { T } from "@/components/t";
 import { LiveFarmerStory } from "@/components/storefront/live-catalog";
 import { cooperative, farmers, lots } from "@/lib/data";
 import { ridgeHeightPct } from "@/lib/ridge";
@@ -16,32 +17,14 @@ export const metadata: Metadata = {
 };
 
 const STEPS = [
-  {
-    title: "Grown on family plots",
-    text: "Member families farm Arabica on plots of 0.5 to 2 hectares between 1,600 and 2,000 m, often intercropped with beans and plantain.",
-  },
-  {
-    title: "Hand-picked and collected",
-    text: "Only ripe red cherries are picked. Collection agents weigh each delivery and record it against the farmer's name and lot.",
-  },
-  {
-    title: "Processed at our stations",
-    text: "Cherries are washed, honey-processed or dried whole on raised beds, then rested and hulled to green coffee.",
-  },
-  {
-    title: "Graded and cupped",
-    text: "Each lot is checked for moisture, screen size and defects, then cupped and scored.",
-  },
-  {
-    title: "Roasted and packed in Kumbo",
-    text: "We roast in small batches and print a QR code with the lot number on every bag before it leaves the cooperative.",
-  },
-  {
-    title: "Farmers paid",
-    // farmerPayments in data.ts includes a cash payment, so mobile money is "mostly", not "always".
-    text: "Farmers are paid once their lot is sold, mostly by MTN MoMo or Orange Money, and each payment is recorded against the lot.",
-  },
-];
+  { titleKey: "step1Title", textKey: "step1Text" },
+  { titleKey: "step2Title", textKey: "step2Text" },
+  { titleKey: "step3Title", textKey: "step3Text" },
+  { titleKey: "step4Title", textKey: "step4Text" },
+  { titleKey: "step5Title", textKey: "step5Text" },
+  // farmerPayments in data.ts includes a cash payment, so mobile money is "mostly", not "always".
+  { titleKey: "step6Title", textKey: "step6Text" },
+] as const;
 
 function initials(name: string) {
   return name
@@ -131,12 +114,11 @@ export default function OurStoryPage() {
       <section aria-labelledby="story-heading" className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:pb-12 sm:pt-14">
         <div className="max-w-3xl">
           <h1 id="story-heading" className="type-h1 text-brand">
-            A cooperative of coffee families in the Bui highlands
+            <T k="storyHeading" />
           </h1>
           <p className="type-lead mt-5 max-w-[60ch] text-foreground">{cooperative.story}</p>
           <p className="mt-4 max-w-[60ch] text-foreground">
-            Selling together earns members more than selling cherries alone to middlemen. Training in selective picking and
-            drying lifts quality, and with it the price each farmer receives. Every lot is recorded and open for you to see.
+            <T k="storyLead1" />
           </p>
           <p className="mt-4 text-sm text-muted">{cooperative.location}</p>
         </div>
@@ -183,7 +165,7 @@ export default function OurStoryPage() {
 
       <section aria-labelledby="journey-heading" className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <h2 id="journey-heading" className="type-h2 text-brand">
-          From picking to payment
+          <T k="fromPickingToPayment" />
         </h2>
         {/*
           A real sequence, so it is numbered, on one rail: a vertical line on
@@ -192,7 +174,7 @@ export default function OurStoryPage() {
         <ol className="mt-8 grid gap-y-8 sm:mt-10 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-12">
           {STEPS.map((s, i) => (
             <li
-              key={s.title}
+              key={s.titleKey}
               className="relative pl-12 before:absolute before:-bottom-8 before:left-[15.5px] before:top-9 before:w-px before:bg-border last:before:hidden lg:pl-0 lg:pt-12 lg:before:-right-8 lg:before:bottom-auto lg:before:left-10 lg:before:top-4 lg:before:h-px lg:before:w-auto lg:last:before:block lg:[&:nth-child(3n)]:before:right-0"
             >
               <span
@@ -201,8 +183,8 @@ export default function OurStoryPage() {
               >
                 {i + 1}
               </span>
-              <h3 className="type-title text-brand">{s.title}</h3>
-              <p className="mt-1 max-w-[46ch] text-foreground">{s.text}</p>
+              <h3 className="type-title text-brand"><T k={s.titleKey} /></h3>
+              <p className="mt-1 max-w-[46ch] text-foreground"><T k={s.textKey} /></p>
             </li>
           ))}
         </ol>
@@ -214,7 +196,7 @@ export default function OurStoryPage() {
             Member families, from {highest.village} down to {lowest.village}
           </h2>
           <p className="mt-3 text-foreground">
-            Some of the families whose coffee is in this season&apos;s lots, from the highest farm to the lowest.
+            <T k="memberFamiliesLead" />
           </p>
         </div>
         <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
@@ -284,12 +266,12 @@ export default function OurStoryPage() {
         <div className="flex flex-col items-start justify-between gap-6 border-t border-brand/20 pt-10 sm:flex-row sm:items-center">
           <div>
             <h2 id="support-heading" className="type-h2 text-brand">
-              Order from these farms
+              <T k="orderFromFarms" />
             </h2>
-            <p className="mt-2 text-foreground">Order direct from the cooperative, delivered across Cameroon and abroad.</p>
+            <p className="mt-2 text-foreground"><T k="orderFromFarmsCopy" /></p>
           </div>
           <Link href="/shop" className="btn btn-primary btn-lg shrink-0">
-            Shop the harvest
+            <T k="shopHarvest" />
           </Link>
         </div>
       </section>
