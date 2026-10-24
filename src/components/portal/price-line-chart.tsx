@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import type { PricePoint } from "@/lib/world-price";
+
+export interface ChartPoint { date: string; value: number; }
 
 const PAD = { top: 14, right: 18, bottom: 38, left: 60 };
 const W = 560;
@@ -29,7 +30,15 @@ function yRange(prices: number[], tickCount = 5) {
   return { lo, hi: lo + step * (tickCount - 1), ticks: Array.from({ length: tickCount }, (_, i) => lo + i * step) };
 }
 
-export function PriceLineChart({ points }: { points: PricePoint[] }) {
+export function PriceLineChart({
+  points,
+  formatValue = (v) => v.toFixed(2),
+  ariaLabel = "Price chart",
+}: {
+  points: ChartPoint[];
+  formatValue?: (v: number) => string;
+  ariaLabel?: string;
+}) {
   const clipId = useId();
   const gradId = `${clipId}-g`;
   const svgRef = useRef<SVGSVGElement>(null);
@@ -39,14 +48,14 @@ export function PriceLineChart({ points }: { points: PricePoint[] }) {
     return <p className="p-4 text-sm text-muted">No price data available.</p>;
   }
 
-  const prices = points.map((p) => p.centsPerLb / 100);
+  const prices = points.map((p) => p.value);
   const { lo, hi, ticks } = yRange(prices);
 
   const xOf = (i: number) => (i / (points.length - 1)) * PLOT_W;
   const yOf = (v: number) => PLOT_H - ((v - lo) / (hi - lo)) * PLOT_H;
 
   const linePath = points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(i).toFixed(1)},${yOf(p.centsPerLb / 100).toFixed(1)}`)
+    .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(i).toFixed(1)},${yOf(p.value).toFixed(1)}`)
     .join(" ");
   const areaPath = `${linePath} L${xOf(points.length - 1).toFixed(1)},${PLOT_H} L0,${PLOT_H} Z`;
 
@@ -61,7 +70,7 @@ export function PriceLineChart({ points }: { points: PricePoint[] }) {
     const rect = svg.getBoundingClientRect();
     const svgX = ((e.clientX - rect.left) / rect.width) * W - PAD.left;
     const idx = Math.max(0, Math.min(points.length - 1, Math.round((svgX / PLOT_W) * (points.length - 1))));
-    setHover({ xi: idx, x: xOf(idx), y: yOf(points[idx].centsPerLb / 100) });
+    setHover({ xi: idx, x: xOf(idx), y: yOf(points[idx].value) });
   }
 
   const hoverPt = hover ? points[hover.xi] : null;
@@ -73,7 +82,7 @@ export function PriceLineChart({ points }: { points: PricePoint[] }) {
       ref={svgRef}
       viewBox={`0 0 ${W} ${H}`}
       className="w-full overflow-visible select-none"
-      aria-label="Arabica C daily closing price over the last 90 days"
+      aria-label={ariaLabel}
       role="img"
       onMouseMove={onMouseMove}
       onMouseLeave={() => setHover(null)}
@@ -96,7 +105,7 @@ export function PriceLineChart({ points }: { points: PricePoint[] }) {
             <g key={tick}>
               <line x1={0} y1={yy} x2={PLOT_W} y2={yy} stroke="var(--color-border)" strokeWidth="1" />
               <text x={-8} y={yy} textAnchor="end" dominantBaseline="middle" fontSize="11" fill="var(--color-muted)" fontFamily="inherit">
-                {tick.toFixed(2)}
+                {formatValue(tick)}
               </text>
             </g>
           );
@@ -130,7 +139,7 @@ export function PriceLineChart({ points }: { points: PricePoint[] }) {
               {hoverPt.date}
             </text>
             <text x={ttX + 9} y={ttY + 30} fontSize="13" fontWeight="600" fill="var(--color-foreground)" fontFamily="inherit">
-              {(hoverPt.centsPerLb / 100).toFixed(2)} USD/lb
+              {formatValue(hoverPt.value)}
             </text>
           </>
         )}

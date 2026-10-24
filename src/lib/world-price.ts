@@ -152,15 +152,22 @@ export interface PricePoint {
   centsPerLb: number;
 }
 
-/** ~90 days of daily Arabica C closing prices from Yahoo Finance. Cached ~1 hour. */
-export async function worldPriceHistory(): Promise<PricePoint[]> {
+export interface RawPricePoint {
+  /** ISO date, e.g. "2026-07-01" */
+  date: string;
+  /** Raw closing price in the symbol's native unit */
+  close: number;
+}
+
+/** ~90 days of daily closing prices for any Yahoo Finance symbol. Cached ~1 hour. */
+export async function worldPriceHistoryFor(symbol: string): Promise<RawPricePoint[]> {
   "use cache";
   cacheLife("hours");
   const res = await get(
-    "https://query1.finance.yahoo.com/v8/finance/chart/KC=F?range=3mo&interval=1d",
-    "KC=F history",
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=3mo&interval=1d`,
+    `${symbol} history`,
   );
-  if (!res.ok) throw new Error(`KC=F history: HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`${symbol} history: HTTP ${res.status}`);
   const data = (await res.json()) as {
     chart?: {
       result?: {
@@ -172,14 +179,20 @@ export async function worldPriceHistory(): Promise<PricePoint[]> {
   const result = data.chart?.result?.[0];
   const timestamps = result?.timestamp ?? [];
   const closes = result?.indicators?.quote?.[0]?.close ?? [];
-  const points: PricePoint[] = [];
+  const points: RawPricePoint[] = [];
   for (let i = 0; i < timestamps.length; i++) {
     const close = closes[i];
     if (close == null || !Number.isFinite(close) || close <= 0) continue;
     const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
-    points.push({ date, centsPerLb: close });
+    points.push({ date, close });
   }
   return points.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** ~90 days of daily Arabica C closing prices from Yahoo Finance. Cached ~1 hour. */
+export async function worldPriceHistory(): Promise<PricePoint[]> {
+  const raw = await worldPriceHistoryFor("KC=F");
+  return raw.map((p) => ({ date: p.date, centsPerLb: p.close }));
 }
 
 /** Fetched at most about once an hour; throws when a source cannot be reached. */
