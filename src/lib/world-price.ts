@@ -145,6 +145,43 @@ async function fredMonthly(series: string, notes: string[]): Promise<Monthly | n
   return null;
 }
 
+export interface PricePoint {
+  /** ISO date, e.g. "2026-07-01" */
+  date: string;
+  /** US cents per pound (Arabica C contract, ICE New York KC=F) */
+  centsPerLb: number;
+}
+
+/** ~90 days of daily Arabica C closing prices from Yahoo Finance. Cached ~1 hour. */
+export async function worldPriceHistory(): Promise<PricePoint[]> {
+  "use cache";
+  cacheLife("hours");
+  const res = await get(
+    "https://query1.finance.yahoo.com/v8/finance/chart/KC=F?range=3mo&interval=1d",
+    "KC=F history",
+  );
+  if (!res.ok) throw new Error(`KC=F history: HTTP ${res.status}`);
+  const data = (await res.json()) as {
+    chart?: {
+      result?: {
+        timestamp?: number[];
+        indicators?: { quote?: { close?: (number | null)[] }[] };
+      }[];
+    };
+  };
+  const result = data.chart?.result?.[0];
+  const timestamps = result?.timestamp ?? [];
+  const closes = result?.indicators?.quote?.[0]?.close ?? [];
+  const points: PricePoint[] = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    const close = closes[i];
+    if (close == null || !Number.isFinite(close) || close <= 0) continue;
+    const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
+    points.push({ date, centsPerLb: close });
+  }
+  return points.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 /** Fetched at most about once an hour; throws when a source cannot be reached. */
 export async function worldCoffeePrice(): Promise<WorldPrice> {
   "use cache";

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BarChart } from "@/components/portal/bar-chart";
 import { CsvButton } from "@/components/portal/csv-button";
+import { WorldPriceHistoryCard } from "@/components/portal/world-price-history-card";
 import {
   paymentsPerFarmer,
   salesByCity,
@@ -73,6 +74,10 @@ export default function ReportsPage() {
         description={`${cooperative.name} · ${cooperative.location}. Product sales exclude shipping; payment-method and city totals include it.`}
         actions={<PrintButton />}
       />
+
+      <div className="mb-6">
+        <WorldPriceHistoryCard />
+      </div>
 
       <div className="mb-6 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4 sm:gap-4 print:grid-cols-4">
         <StatCard label="Order value" value={<Price xaf={totalSalesXaf()} />} hint={`${orders.length} orders incl. shipping`} />
