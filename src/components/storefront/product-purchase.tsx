@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Price } from "@/components/price";
 import { useStore } from "@/components/store-provider";
 import { useProductView } from "@/lib/catalog-overrides";
+import { getT } from "@/lib/i18n";
 import { askNextRoastLink } from "@/lib/whatsapp";
 import { AddToCartButton } from "./add-to-cart-button";
 import { QuantityStepper } from "./quantity-stepper";
@@ -28,7 +29,8 @@ export function ProductPurchase({
   const stock = live?.stock ?? defaultStock;
   const hidden = live?.hidden ?? false;
   // Never let the order list hold more bags than are in stock.
-  const { cart, currency, addToCart } = useStore();
+  const { cart, currency, addToCart, lang } = useStore();
+  const t = getT(lang);
   const router = useRouter();
   const inList = cart.find((i) => i.slug === slug)?.quantity ?? 0;
   const remaining = Math.max(0, stock - inList);
@@ -48,7 +50,7 @@ export function ProductPurchase({
         <p className="mt-1 text-sm text-muted">Browse the shop for coffee available now, or ask us on WhatsApp when it will be back.</p>
         <a href={askNextRoastLink()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-3">
           <WhatsAppGlyph />
-          Ask on WhatsApp
+          {t.askOnWhatsApp}
         </a>
       </div>
     );
@@ -78,7 +80,7 @@ export function ProductPurchase({
           name={name}
           quantity={quantity}
           disabled={soldOut || allInList}
-          disabledLabel={allInList ? "All in your order" : undefined}
+          disabledLabel={allInList ? t.allInYourOrder : undefined}
           onAdded={() => setAddedHere(true)}
           className="flex-1 sm:flex-none sm:px-8"
         />
@@ -93,15 +95,15 @@ export function ProductPurchase({
           href="/cart"
           className="anim-enter mt-2 inline-flex min-h-11 items-center gap-1 font-semibold text-accent underline decoration-1 underline-offset-4 hover:decoration-2"
         >
-          View my order
+          {t.viewMyOrder}
         </Link>
       )}
       {soldOut ? (
         <div className="mt-3">
-          <p className="font-semibold text-muted">Sold out until the next harvest.</p>
+          <p className="font-semibold text-muted">{t.soldOutMessage}</p>
           <a href={askNextRoastLink()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-2 w-full">
             <WhatsAppGlyph />
-            Ask on WhatsApp
+            {t.askOnWhatsApp}
           </a>
         </div>
       ) : (
@@ -116,13 +118,10 @@ export function ProductPurchase({
           className="btn mt-3 w-full border-[1.5px] border-whatsapp bg-surface text-whatsapp pointer-fine:hover:bg-whatsapp/5"
         >
           <WhatsAppGlyph />
-          Order now on WhatsApp
+          {t.orderOnWhatsApp}
         </button>
       )}
-      <p className="mt-3 text-sm text-muted">
-        Add to order, send it on WhatsApp, then pay by MTN MoMo or Orange Money once we confirm.
-        {currency !== "XAF" && " You pay in FCFA; other currencies are shown for reference."}
-      </p>
+      <p className="mt-3 text-sm text-muted">{t.payNote(currency !== "XAF")}</p>
     </div>
   );
 }

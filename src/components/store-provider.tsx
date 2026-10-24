@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
 import { CURRENCIES } from "@/lib/currency";
+import { LANGS, type Lang } from "@/lib/i18n";
 import { products as catalogProducts } from "@/lib/data";
 import type { Currency } from "@/lib/types";
 
@@ -11,6 +12,8 @@ export interface CartItem {
 }
 
 interface StoreState {
+  lang: Lang;
+  setLang: (l: Lang) => void;
   currency: Currency;
   setCurrency: (c: Currency) => void;
   cart: CartItem[];
@@ -35,6 +38,7 @@ const StoreContext = createContext<StoreState | null>(null);
 
 const CART_KEY = "gv-cart";
 const CURRENCY_KEY = "gv-currency";
+const LANG_KEY = "gv-lang";
 
 function readStorage<T>(key: string, fallback: T): T {
   try {
@@ -99,19 +103,25 @@ function writeStorage(key: string, value: unknown) {
 interface Snapshot {
   cart: CartItem[];
   currency: Currency;
+  lang: Lang;
   loaded: boolean;
   persisted: boolean;
 }
 
-const SERVER_SNAPSHOT: Snapshot = { cart: [], currency: "XAF", loaded: false, persisted: true };
+const SERVER_SNAPSHOT: Snapshot = { cart: [], currency: "XAF", lang: "en", loaded: false, persisted: true };
 let snapshot: Snapshot | null = null;
 const listeners = new Set<() => void>();
+
+function sanitizeLang(raw: unknown): Lang {
+  return LANGS.includes(raw as Lang) ? (raw as Lang) : "en";
+}
 
 function getSnapshot(): Snapshot {
   if (!snapshot) {
     snapshot = {
       cart: sanitizeCart(readStorage<unknown>(CART_KEY, [])),
       currency: sanitizeCurrency(readStorage<unknown>(CURRENCY_KEY, "XAF")),
+      lang: sanitizeLang(readStorage<unknown>(LANG_KEY, "en")),
       loaded: true,
       persisted: !persistFailed,
     };
@@ -126,7 +136,7 @@ function getServerSnapshot(): Snapshot {
 function subscribe(listener: () => void) {
   listeners.add(listener);
   const onStorage = (e: StorageEvent) => {
-    if (e.key === CART_KEY || e.key === CURRENCY_KEY) {
+    if (e.key === CART_KEY || e.key === CURRENCY_KEY || e.key === LANG_KEY) {
       snapshot = null;
       listener();
     }
@@ -142,6 +152,7 @@ function update(next: Partial<Omit<Snapshot, "loaded" | "persisted">>) {
   const prev = getSnapshot();
   if (next.cart) writeStorage(CART_KEY, next.cart);
   if (next.currency) writeStorage(CURRENCY_KEY, next.currency);
+  if (next.lang) writeStorage(LANG_KEY, next.lang);
   snapshot = { ...prev, ...next, persisted: !persistFailed };
   listeners.forEach((l) => l());
 }
@@ -151,10 +162,11 @@ function updateCart(fn: (prev: CartItem[]) => CartItem[]) {
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const { cart, currency, loaded, persisted } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const { cart, currency, lang, loaded, persisted } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [adds, setAdds] = useState(0);
 
   const setCurrency = useCallback((c: Currency) => update({ currency: sanitizeCurrency(c) }), []);
+  const setLang = useCallback((l: Lang) => update({ lang: sanitizeLang(l) }), []);
 
   const addToCart = useCallback((slug: string, quantity = 1) => {
     const add = clampQuantity(Number.isFinite(quantity) ? quantity : 1);
@@ -184,6 +196,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<StoreState>(
     () => ({
+      lang,
+      setLang,
       currency,
       setCurrency,
       cart,
@@ -196,7 +210,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       loaded,
       persisted,
     }),
-    [currency, setCurrency, cart, addToCart, setQuantity, removeFromCart, clearCart, adds, loaded, persisted],
+    [lang, setLang, currency, setCurrency, cart, addToCart, setQuantity, removeFromCart, clearCart, adds, loaded, persisted],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
