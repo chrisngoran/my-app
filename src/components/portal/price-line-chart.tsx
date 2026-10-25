@@ -32,13 +32,15 @@ function yRange(prices: number[], tickCount = 5) {
 
 export function PriceLineChart({
   points,
-  formatValue = (v) => v.toFixed(2),
+  precision = 2,
   ariaLabel = "Price chart",
 }: {
   points: ChartPoint[];
-  formatValue?: (v: number) => string;
+  /** Decimal places for Y-axis and tooltip values. Default 2. */
+  precision?: number;
   ariaLabel?: string;
 }) {
+  const formatValue = (v: number) => v.toFixed(precision);
   const clipId = useId();
   const gradId = `${clipId}-g`;
   const svgRef = useRef<SVGSVGElement>(null);

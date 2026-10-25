@@ -159,34 +159,38 @@ export interface RawPricePoint {
   close: number;
 }
 
-/** ~90 days of daily closing prices for any Yahoo Finance symbol. Cached ~1 hour. */
+/** ~90 days of daily closing prices for any Yahoo Finance symbol. Returns [] on any network or parse failure. Cached ~1 hour. */
 export async function worldPriceHistoryFor(symbol: string): Promise<RawPricePoint[]> {
   "use cache";
   cacheLife("hours");
-  const res = await get(
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=3mo&interval=1d`,
-    `${symbol} history`,
-  );
-  if (!res.ok) throw new Error(`${symbol} history: HTTP ${res.status}`);
-  const data = (await res.json()) as {
-    chart?: {
-      result?: {
-        timestamp?: number[];
-        indicators?: { quote?: { close?: (number | null)[] }[] };
-      }[];
+  try {
+    const res = await get(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=3mo&interval=1d`,
+      `${symbol} history`,
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      chart?: {
+        result?: {
+          timestamp?: number[];
+          indicators?: { quote?: { close?: (number | null)[] }[] };
+        }[];
+      };
     };
-  };
-  const result = data.chart?.result?.[0];
-  const timestamps = result?.timestamp ?? [];
-  const closes = result?.indicators?.quote?.[0]?.close ?? [];
-  const points: RawPricePoint[] = [];
-  for (let i = 0; i < timestamps.length; i++) {
-    const close = closes[i];
-    if (close == null || !Number.isFinite(close) || close <= 0) continue;
-    const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
-    points.push({ date, close });
+    const result = data.chart?.result?.[0];
+    const timestamps = result?.timestamp ?? [];
+    const closes = result?.indicators?.quote?.[0]?.close ?? [];
+    const points: RawPricePoint[] = [];
+    for (let i = 0; i < timestamps.length; i++) {
+      const close = closes[i];
+      if (close == null || !Number.isFinite(close) || close <= 0) continue;
+      const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
+      points.push({ date, close });
+    }
+    return points.sort((a, b) => a.date.localeCompare(b.date));
+  } catch {
+    return [];
   }
-  return points.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /** ~90 days of daily Arabica C closing prices from Yahoo Finance. Cached ~1 hour. */
