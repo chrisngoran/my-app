@@ -39,7 +39,6 @@ async function ChartContent() {
         <div className="px-4 pt-4 pb-2 sm:px-5 sm:pt-5">
           <PriceLineChart
             points={arabicaPts}
-            formatValue={(v) => `${v.toFixed(2)}`}
             ariaLabel="Arabica C daily closing price over the last 90 days"
           />
         </div>
@@ -65,7 +64,7 @@ async function ChartContent() {
         <div className="px-4 pt-4 pb-2 sm:px-5 sm:pt-5">
           <PriceLineChart
             points={robustaPts}
-            formatValue={(v) => `${Math.round(v)}`}
+            precision={0}
             ariaLabel="Robusta daily closing price over the last 90 days"
           />
         </div>
