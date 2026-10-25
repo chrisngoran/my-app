@@ -14,7 +14,7 @@ function changePctLabel(points: { value: number }[]) {
 
 async function ChartContent() {
   const [arabicaRaw, robustaRaw] = await Promise.all([
-    worldPriceHistoryFor("KC=F"),
+    worldPriceHistoryFor("KC=F").catch(() => []),
     worldPriceHistoryFor("RC=F").catch(() => worldPriceHistoryFor("RM=F").catch(() => [])),
   ]);
 
